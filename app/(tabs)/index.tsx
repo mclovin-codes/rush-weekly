@@ -1,98 +1,193 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { mockGames, mockFilters } from '@/constants/mock-data';
+import { Colors } from '@/constants/theme';
+import GameCard from '@/components/game-card';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [selectedFilter, setSelectedFilter] = useState('All');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  // Mock user data
+  const userUnits = 980;
+  const weeklyChange = -20;
+
+  const filteredGames = mockGames.filter(game => {
+    if (selectedFilter === 'All') return true;
+    if (selectedFilter === 'Live Now') return game.isLive;
+    if (selectedFilter === 'Today') {
+      const today = new Date();
+      return game.startTime.toDateString() === today.toDateString();
+    }
+    if (selectedFilter === 'Tomorrow') {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return game.startTime.toDateString() === tomorrow.toDateString();
+    }
+    if (selectedFilter === 'Soccer') return game.sport === 'Soccer';
+    if (selectedFilter === 'Basketball') return game.sport === 'Basketball';
+    if (selectedFilter === 'Football') return game.sport === 'Football';
+    return true;
+  });
+
+  const handleGamePress = (game: any) => {
+    // Navigate to game detail view (mock for now)
+    console.log('Game pressed:', game);
+  };
+
+  const handleOddsPress = (team: 'home' | 'away', game: any) => {
+    // Open bet slip (mock for now)
+    console.log(`Odds pressed for ${team} team:`, game);
+  };
+
+  const calculateTimeRemaining = () => {
+    // Mock calculation - in real app would calculate from actual end time
+    return '2d 14h 23m';
+  };
+
+  return (
+    <View style={styles.container}>
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.branding}>
+          <Text style={styles.appName}>RUSH</Text>
+          <Text style={styles.weekIndicator}>Week 14 Competition</Text>
+        </View>
+
+        <View style={styles.creditsContainer}>
+          <Text style={[
+            styles.credits,
+            { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
+          ]}>
+            {userUnits.toLocaleString()} units
+          </Text>
+          <Text style={styles.change}>
+            {weeklyChange > 0 ? '+' : ''}{weeklyChange}
+          </Text>
+        </View>
+
+        <Text style={styles.countdown}>
+          Ends in {calculateTimeRemaining()}
+        </Text>
+      </View>
+
+      {/* Filter Tabs */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterContainer}
+        contentContainerStyle={styles.filterContent}
+      >
+        {mockFilters.map((filter) => (
+          <TouchableOpacity
+            key={filter}
+            style={[
+              styles.filterTab,
+              selectedFilter === filter && styles.activeFilterTab
+            ]}
+            onPress={() => setSelectedFilter(filter)}
+          >
+            <Text style={[
+              styles.filterText,
+              selectedFilter === filter && styles.activeFilterText
+            ]}>
+              {filter}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Game Cards */}
+      <ScrollView style={styles.gamesContainer}>
+        {filteredGames.map((game) => (
+          <GameCard
+            key={game.id}
+            game={game}
+            onPress={() => handleGamePress(game)}
+            onOddsPress={(team) => handleOddsPress(team, game)}
+          />
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: Colors.dark.background,
+  },
+  header: {
+    backgroundColor: Colors.dark.card,
+    paddingHorizontal: 16,
+    paddingTop: 48,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.background,
+  },
+  branding: {
     alignItems: 'center',
-    gap: 8,
+    marginBottom: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  appName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.dark.tint,
+    letterSpacing: 2,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  weekIndicator: {
+    fontSize: 16,
+    color: Colors.dark.icon,
+    marginTop: 4,
+  },
+  creditsContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  credits: {
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+  change: {
+    fontSize: 14,
+    color: Colors.dark.icon,
+    marginTop: 4,
+  },
+  countdown: {
+    fontSize: 16,
+    color: Colors.dark.accent,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  filterContainer: {
+    backgroundColor: Colors.dark.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.background,
+  },
+  filterContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  filterTab: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: Colors.dark.background,
+  },
+  activeFilterTab: {
+    backgroundColor: Colors.dark.tint,
+  },
+  filterText: {
+    fontSize: 14,
+    color: Colors.dark.icon,
+    fontWeight: '500',
+  },
+  activeFilterText: {
+    color: Colors.dark.text,
+  },
+  gamesContainer: {
+    flex: 1,
+    marginTop: 8,
   },
 });

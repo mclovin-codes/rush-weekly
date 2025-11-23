@@ -18,12 +18,16 @@ export const Colors = {
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#F1F5F9', // Text Primary
+    background: '#0F172A', // Background
+    tint: '#3B82F6', // Primary Action
+    icon: '#94A3B8', // Text Secondary
+    tabIconDefault: '#94A3B8',
+    tabIconSelected: '#3B82F6',
+    card: '#1E293B', // Cards
+    success: '#10B981', // Success/Positive
+    danger: '#EF4444', // Danger/Negative
+    accent: '#8B5CF6', // Accent
   },
 };
 
