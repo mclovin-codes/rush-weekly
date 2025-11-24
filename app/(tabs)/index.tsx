@@ -83,7 +83,7 @@ export default function HomeScreen() {
             <View style={styles.changeContainer}>
               <Text style={[
                 styles.changeText,
-                { color: weeklyChange >= 0 ? '#10B981' : '#EF4444' }
+                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
               ]}>
                 {weeklyChange > 0 ? '+' : ''}{weeklyChange}
               </Text>
@@ -164,10 +164,10 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: Colors.dark.background,
   },
   header: {
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.card,
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
@@ -175,17 +175,17 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
     letterSpacing: 4,
     marginBottom: 24,
   },
   unitsCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   unitsRow: {
     flexDirection: 'row',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   unitsLabel: {
     fontSize: 13,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#1F1F1F',
+    backgroundColor: Colors.dark.card,
   },
   changeText: {
     fontSize: 13,
@@ -213,12 +213,12 @@ const styles = StyleSheet.create({
   unitsAmount: {
     fontSize: 44,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
     letterSpacing: -1,
   },
   unitsSubtext: {
     fontSize: 14,
-    color: '#666666',
+    color: Colors.dark.icon,
     fontWeight: '600',
   },
   competitionBar: {
@@ -227,26 +227,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   competitionLabel: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
     marginBottom: 2,
   },
   competitionTime: {
     fontSize: 12,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '500',
   },
   liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1F1F1F',
+    backgroundColor: Colors.dark.card,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -255,18 +255,18 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#EF4444',
+    backgroundColor: Colors.dark.danger,
     marginRight: 6,
   },
   liveText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
   },
   filterWrapper: {
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#252525',
+    borderBottomColor: Colors.dark.icon,
   },
   filterContent: {
     paddingHorizontal: 20,
@@ -278,21 +278,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     marginRight: 8,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   activeFilterTab: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+    backgroundColor: Colors.dark.text,
+    borderColor: Colors.dark.text,
   },
   filterText: {
     fontSize: 14,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
   },
   activeFilterText: {
-    color: '#000000',
+    color: Colors.dark.background,
   },
   gamesContainer: {
     flex: 1,

@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Colors } from '@/constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
@@ -245,7 +246,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     height: SHEET_HEIGHT,
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: 40,
@@ -257,7 +258,7 @@ const styles = StyleSheet.create({
   handle: {
     width: 40,
     height: 4,
-    backgroundColor: '#333333',
+    backgroundColor: Colors.dark.icon,
     borderRadius: 2,
   },
   header: {
@@ -270,28 +271,28 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
   },
   closeButton: {
     fontSize: 28,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '300',
   },
   selectionCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     marginHorizontal: 20,
     marginBottom: 20,
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   matchup: {
     marginBottom: 12,
   },
   matchupLabel: {
     fontSize: 11,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -299,12 +300,12 @@ const styles = StyleSheet.create({
   },
   matchupText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: Colors.dark.text,
     fontWeight: '600',
   },
   divider: {
     height: 1,
-    backgroundColor: '#252525',
+    backgroundColor: Colors.dark.icon,
     marginBottom: 12,
   },
   selection: {
@@ -314,7 +315,7 @@ const styles = StyleSheet.create({
   },
   selectionLabel: {
     fontSize: 11,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -323,10 +324,10 @@ const styles = StyleSheet.create({
   selectionTeam: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
   },
   oddsContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.dark.text,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   oddsValue: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#000000',
+    color: Colors.dark.background,
   },
   inputSection: {
     paddingHorizontal: 20,
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -351,10 +352,10 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
@@ -362,17 +363,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 32,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
     paddingVertical: 12,
   },
   inputUnit: {
     fontSize: 16,
-    color: '#666666',
+    color: Colors.dark.icon,
     fontWeight: '600',
   },
   balanceText: {
     fontSize: 13,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
     marginTop: 8,
   },
@@ -384,26 +385,26 @@ const styles = StyleSheet.create({
   },
   quickButton: {
     flex: 1,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   quickButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
   },
   potentialWinCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     marginHorizontal: 20,
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   potentialRow: {
     flexDirection: 'row',
@@ -413,32 +414,32 @@ const styles = StyleSheet.create({
   },
   potentialLabel: {
     fontSize: 14,
-    color: '#888888',
+    color: Colors.dark.icon,
     fontWeight: '600',
   },
   potentialValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.dark.text,
   },
   profitValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#10B981',
+    color: Colors.dark.success,
   },
   placeBetButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.dark.text,
     marginHorizontal: 20,
     paddingVertical: 18,
     borderRadius: 12,
     alignItems: 'center',
   },
   placeBetButtonDisabled: {
-    backgroundColor: '#252525',
+    backgroundColor: Colors.dark.icon,
   },
   placeBetButtonText: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#000000',
+    color: Colors.dark.background,
   },
 });
