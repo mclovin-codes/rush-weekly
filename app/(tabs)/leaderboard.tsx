@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import React from 'react';
 
 import { mockLeaderboard } from '@/constants/mock-data';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, Typography } from '@/constants/theme';
 import LeaderboardRow from '@/components/leaderboard-row';
 
 export default function LeaderboardScreen() {
@@ -97,14 +97,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   poolName: {
-    fontSize: 24,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.teamName.large,
     color: Colors.dark.text,
     marginBottom: 4,
   },
   weekLabel: {
-    fontSize: 13,
-    fontFamily: Fonts.condensed,
+    ...Typography.sectionHeader.small,
     color: Colors.dark.icon,
   },
   playerCount: {
@@ -121,8 +119,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   playerCountLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.condensed,
+    ...Typography.meta.small,
     color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -141,16 +138,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.condensed,
+    ...Typography.meta.small,
     color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   statusValue: {
-    fontSize: 20,
-    fontFamily: Fonts.display,
+    ...Typography.title.small,
     color: Colors.dark.text,
   },
   prizeValue: {
@@ -175,8 +170,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.dark.border,
   },
   listHeaderText: {
-    fontSize: 11,
-    fontFamily: Fonts.condensed,
+    ...Typography.meta.small,
     color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,

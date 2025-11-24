@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 
-// RUSH brand color - electric blue accent
-const accentColor = '#00C0FF';
+// RUSH brand color - premium electric blue accent
+const accentColor = '#00BFFF'; // Premium electric blue
 const tintColorLight = accentColor;
 const tintColorDark = accentColor;
 
@@ -32,35 +32,35 @@ export const Colors = {
     },
   },
   dark: {
-    // Deep navy background for sleek, premium feel
-    background: '#050E1A',
+    // Premium sportsbook dark theme
+    background: '#0B1118',
     text: '#FFFFFF',
-    textSecondary: '#94A3B8',
+    textSecondary: 'rgba(255,255,255,0.5)',
     tint: tintColorDark,
     tintHover: '#33CCFF',
     tintPressed: '#0099CC',
-    tintDisabled: '#00C0FF40',
-    card: '#101C2C',
-    cardElevated: '#1A2738',
-    border: '#1E293B',
-    divider: '#1E293B80',
-    overlay: '#050E1A99',
-    icon: '#94A3B8',
-    tabIconDefault: '#94A3B8',
+    tintDisabled: '#00BFFF40',
+    card: '#121A23',
+    cardElevated: '#1A2530',
+    border: 'rgba(255,255,255,0.06)',
+    divider: 'rgba(255,255,255,0.06)',
+    overlay: '#0B111899',
+    icon: 'rgba(255,255,255,0.5)',
+    tabIconDefault: 'rgba(255,255,255,0.5)',
     tabIconSelected: tintColorDark,
     success: '#10B981',
     successBg: '#10B98120',
-    danger: '#EF4444',
-    dangerBg: '#EF444420',
+    danger: '#D95151', // Updated negative/alert color
+    dangerBg: '#D9515120',
     warning: '#F59E0B',
     warningBg: '#F59E0B20',
     accent: '#8B5CF6',
     accentBg: '#8B5CF620',
     gradients: {
-      primary: ['#00C0FF', '#0080FF'],
+      primary: ['#00BFFF', '#0099CC'],
       accent: ['#8B5CF6', '#6366F1'],
-      rush: ['#00C0FF', '#00E5FF'],
-      background: ['#050E1A', '#0A1628'],
+      rush: ['#00BFFF', '#00E5FF'],
+      background: ['#0B1118', '#121A23'],
     },
   },
 };
@@ -70,62 +70,47 @@ export const Colors = {
 // <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 export const Fonts = {
-  /** Primary UI font - Inter with system fallbacks */
-  primary: Platform.select({
+  // Inter for functional text, numbers, metadata, and body copy
+  regular: Platform.select({
     default: 'Inter',
     web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   }),
-
-  /** Medium weight Inter */
-  primaryMedium: Platform.select({
-    default: 'Inter_500Medium', // Fallback to regular for now
+  medium: Platform.select({
+    default: 'Inter_500Medium',
+    web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  }),
+  bold: Platform.select({
+    default: 'Inter_700Bold',
     web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   }),
 
-  /** Bold Inter */
-  primaryBold: Platform.select({
-    default: 'Inter-Bold',
-    web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-  }),
-
-  /** Display font - Bebas Neue with fallbacks */
+  // Bebas Neue for headlines, section headers, market labels, buttons, and app branding
   display: Platform.select({
-    ios: 'BebasNeue',
-    android: 'BebasNeue',
-    default: 'BebasNeue',
+    default: 'BebasNeue_400Regular',
     web: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif",
   }),
 
-  /** Condensed font - Barlow Condensed with fallbacks */
+  // Barlow Condensed SemiBold for sport categories, tabs, and scoreboard-like elements
   condensed: Platform.select({
-    ios: 'BarlowCondensed',
-    android: 'BarlowCondensed',
-    default: 'BarlowCondensed',
-    web: "'Barlow Condensed', 'Arial Narrow', sans-serif",
+    default: 'BarlowCondensed_600SemiBold',
+    web: "'Barlow Condensed SemiBold', 'Arial Narrow', sans-serif",
   }),
 
-  /** Bold condensed */
-  condensedBold: Platform.select({
-    ios: 'BarlowCondensed',
-    android: 'BarlowCondensed',
-    default: 'BarlowCondensed',
-    web: "'Barlow Condensed', 'Arial Narrow', sans-serif",
-  }),
-
-  /** System font stacks - always available */
+  // System fallback
   system: Platform.select({
-    ios: 'San Francisco',
-    android: 'Roboto',
-    default: 'system-ui',
-    web: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    ios: "System",
+    android: "Roboto",
+    default: "system-ui",
   }),
 
-  /** Monospace font */
+  // Monospace
   mono: Platform.select({
-    default: 'monospace',
-    web: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    ios: "Courier",
+    android: "monospace",
+    default: "monospace",
   }),
 };
+
 
 export const FontWeights = {
   light: '300',
@@ -138,23 +123,75 @@ export const FontWeights = {
 } as const;
 
 export const FontSizes = {
-  xs: 12,
-  sm: 14,
+  xs: 12,   // Meta text (labels): Inter 400 12–14
+  sm: 14,   // Meta text (labels): Inter 400 12–14
   base: 16,
-  lg: 18,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 30,
-  '4xl': 36,
+  lg: 18,   // Team names: Inter 500 18–20
+  xl: 20,   // Team names: Inter 500 18–20
+  '2xl': 24, // Section headers: Barlow Condensed 18–22 (SemiBold)
+  '3xl': 30, // Titles/Headers: Bebas Neue 28–36
+  '4xl': 36, // Titles/Headers: Bebas Neue 28–36
   '5xl': 48,
 } as const;
+
+// Typography scale for easy reference
+export const Typography = {
+  // Titles/Headers: Bebas Neue 28–36
+  title: {
+    large: { fontSize: FontSizes['4xl'], fontFamily: Fonts.display },
+    medium: { fontSize: FontSizes['3xl'], fontFamily: Fonts.display },
+    small: { fontSize: FontSizes['2xl'], fontFamily: Fonts.display },
+  },
+
+  // Section headers: Barlow Condensed 18–22 (SemiBold)
+  sectionHeader: {
+    large: { fontSize: FontSizes.xl, fontFamily: Fonts.condensed, textTransform: 'uppercase' as const },
+    medium: { fontSize: FontSizes.lg, fontFamily: Fonts.condensed, textTransform: 'uppercase' as const },
+    small: { fontSize: FontSizes.base, fontFamily: Fonts.condensed, textTransform: 'uppercase' as const },
+  },
+
+  // Team names: Inter 500 18–20
+  teamName: {
+    large: { fontSize: FontSizes.xl, fontFamily: Fonts.medium },
+    medium: { fontSize: FontSizes.lg, fontFamily: Fonts.medium },
+    small: { fontSize: FontSizes.base, fontFamily: Fonts.medium },
+  },
+
+  // Odds pill buttons: Bebas Neue 18–20 uppercase
+  oddsPill: {
+    large: { fontSize: FontSizes.xl, fontFamily: Fonts.display, textTransform: 'uppercase' as const },
+    medium: { fontSize: FontSizes.lg, fontFamily: Fonts.display, textTransform: 'uppercase' as const },
+    small: { fontSize: FontSizes.base, fontFamily: Fonts.display, textTransform: 'uppercase' as const },
+  },
+
+  // Meta text (labels): Inter 400 12–14
+  meta: {
+    large: { fontSize: FontSizes.sm, fontFamily: Fonts.regular },
+    medium: { fontSize: FontSizes.xs, fontFamily: Fonts.regular },
+    small: { fontSize: FontSizes.xs, fontFamily: Fonts.regular },
+  },
+
+  // Body text
+  body: {
+    large: { fontSize: FontSizes.lg, fontFamily: Fonts.regular },
+    medium: { fontSize: FontSizes.base, fontFamily: Fonts.regular },
+    small: { fontSize: FontSizes.sm, fontFamily: Fonts.regular },
+  },
+
+  // Emphasis text
+  emphasis: {
+    large: { fontSize: FontSizes.xl, fontFamily: Fonts.bold },
+    medium: { fontSize: FontSizes.base, fontFamily: Fonts.bold },
+    small: { fontSize: FontSizes.sm, fontFamily: Fonts.bold },
+  },
+};
 
 export const Spacing = {
   xs: 4,
   sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
+  md: 16,   // Card padding horizontal
+  lg: 24,   // Section spacing blocks: 24–32px
+  xl: 32,   // Section spacing blocks: 24–32px
   '2xl': 48,
   '3xl': 64,
 } as const;
@@ -163,8 +200,9 @@ export const BorderRadius = {
   sm: 4,
   md: 8,
   lg: 12,
-  xl: 16,
-  '2xl': 24,
+  xl: 16,   // Elevated cards with rounded corners: 16–20px
+  '2xl': 20, // Elevated cards with rounded corners: 16–20px
+  '3xl': 24,
   full: 9999,
 } as const;
 
@@ -204,6 +242,22 @@ export const Shadows = {
     shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 8,
+  },
+  // Subtle shadows for elevated cards
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  // Glow effect for odds pills and active states
+  pillGlow: {
+    shadowColor: accentColor,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 3,
   },
 } as const;
 

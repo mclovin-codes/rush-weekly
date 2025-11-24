@@ -3,11 +3,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useFonts } from 'expo-font';
-import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+
 import {
   BebasNeue_400Regular,
 } from '@expo-google-fonts/bebas-neue';
@@ -15,6 +14,7 @@ import {
   BarlowCondensed_400Regular,
   BarlowCondensed_600SemiBold,
 } from '@expo-google-fonts/barlow-condensed';
+
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -27,14 +27,13 @@ export default function RootLayout() {
 
   try {
     const [loaded, error] = useFonts({
-      'Inter': Inter_400Regular,
-      'Inter_500Medium,': Inter_500Medium,
-      'Inter_700Bold': Inter_700Bold,
-      'BebasNeue_400Regular': BebasNeue_400Regular,
-      'BarlowCondensed_400Regular': BarlowCondensed_400Regular,
-      'BarlowCondensed_600SemiBold': BarlowCondensed_600SemiBold
-
-    });
+  Inter_400: Inter_400Regular,
+  Inter_500: Inter_500Medium,
+  Inter_700: Inter_700Bold,
+  BebasNeue: BebasNeue_400Regular,
+  BarlowCondensed_400: BarlowCondensed_400Regular,
+  BarlowCondensed_600: BarlowCondensed_600SemiBold,
+});
     fontsLoaded = loaded;
     fontError = error;
   } catch (err) {

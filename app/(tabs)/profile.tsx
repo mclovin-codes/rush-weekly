@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-nati
 import React from 'react';
 
 import { mockUserProfile } from '@/constants/mock-data';
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, Typography } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak, friends } = mockUserProfile;
@@ -148,8 +148,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.background,
   },
   username: {
-    fontSize: 20,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.teamName.medium,
     color: Colors.dark.text,
     marginBottom: 12,
   },
@@ -161,14 +160,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   poolText: {
-    fontSize: 13,
-    fontFamily: Fonts.condensed,
+    ...Typography.sectionHeader.small,
     color: Colors.dark.text,
     textTransform: 'uppercase',
   },
   rankText: {
-    fontSize: 13,
-    fontFamily: Fonts.primary,
+    ...Typography.body.small,
     color: Colors.dark.icon,
   },
   unitsCard: {
@@ -185,8 +182,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   unitsLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.condensed,
+    ...Typography.meta.small,
     color: Colors.dark.icon,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
@@ -198,18 +194,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.cardElevated,
   },
   changeText: {
-    fontSize: 13,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.body.small,
+    ...Typography.emphasis.small,
   },
   unitsAmount: {
-    fontSize: 44,
-    fontFamily: Fonts.display,
+    ...Typography.title.large,
     color: Colors.dark.text,
     letterSpacing: -1,
   },
   unitsSubtext: {
-    fontSize: 14,
-    fontFamily: Fonts.primary,
+    ...Typography.body.medium,
     color: Colors.dark.icon,
   },
   section: {
@@ -224,14 +218,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
     paddingBottom: 11
   },
   addButton: {
-    fontSize: 15,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.body.medium,
+    ...Typography.emphasis.medium,
     color: Colors.dark.tint,
   },
   statsGrid: {
@@ -250,14 +243,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.icon,
   },
   statValue: {
-    fontSize: 28,
-    fontFamily: Fonts.display,
+    ...Typography.title.medium,
     color: Colors.dark.text,
     marginBottom: 4,
   },
   statLabel: {
-    fontSize: 12,
-    fontFamily: Fonts.condensed,
+    ...Typography.meta.small,
     color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,

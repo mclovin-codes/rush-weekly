@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, Text, Switch } from 'react-native';
 import React, { useState } from 'react';
 
-import { Colors, Fonts } from '@/constants/theme';
+import { Colors, Fonts, Typography } from '@/constants/theme';
 
 export default function AccountScreen() {
   const [notifications, setNotifications] = useState({
@@ -11,10 +11,7 @@ export default function AccountScreen() {
     friendActivity: true,
   });
 
-  const [settings, setSettings] = useState({
-    darkTheme: true,
-  });
-
+  
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
@@ -207,8 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subscriptionStatus: {
-    fontSize: 14,
-    fontFamily: Fonts.condensed,
+    ...Typography.sectionHeader.small,
     color: Colors.dark.success,
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -219,13 +215,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   subscriptionPlan: {
-    fontSize: 24,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.teamName.large,
     color: Colors.dark.text,
   },
   subscriptionRenewal: {
-    fontSize: 14,
-    fontFamily: Fonts.primary,
+    ...Typography.body.small,
     color: Colors.dark.textSecondary,
     marginTop: 4,
   },
@@ -241,14 +235,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   manageButtonText: {
-    fontSize: 16,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.emphasis.medium,
     color: Colors.dark.background,
     letterSpacing: 0.5,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: Fonts.primaryBold,
+    ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
     marginBottom: 16,
   },
@@ -261,18 +253,16 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.dark.border,
   },
   menuItemText: {
-    fontSize: 16,
-    fontFamily: Fonts.primary,
+    ...Typography.body.medium,
     color: Colors.dark.text,
     flex: 1,
   },
   menuItemValue: {
-    fontSize: 16,
-    fontFamily: Fonts.primary,
+    ...Typography.body.medium,
     color: Colors.dark.textSecondary,
   },
   menuItemArrow: {
-    fontSize: 16,
+    ...Typography.body.medium,
     color: Colors.dark.textSecondary,
   },
   switchItem: {
@@ -284,8 +274,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.dark.border,
   },
   switchLabel: {
-    fontSize: 16,
-    fontFamily: Fonts.primary,
+    ...Typography.body.medium,
     color: Colors.dark.text,
     flex: 1,
   },
@@ -295,9 +284,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.dark.border,
   },
   dangerText: {
-    fontSize: 16,
-    fontFamily: Fonts.primary,
+    ...Typography.body.medium,
+    ...Typography.emphasis.medium,
     color: Colors.dark.danger,
-    fontWeight: '600',
   },
 });
