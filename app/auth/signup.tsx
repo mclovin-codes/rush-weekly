@@ -4,7 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 
-export default function SignupScreen() {
+interface SignupScreenProps {
+  onSignupComplete?: () => void;
+}
+
+export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -72,6 +76,10 @@ export default function SignupScreen() {
       setIsLoading(false);
       // Handle successful signup
       console.log('Signup successful');
+      // Call onSignupComplete if provided
+      if (onSignupComplete) {
+        onSignupComplete();
+      }
     }, 2000);
   };
 
@@ -147,41 +155,7 @@ export default function SignupScreen() {
       <Text style={styles.stepTitle}>Set Your Password</Text>
       <Text style={styles.stepSubtitle}>Step 2 of 3: Security Setup</Text>
 
-      <View style={styles.passwordRequirements}>
-        <Text style={styles.requirementsTitle}>Password Requirements:</Text>
-        <View style={styles.requirementItem}>
-          <Ionicons
-            name={password.length >= 8 ? "checkmark-circle" : "ellipse-outline"}
-            size={16}
-            color={password.length >= 8 ? Colors.dark.success : Colors.dark.textSecondary}
-          />
-          <Text style={styles.requirementText}>At least 8 characters</Text>
-        </View>
-        <View style={styles.requirementItem}>
-          <Ionicons
-            name={/[a-z]/.test(password) ? "checkmark-circle" : "ellipse-outline"}
-            size={16}
-            color={/[a-z]/.test(password) ? Colors.dark.success : Colors.dark.textSecondary}
-          />
-          <Text style={styles.requirementText}>One lowercase letter</Text>
-        </View>
-        <View style={styles.requirementItem}>
-          <Ionicons
-            name={/[A-Z]/.test(password) ? "checkmark-circle" : "ellipse-outline"}
-            size={16}
-            color={/[A-Z]/.test(password) ? Colors.dark.success : Colors.dark.textSecondary}
-          />
-          <Text style={styles.requirementText}>One uppercase letter</Text>
-        </View>
-        <View style={styles.requirementItem}>
-          <Ionicons
-            name={/[0-9]/.test(password) ? "checkmark-circle" : "ellipse-outline"}
-            size={16}
-            color={/[0-9]/.test(password) ? Colors.dark.success : Colors.dark.textSecondary}
-          />
-          <Text style={styles.requirementText}>One number</Text>
-        </View>
-      </View>
+    <View style={{height: 20}}/>
 
       <View style={styles.inputGroup}>
         <Text style={styles.inputLabel}>PASSWORD</Text>
@@ -301,20 +275,7 @@ export default function SignupScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bonusContainer}>
-        <View style={styles.bonusHeader}>
-          <Ionicons name="gift" size={24} color={Colors.dark.warning} />
-          <View style={styles.bonusTextContainer}>
-            <Text style={styles.bonusTitle}>Welcome Bonus!</Text>
-            <Text style={styles.bonusSubtitle}>Get 100 bonus units when you complete signup</Text>
-          </View>
-        </View>
-        <View style={styles.bonusDetails}>
-          <Text style={styles.bonusDetail}>• Instant deposit match up to 50 units</Text>
-          <Text style={styles.bonusDetail}>• Free entry to next competition</Text>
-          <Text style={styles.bonusDetail}>• VIP access for first week</Text>
-        </View>
-      </View>
+    
 
       <View style={styles.stepNavigation}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
@@ -494,6 +455,7 @@ const styles = StyleSheet.create({
   },
   termsContainer: {
     marginBottom: 24,
+    paddingVertical: 36
   },
   termsTitle: {
     ...Typography.emphasis.medium,
@@ -569,7 +531,8 @@ const styles = StyleSheet.create({
   },
   signupButton: {
     backgroundColor: Colors.dark.tint,
-    paddingVertical: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
     borderRadius: 12,
     alignItems: 'center',
     shadowColor: Colors.dark.tint,
@@ -577,6 +540,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   signupButtonDisabled: {
     backgroundColor: Colors.dark.textSecondary,

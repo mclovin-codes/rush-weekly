@@ -1,15 +1,19 @@
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import React, { useState, useRef } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import LoginScreen from './auth/login';
 import SignupScreen from './auth/signup';
 import ForgotPasswordScreen from './auth/forgot-password';
+import OnboardingScreen from './auth/onboarding';
 
 export default function AuthScreen() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const slideAnimation = useRef(new Animated.Value(0)).current;
 
   const handleTabSwitch = (tab: 'login' | 'signup') => {
@@ -30,6 +34,15 @@ export default function AuthScreen() {
     setShowForgotPassword(false);
   };
 
+  const handleSignupComplete = () => {
+    setShowOnboarding(true);
+  };
+
+  const handleOnboardingComplete = () => {
+    // Navigate to main app (home screen)
+    router.replace('/(tabs)');
+  };
+
   if (showForgotPassword) {
     return (
       <View style={styles.container}>
@@ -38,6 +51,14 @@ export default function AuthScreen() {
           <Text style={styles.backButtonText}>Back to Login</Text>
         </TouchableOpacity>
         <ForgotPasswordScreen />
+      </View>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <View style={styles.container}>
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
       </View>
     );
   }
@@ -131,7 +152,7 @@ export default function AuthScreen() {
             },
           ]}
         >
-          <SignupScreen />
+          <SignupScreen onSignupComplete={handleSignupComplete} />
         </Animated.View>
       </View>
     </View>
