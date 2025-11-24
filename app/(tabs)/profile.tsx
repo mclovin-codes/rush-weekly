@@ -73,58 +73,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Friends Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Friends</Text>
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.addButton}>+ Add</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.friendsList}>
-          {friends.slice(0, 4).map((friend, index) => (
-            <TouchableOpacity 
-              key={friend.id} 
-              style={[
-                styles.friendItem,
-                index === friends.slice(0, 4).length - 1 && styles.lastFriendItem
-              ]}
-              activeOpacity={0.7}
-            >
-              <View style={styles.friendLeft}>
-                <View style={styles.friendAvatar}>
-                  <Text style={styles.friendAvatarText}>
-                    {friend.username[0].toUpperCase()}
-                  </Text>
-                </View>
-                <Text style={styles.friendUsername}>{friend.username}</Text>
-              </View>
-              <View style={styles.friendRight}>
-                <Text style={styles.friendUnits}>{friend.units}</Text>
-                <View style={[
-                  styles.friendChangeIndicator,
-                  { backgroundColor: friend.change > 0 ? Colors.dark.successBg : Colors.dark.dangerBg }
-                ]}>
-                  <Text style={[
-                    styles.friendChangeText,
-                    { color: friend.change > 0 ? Colors.dark.success : Colors.dark.danger }
-                  ]}>
-                    {friend.change > 0 ? '↗' : '↘'}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <TouchableOpacity 
-          style={styles.viewAllButton}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.viewAllText}>View All Friends</Text>
-        </TouchableOpacity>
-      </View>
+      
 
       {/* Historic Stats Section */}
       <View style={styles.section}>
@@ -278,6 +227,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
+    paddingBottom: 11
   },
   addButton: {
     fontSize: 15,
