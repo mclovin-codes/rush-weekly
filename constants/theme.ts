@@ -86,7 +86,7 @@ export const Fonts = {
 
   // Bebas Neue for headlines, section headers, market labels, buttons, and app branding
   display: Platform.select({
-    default: 'BebasNeue_400Regular',
+    default: 'BebasNeue',
     web: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif",
   }),
 

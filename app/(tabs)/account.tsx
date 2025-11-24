@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.success,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontWeight: '700',
+    fontFamily: Fonts.display
   },
   subscriptionDetails: {
     alignItems: 'center',
@@ -243,6 +243,7 @@ const styles = StyleSheet.create({
     ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
     marginBottom: 16,
+    fontFamily: Fonts.display
   },
   menuItem: {
     flexDirection: 'row',

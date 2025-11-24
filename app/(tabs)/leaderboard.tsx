@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     ...Typography.teamName.large,
     color: Colors.dark.text,
     marginBottom: 4,
+    fontFamily: Fonts.display
   },
   weekLabel: {
     ...Typography.sectionHeader.small,

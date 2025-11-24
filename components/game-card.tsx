@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: BorderRadius['2xl'],
+    borderRadius: BorderRadius.sm,
     ...Shadows.card,
     position: 'relative',
     borderLeftWidth: 3,
@@ -186,6 +186,7 @@ const styles = StyleSheet.create({
     ...Typography.teamName.medium,
     color: Colors.dark.text,
     textAlign: 'right',
+    fontFamily: Fonts.regular
   },
   vsColumn: {
     width: 24,
@@ -255,6 +256,7 @@ const styles = StyleSheet.create({
   viewMarketsText: {
     ...Typography.emphasis.small,
     color: Colors.dark.tint,
+    fontFamily: Fonts.display
   },
   arrow: {
     ...Typography.emphasis.small,

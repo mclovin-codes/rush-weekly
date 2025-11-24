@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     ...Typography.teamName.medium,
     color: Colors.dark.text,
     marginBottom: 12,
+    
   },
   poolBadge: {
     backgroundColor: Colors.dark.cardElevated,
@@ -163,6 +164,7 @@ const styles = StyleSheet.create({
     ...Typography.sectionHeader.small,
     color: Colors.dark.text,
     textTransform: 'uppercase',
+    fontFamily: Fonts.display
   },
   rankText: {
     ...Typography.body.small,
@@ -220,7 +222,8 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
-    paddingBottom: 11
+    paddingBottom: 11,
+    fontFamily: Fonts.display
   },
   addButton: {
     ...Typography.body.medium,
