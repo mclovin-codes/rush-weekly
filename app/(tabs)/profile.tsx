@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import React from 'react';
 
 import { mockUserProfile } from '@/constants/mock-data';
@@ -8,34 +8,55 @@ export default function ProfileScreen() {
   const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak, friends } = mockUserProfile;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header Card */}
-      <View style={styles.headerCard}>
-        <View style={styles.profileInfo}>
+    <ScrollView 
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.appName}>PROFILE</Text>
+        
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
           </View>
           <Text style={styles.username}>@{username}</Text>
+          
+          {/* Pool Info */}
+          <View style={styles.poolBadge}>
+            <Text style={styles.poolText}>{currentPool}</Text>
+          </View>
+          <Text style={styles.rankText}>
+            #{rank} of {totalPlayers} players
+          </Text>
         </View>
 
-        <View style={styles.poolInfo}>
-          <Text style={styles.poolText}>Current Pool: {currentPool}</Text>
-          <Text style={styles.rankText}>Rank: #{rank} of {totalPlayers}</Text>
-        </View>
-
+        {/* Units Card */}
         <View style={styles.unitsCard}>
-          <Text style={styles.unitsAmount}>{units} UNITS</Text>
-          <Text style={[styles.unitsChange, { color: weeklyChange > 0 ? Colors.dark.success : Colors.dark.danger }]}>{weeklyChange > 0 ? '+' : ''}{weeklyChange} this week</Text>
+          <View style={styles.unitsRow}>
+            <Text style={styles.unitsLabel}>Total Balance</Text>
+            <View style={styles.changeContainer}>
+              <Text style={[
+                styles.changeText,
+                { color: weeklyChange >= 0 ? '#10B981' : '#EF4444' }
+              ]}>
+                {weeklyChange > 0 ? '+' : ''}{weeklyChange}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.unitsAmount}>{units.toLocaleString()}</Text>
+          <Text style={styles.unitsSubtext}>units</Text>
         </View>
       </View>
 
       {/* Weekly Stats Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weekly Stats</Text>
+        <Text style={styles.sectionTitle}>This Week</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{betsPlaced}</Text>
-            <Text style={styles.statLabel}>Bets Placed</Text>
+            <Text style={styles.statLabel}>Bets</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{winRate}%</Text>
@@ -43,11 +64,11 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>+{biggestWin}</Text>
-            <Text style={styles.statLabel}>Biggest Win</Text>
+            <Text style={styles.statLabel}>Best Win</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{currentStreak}W</Text>
-            <Text style={styles.statLabel}>Current Streak</Text>
+            <Text style={styles.statLabel}>Streak</Text>
           </View>
         </View>
       </View>
@@ -55,45 +76,83 @@ export default function ProfileScreen() {
       {/* Friends Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Friends ({friends.length})</Text>
-          <Text style={styles.addFriend}>+ Add</Text>
+          <Text style={styles.sectionTitle}>Friends</Text>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Text style={styles.addButton}>+ Add</Text>
+          </TouchableOpacity>
         </View>
-        {friends.map((friend) => (
-          <View key={friend.id} style={styles.friendItem}>
-            <Text style={styles.friendUsername}>{friend.username}</Text>
-            <View style={styles.friendStats}>
-              <Text style={styles.friendUnits}>{friend.units} units</Text>
-              <Text style={[styles.friendChange, { color: friend.change > 0 ? Colors.dark.success : Colors.dark.danger }]}>
-                {friend.change > 0 ? '↗' : '↘'}
-              </Text>
-            </View>
-          </View>
-        ))}
-        <Text style={styles.viewAllFriends}>View All Friends →</Text>
+        
+        <View style={styles.friendsList}>
+          {friends.slice(0, 4).map((friend, index) => (
+            <TouchableOpacity 
+              key={friend.id} 
+              style={[
+                styles.friendItem,
+                index === friends.slice(0, 4).length - 1 && styles.lastFriendItem
+              ]}
+              activeOpacity={0.7}
+            >
+              <View style={styles.friendLeft}>
+                <View style={styles.friendAvatar}>
+                  <Text style={styles.friendAvatarText}>
+                    {friend.username[0].toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.friendUsername}>{friend.username}</Text>
+              </View>
+              <View style={styles.friendRight}>
+                <Text style={styles.friendUnits}>{friend.units}</Text>
+                <View style={[
+                  styles.friendChangeIndicator,
+                  { backgroundColor: friend.change > 0 ? '#10B98120' : '#EF444420' }
+                ]}>
+                  <Text style={[
+                    styles.friendChangeText,
+                    { color: friend.change > 0 ? '#10B981' : '#EF4444' }
+                  ]}>
+                    {friend.change > 0 ? '↗' : '↘'}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity 
+          style={styles.viewAllButton}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.viewAllText}>View All Friends</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Historic Stats Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Historic Stats</Text>
+        <Text style={styles.sectionTitle}>All Time</Text>
         <View style={styles.historicStats}>
           <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>All-Time Record</Text>
-            <Text style={styles.historicValue}>58% Win Rate</Text>
+            <Text style={styles.historicLabel}>Win Rate</Text>
+            <Text style={styles.historicValue}>58%</Text>
           </View>
+          <View style={styles.historicDivider} />
           <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Best Weekly Finish</Text>
-            <Text style={styles.historicValue}>#3 (Week 8)</Text>
+            <Text style={styles.historicLabel}>Best Finish</Text>
+            <Text style={styles.historicValue}>#3</Text>
           </View>
+          <View style={styles.historicDivider} />
           <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Total Competitions</Text>
+            <Text style={styles.historicLabel}>Competitions</Text>
             <Text style={styles.historicValue}>12</Text>
           </View>
+          <View style={styles.historicDivider} />
           <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Total Winnings</Text>
+            <Text style={styles.historicLabel}>Winnings</Text>
             <Text style={styles.historicValue}>$2,450</Text>
           </View>
         </View>
       </View>
+
+      <View style={styles.bottomPadding} />
     </ScrollView>
   );
 }
@@ -101,77 +160,112 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: '#0A0A0A',
   },
-  headerCard: {
-    backgroundColor: Colors.dark.card,
-    margin: 16,
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
+  header: {
+    backgroundColor: '#141414',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
-  profileInfo: {
-    alignItems: 'center',
+  appName: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 4,
+    marginBottom: 24,
+  },
+  profileCard: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 24,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#252525',
+    alignItems: 'center',
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: Colors.dark.tint,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatarText: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  username: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
+  },
+  poolBadge: {
+    backgroundColor: '#1F1F1F',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  poolText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  rankText: {
+    fontSize: 13,
+    color: '#888888',
+    fontWeight: '600',
+  },
+  unitsCard: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  unitsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.dark.text,
-  },
-  username: {
-    fontSize: 18,
+  unitsLabel: {
+    fontSize: 11,
+    color: '#888888',
     fontWeight: '600',
-    color: Colors.dark.text,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  poolInfo: {
-    marginBottom: 16,
+  changeContainer: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#1F1F1F',
   },
-  poolText: {
-    fontSize: 16,
-    color: Colors.dark.text,
-    textAlign: 'center',
-  },
-  rankText: {
-    fontSize: 14,
-    color: Colors.dark.icon,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  unitsCard: {
-    backgroundColor: Colors.dark.background,
-    padding: 16,
-    borderRadius: 8,
-    width: '100%',
-    borderWidth: 2,
-    borderColor: Colors.dark.tint,
+  changeText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
   unitsAmount: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.dark.text,
-    textAlign: 'center',
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1,
   },
-  unitsChange: {
+  unitsSubtext: {
     fontSize: 14,
-    textAlign: 'center',
-    marginTop: 4,
+    color: '#666666',
+    fontWeight: '600',
   },
   section: {
-    backgroundColor: Colors.dark.card,
-    margin: 16,
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#141414',
+    marginTop: 12,
+    padding: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -180,83 +274,151 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.dark.text,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
-  addFriend: {
-    fontSize: 16,
-    color: Colors.dark.tint,
-    fontWeight: '500',
+  addButton: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   statItem: {
-    width: '48%',
-    backgroundColor: Colors.dark.background,
+    flex: 1,
+    minWidth: '47%',
+    backgroundColor: '#1A1A1A',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#252525',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: Colors.dark.text,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.dark.icon,
-    marginTop: 4,
+    color: '#888888',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  friendsList: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#252525',
+    overflow: 'hidden',
   },
   friendItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
+    borderBottomColor: '#252525',
+  },
+  lastFriendItem: {
+    borderBottomWidth: 0,
+  },
+  friendLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  friendAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#252525',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   friendUsername: {
-    fontSize: 16,
-    color: Colors.dark.text,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
-  friendStats: {
+  friendRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   friendUnits: {
-    fontSize: 16,
-    color: Colors.dark.text,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
-  friendChange: {
+  friendChangeIndicator: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendChangeText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
-  viewAllFriends: {
-    fontSize: 16,
-    color: Colors.dark.tint,
-    textAlign: 'center',
-    marginTop: 16,
+  viewAllButton: {
+    marginTop: 12,
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  viewAllText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   historicStats: {
-    gap: 12,
+    flexDirection: 'row',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#252525',
   },
   historicItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flex: 1,
     alignItems: 'center',
   },
   historicLabel: {
-    fontSize: 16,
-    color: Colors.dark.text,
+    fontSize: 11,
+    color: '#888888',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   historicValue: {
-    fontSize: 16,
-    color: Colors.dark.icon,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  historicDivider: {
+    width: 1,
+    backgroundColor: '#252525',
+    marginHorizontal: 8,
+  },
+  bottomPadding: {
+    height: 20,
   },
 });

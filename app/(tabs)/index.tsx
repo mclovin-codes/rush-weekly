@@ -1,16 +1,41 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
 
 import { mockGames, mockFilters } from '@/constants/mock-data';
 import { Colors } from '@/constants/theme';
 import GameCard from '@/components/game-card';
+import BetSlipBottomSheet from '@/app/modal';
 
 export default function HomeScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [betSlipVisible, setBetSlipVisible] = useState(false);
+  const [selectedBet, setSelectedBet] = useState<{
+    game: any;
+    team: 'home' | 'away';
+  } | null>(null);
 
   // Mock user data
   const userUnits = 980;
   const weeklyChange = -20;
+
+  // Pulse animation for live indicator
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
 
   const filteredGames = mockGames.filter(game => {
     if (selectedFilter === 'All') return true;
@@ -31,74 +56,89 @@ export default function HomeScreen() {
   });
 
   const handleGamePress = (game: any) => {
-    // Navigate to game detail view (mock for now)
-    console.log('Game pressed:', game);
+    setSelectedBet({ game, team: 'home' }); // Set both game and default team
+    setBetSlipVisible(true);
   };
 
   const handleOddsPress = (team: 'home' | 'away', game: any) => {
-    // Open bet slip (mock for now)
     console.log(`Odds pressed for ${team} team:`, game);
   };
 
-  const calculateTimeRemaining = () => {
-    // Mock calculation - in real app would calculate from actual end time
-    return '2d 14h 23m';
+  const handleCloseBetSlip = () => {
+    setBetSlipVisible(false);
+    setSelectedBet(null);
   };
 
   return (
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
-        <View style={styles.branding}>
-          <Text style={styles.appName}>RUSH</Text>
-          <Text style={styles.weekIndicator}>Week 14 Competition</Text>
+        {/* App Name */}
+        <Text style={styles.appName}>RUSH</Text>
+        
+        {/* Units Card */}
+        <View style={styles.unitsCard}>
+          <View style={styles.unitsRow}>
+            <Text style={styles.unitsLabel}>Balance</Text>
+            <View style={styles.changeContainer}>
+              <Text style={[
+                styles.changeText,
+                { color: weeklyChange >= 0 ? '#10B981' : '#EF4444' }
+              ]}>
+                {weeklyChange > 0 ? '+' : ''}{weeklyChange}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.unitsAmount}>{userUnits.toLocaleString()}</Text>
+          <Text style={styles.unitsSubtext}>units</Text>
         </View>
 
-        <View style={styles.creditsContainer}>
-          <Text style={[
-            styles.credits,
-            { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
-          ]}>
-            {userUnits.toLocaleString()} units
-          </Text>
-          <Text style={styles.change}>
-            {weeklyChange > 0 ? '+' : ''}{weeklyChange}
-          </Text>
+        {/* Competition Info */}
+        <View style={styles.competitionBar}>
+          <View>
+            <Text style={styles.competitionLabel}>Week 14</Text>
+            <Text style={styles.competitionTime}>Ends in 2d 14h</Text>
+          </View>
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveText}>3 Live</Text>
+          </View>
         </View>
-
-        <Text style={styles.countdown}>
-          Ends in {calculateTimeRemaining()}
-        </Text>
       </View>
 
       {/* Filter Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
-        contentContainerStyle={styles.filterContent}
-      >
-        {mockFilters.map((filter) => (
-          <TouchableOpacity
-            key={filter}
-            style={[
-              styles.filterTab,
-              selectedFilter === filter && styles.activeFilterTab
-            ]}
-            onPress={() => setSelectedFilter(filter)}
-          >
-            <Text style={[
-              styles.filterText,
-              selectedFilter === filter && styles.activeFilterText
-            ]}>
-              {filter}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.filterWrapper}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContent}
+        >
+          {mockFilters.map((filter) => (
+            <TouchableOpacity
+              key={filter}
+              style={[
+                styles.filterTab,
+                selectedFilter === filter && styles.activeFilterTab
+              ]}
+              onPress={() => setSelectedFilter(filter)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.filterText,
+                selectedFilter === filter && styles.activeFilterText
+              ]}>
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       {/* Game Cards */}
-      <ScrollView style={styles.gamesContainer}>
+      <ScrollView 
+        style={styles.gamesContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {filteredGames.map((game) => (
           <GameCard
             key={game.id}
@@ -107,7 +147,16 @@ export default function HomeScreen() {
             onOddsPress={(team) => handleOddsPress(team, game)}
           />
         ))}
+        <View style={styles.bottomPadding} />
+        <BetSlipBottomSheet
+        visible={betSlipVisible}
+        onClose={handleCloseBetSlip}
+        game={selectedBet?.game}
+        selectedTeam={selectedBet?.team || 'home'}
+        userUnits={userUnits}
+      />
       </ScrollView>
+      
     </View>
   );
 }
@@ -115,79 +164,141 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: '#0A0A0A',
   },
   header: {
-    backgroundColor: Colors.dark.card,
-    paddingHorizontal: 16,
-    paddingTop: 48,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
-  },
-  branding: {
-    alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: '#141414',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
   appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.dark.tint,
-    letterSpacing: 2,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 4,
+    marginBottom: 24,
   },
-  weekIndicator: {
-    fontSize: 16,
-    color: Colors.dark.icon,
-    marginTop: 4,
+  unitsCard: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#252525',
   },
-  creditsContainer: {
+  unitsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
-  credits: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  unitsLabel: {
+    fontSize: 13,
+    color: '#888888',
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
-  change: {
+  changeContainer: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#1F1F1F',
+  },
+  changeText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  unitsAmount: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -1,
+  },
+  unitsSubtext: {
     fontSize: 14,
-    color: Colors.dark.icon,
-    marginTop: 4,
+    color: '#666666',
+    fontWeight: '600',
   },
-  countdown: {
-    fontSize: 16,
-    color: Colors.dark.accent,
-    textAlign: 'center',
+  competitionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  competitionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  competitionTime: {
+    fontSize: 12,
+    color: '#888888',
     fontWeight: '500',
   },
-  filterContainer: {
-    backgroundColor: Colors.dark.card,
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1F1F1F',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EF4444',
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  filterWrapper: {
+    backgroundColor: '#141414',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
+    borderBottomColor: '#252525',
   },
   filterContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 8,
   },
   filterTab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
     marginRight: 8,
-    backgroundColor: Colors.dark.background,
+    backgroundColor: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: '#252525',
   },
   activeFilterTab: {
-    backgroundColor: Colors.dark.tint,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
   filterText: {
     fontSize: 14,
-    color: Colors.dark.icon,
-    fontWeight: '500',
+    color: '#888888',
+    fontWeight: '600',
   },
   activeFilterText: {
-    color: Colors.dark.text,
+    color: '#000000',
   },
   gamesContainer: {
     flex: 1,
-    marginTop: 8,
+    paddingTop: 16,
+  },
+  bottomPadding: {
+    height: 20,
   },
 });
