@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated } from '
 import React, { useState, useRef, useEffect } from 'react';
 
 import { mockGames, mockFilters } from '@/constants/mock-data';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import GameCard from '@/components/game-card';
 import BetSlipBottomSheet from '@/app/modal';
 
@@ -75,7 +75,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         {/* App Name */}
         <Text style={styles.appName}>RUSH</Text>
-        
+       
         {/* Units Card */}
         <View style={styles.unitsCard}>
           <View style={styles.unitsRow}>
@@ -155,8 +155,7 @@ export default function HomeScreen() {
         selectedTeam={selectedBet?.team || 'home'}
         userUnits={userUnits}
       />
-      </ScrollView>
-      
+          </ScrollView>
     </View>
   );
 }
@@ -174,10 +173,11 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 28,
-    fontWeight: '800',
+    fontFamily: Fonts.display,
     color: Colors.dark.text,
     letterSpacing: 4,
     marginBottom: 24,
+    
   },
   unitsCard: {
     backgroundColor: Colors.dark.card,
@@ -195,8 +195,8 @@ const styles = StyleSheet.create({
   },
   unitsLabel: {
     fontSize: 13,
+    fontFamily: Fonts.condensed,
     color: Colors.dark.icon,
-    fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -208,18 +208,18 @@ const styles = StyleSheet.create({
   },
   changeText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
   },
   unitsAmount: {
     fontSize: 44,
-    fontWeight: '800',
+    fontFamily: Fonts.display,
     color: Colors.dark.text,
     letterSpacing: -1,
   },
   unitsSubtext: {
     fontSize: 14,
+    fontFamily: Fonts.primary,
     color: Colors.dark.icon,
-    fontWeight: '600',
   },
   competitionBar: {
     flexDirection: 'row',
@@ -234,14 +234,14 @@ const styles = StyleSheet.create({
   },
   competitionLabel: {
     fontSize: 15,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
     marginBottom: 2,
   },
   competitionTime: {
     fontSize: 12,
+    fontFamily: Fonts.primary,
     color: Colors.dark.icon,
-    fontWeight: '500',
   },
   liveBadge: {
     flexDirection: 'row',
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   liveText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   filterWrapper: {
@@ -288,10 +288,11 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 14,
+    fontFamily: Fonts.primaryMedium,
     color: Colors.dark.icon,
-    fontWeight: '600',
   },
   activeFilterText: {
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.background,
   },
   gamesContainer: {

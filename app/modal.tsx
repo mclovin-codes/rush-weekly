@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
@@ -136,6 +136,7 @@ export default function BetSlipBottomSheet({
               <View style={styles.handle} />
             </View>
 
+         
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>Place Bet</Text>
@@ -270,13 +271,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: '800',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   closeButton: {
     fontSize: 28,
     color: Colors.dark.icon,
-    fontWeight: '300',
+    fontFamily: Fonts.display,
   },
   selectionCard: {
     backgroundColor: Colors.dark.card,
@@ -292,16 +293,16 @@ const styles = StyleSheet.create({
   },
   matchupLabel: {
     fontSize: 11,
+    fontFamily: Fonts.condensed,
     color: Colors.dark.icon,
-    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   matchupText: {
     fontSize: 14,
+    fontFamily: Fonts.primary,
     color: Colors.dark.text,
-    fontWeight: '600',
   },
   divider: {
     height: 1,
@@ -315,15 +316,15 @@ const styles = StyleSheet.create({
   },
   selectionLabel: {
     fontSize: 11,
+    fontFamily: Fonts.condensed,
     color: Colors.dark.icon,
-    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   selectionTeam: {
     fontSize: 18,
-    fontWeight: '800',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   oddsContainer: {
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
   },
   oddsValue: {
     fontSize: 20,
-    fontWeight: '800',
+    fontFamily: Fonts.display,
     color: Colors.dark.background,
   },
   inputSection: {
@@ -343,8 +344,8 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
+    fontFamily: Fonts.condensed,
     color: Colors.dark.icon,
-    fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 8,
@@ -362,19 +363,19 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 32,
-    fontWeight: '800',
+    fontFamily: Fonts.display,
     color: Colors.dark.text,
     paddingVertical: 12,
   },
   inputUnit: {
     fontSize: 16,
+    fontFamily: Fonts.primaryMedium,
     color: Colors.dark.icon,
-    fontWeight: '600',
   },
   balanceText: {
     fontSize: 13,
+    fontFamily: Fonts.primary,
     color: Colors.dark.icon,
-    fontWeight: '600',
     marginTop: 8,
   },
   quickAmounts: {
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
   },
   quickButtonText: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   potentialWinCard: {
@@ -414,17 +415,17 @@ const styles = StyleSheet.create({
   },
   potentialLabel: {
     fontSize: 14,
+    fontFamily: Fonts.primaryMedium,
     color: Colors.dark.icon,
-    fontWeight: '600',
   },
   potentialValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   profitValue: {
     fontSize: 16,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.success,
   },
   placeBetButton: {
@@ -439,7 +440,7 @@ const styles = StyleSheet.create({
   },
   placeBetButtonText: {
     fontSize: 17,
-    fontWeight: '800',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.background,
   },
 });

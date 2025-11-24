@@ -69,40 +69,63 @@ export const Colors = {
 // Add these to your app.json or index.html:
 // <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-export const Fonts = Platform.select({
-  ios: {
-    /** Primary UI font - clean, modern, optimized for screens */
-    primary: 'Inter',
-    /** Display font - bold, impactful for large text and numbers */
-    display: 'Bebas Neue',
-    /** Condensed font - for tags, labels, and dense information */
-    condensed: 'Barlow Condensed',
-    /** System fallbacks */
-    sans: 'system-ui',
-    mono: 'ui-monospace',
-  },
-  android: {
-    primary: 'Inter',
-    display: 'Bebas Neue',
-    condensed: 'Barlow Condensed',
-    sans: 'Roboto',
-    mono: 'monospace',
-  },
-  default: {
-    primary: 'Inter',
-    display: 'Bebas Neue',
-    condensed: 'Barlow Condensed',
-    sans: 'system-ui',
-    mono: 'monospace',
-  },
-  web: {
-    primary: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    display: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif",
-    condensed: "'Barlow Condensed', 'Arial Narrow', sans-serif",
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const Fonts = {
+  /** Primary UI font - Inter with system fallbacks */
+  primary: Platform.select({
+    default: 'Inter',
+    web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  }),
+
+  /** Medium weight Inter */
+  primaryMedium: Platform.select({
+    default: 'Inter', // Fallback to regular for now
+    web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  }),
+
+  /** Bold Inter */
+  primaryBold: Platform.select({
+    default: 'Inter-Bold',
+    web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+  }),
+
+  /** Display font - Bebas Neue with fallbacks */
+  display: Platform.select({
+    ios: 'BebasNeue',
+    android: 'BebasNeue',
+    default: 'BebasNeue',
+    web: "'Bebas Neue', 'Impact', 'Arial Black', sans-serif",
+  }),
+
+  /** Condensed font - Barlow Condensed with fallbacks */
+  condensed: Platform.select({
+    ios: 'BarlowCondensed',
+    android: 'BarlowCondensed',
+    default: 'BarlowCondensed',
+    web: "'Barlow Condensed', 'Arial Narrow', sans-serif",
+  }),
+
+  /** Bold condensed */
+  condensedBold: Platform.select({
+    ios: 'BarlowCondensed',
+    android: 'BarlowCondensed',
+    default: 'BarlowCondensed',
+    web: "'Barlow Condensed', 'Arial Narrow', sans-serif",
+  }),
+
+  /** System font stacks - always available */
+  system: Platform.select({
+    ios: 'San Francisco',
+    android: 'Roboto',
+    default: 'system-ui',
+    web: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  }),
+
+  /** Monospace font */
+  mono: Platform.select({
+    default: 'monospace',
+    web: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  }),
+};
 
 export const FontWeights = {
   light: '300',
