@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, Text, Switch } from 'react-native';
 import React, { useState } from 'react';
 
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 export default function AccountScreen() {
   const [notifications, setNotifications] = useState({
@@ -17,6 +17,11 @@ export default function AccountScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.appName}>ACCOUNT</Text>
+      </View>
+
       {/* Subscription Status Card */}
       <View style={styles.section}>
         <View style={styles.subscriptionCard}>
@@ -59,7 +64,9 @@ export default function AccountScreen() {
           <Switch
             value={notifications.newWeek}
             onValueChange={(value) => setNotifications(prev => ({ ...prev, newWeek: value }))}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
         <View style={styles.switchItem}>
@@ -67,7 +74,9 @@ export default function AccountScreen() {
           <Switch
             value={notifications.gameResults}
             onValueChange={(value) => setNotifications(prev => ({ ...prev, gameResults: value }))}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
         <View style={styles.switchItem}>
@@ -75,7 +84,9 @@ export default function AccountScreen() {
           <Switch
             value={notifications.rankChanges}
             onValueChange={(value) => setNotifications(prev => ({ ...prev, rankChanges: value }))}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
         <View style={styles.switchItem}>
@@ -83,7 +94,9 @@ export default function AccountScreen() {
           <Switch
             value={notifications.friendActivity}
             onValueChange={(value) => setNotifications(prev => ({ ...prev, friendActivity: value }))}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
       </View>
@@ -104,7 +117,9 @@ export default function AccountScreen() {
           <Switch
             value={settings.darkTheme}
             onValueChange={(value) => setSettings(prev => ({ ...prev, darkTheme: value }))}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
       </View>
@@ -116,14 +131,18 @@ export default function AccountScreen() {
           <Text style={styles.switchLabel}>Profile visibility</Text>
           <Switch
             value={true}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
         <View style={styles.switchItem}>
           <Text style={styles.switchLabel}>Friend requests</Text>
           <Switch
             value={true}
-            trackColor={{ false: Colors.dark.background, true: Colors.dark.tint }}
+            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
+            thumbColor={Colors.dark.text}
+            ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
       </View>
@@ -172,57 +191,86 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
+  header: {
+    backgroundColor: Colors.dark.card,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  appName: {
+    fontSize: 28,
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
+    letterSpacing: 4,
+  },
   section: {
     backgroundColor: Colors.dark.card,
     margin: 16,
     marginTop: 8,
     padding: 16,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.icon,
   },
   subscriptionCard: {
     alignItems: 'center',
+    backgroundColor: Colors.dark.cardElevated,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '30',
   },
   subscriptionHeader: {
     alignItems: 'center',
     marginBottom: 16,
   },
   subscriptionEmoji: {
-    fontSize: 32,
+    fontSize: 36,
     marginBottom: 8,
   },
   subscriptionStatus: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: Fonts.condensed,
     color: Colors.dark.success,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontWeight: '700',
   },
   subscriptionDetails: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   subscriptionPlan: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   subscriptionRenewal: {
     fontSize: 14,
-    color: Colors.dark.icon,
+    fontFamily: Fonts.primary,
+    color: Colors.dark.textSecondary,
     marginTop: 4,
   },
   manageButton: {
     backgroundColor: Colors.dark.tint,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    shadowColor: Colors.dark.tint,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   manageButtonText: {
     fontSize: 16,
-    color: Colors.dark.text,
-    fontWeight: '600',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.background,
+    letterSpacing: 0.5,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
     marginBottom: 16,
   },
@@ -232,19 +280,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
+    borderBottomColor: Colors.dark.border,
   },
   menuItemText: {
     fontSize: 16,
+    fontFamily: Fonts.primary,
     color: Colors.dark.text,
+    flex: 1,
   },
   menuItemValue: {
     fontSize: 16,
-    color: Colors.dark.icon,
+    fontFamily: Fonts.primary,
+    color: Colors.dark.textSecondary,
   },
   menuItemArrow: {
     fontSize: 16,
-    color: Colors.dark.icon,
+    color: Colors.dark.textSecondary,
   },
   switchItem: {
     flexDirection: 'row',
@@ -252,20 +303,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
+    borderBottomColor: Colors.dark.border,
   },
   switchLabel: {
     fontSize: 16,
+    fontFamily: Fonts.primary,
     color: Colors.dark.text,
+    flex: 1,
   },
   dangerItem: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.background,
+    borderBottomColor: Colors.dark.border,
   },
   dangerText: {
     fontSize: 16,
+    fontFamily: Fonts.primary,
     color: Colors.dark.danger,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });

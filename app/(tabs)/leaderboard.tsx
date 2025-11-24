@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import React from 'react';
 
 import { mockLeaderboard } from '@/constants/mock-data';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import LeaderboardRow from '@/components/leaderboard-row';
 
 export default function LeaderboardScreen() {
@@ -68,28 +68,28 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: Colors.dark.background,
   },
   header: {
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.card,
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
   },
   appName: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
     letterSpacing: 4,
     marginBottom: 24,
   },
   poolCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   poolHeader: {
     flexDirection: 'row',
@@ -98,42 +98,42 @@ const styles = StyleSheet.create({
   },
   poolName: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
     marginBottom: 4,
   },
   weekLabel: {
     fontSize: 13,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
   },
   playerCount: {
     alignItems: 'center',
-    backgroundColor: '#1F1F1F',
+    backgroundColor: Colors.dark.cardElevated,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 10,
   },
   playerCountNumber: {
     fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
     lineHeight: 28,
   },
   playerCountLabel: {
     fontSize: 11,
-    color: '#666666',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   statusBar: {
     flexDirection: 'row',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
     alignItems: 'center',
   },
   statusItem: {
@@ -142,24 +142,24 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 11,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   statusValue: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
   },
   prizeValue: {
-    color: '#10B981',
+    color: Colors.dark.success,
   },
   divider: {
     width: 1,
     height: 32,
-    backgroundColor: '#252525',
+    backgroundColor: Colors.dark.icon,
     marginHorizontal: 16,
   },
   leaderboardContainer: {
@@ -170,14 +170,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: Colors.dark.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#252525',
+    borderBottomColor: Colors.dark.border,
   },
   listHeaderText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#666666',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     width: 60,

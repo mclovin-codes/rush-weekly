@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-nati
 import React from 'react';
 
 import { mockUserProfile } from '@/constants/mock-data';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 export default function ProfileScreen() {
   const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak, friends } = mockUserProfile;
@@ -39,7 +39,7 @@ export default function ProfileScreen() {
             <View style={styles.changeContainer}>
               <Text style={[
                 styles.changeText,
-                { color: weeklyChange >= 0 ? '#10B981' : '#EF4444' }
+                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
               ]}>
                 {weeklyChange > 0 ? '+' : ''}{weeklyChange}
               </Text>
@@ -104,11 +104,11 @@ export default function ProfileScreen() {
                 <Text style={styles.friendUnits}>{friend.units}</Text>
                 <View style={[
                   styles.friendChangeIndicator,
-                  { backgroundColor: friend.change > 0 ? '#10B98120' : '#EF444420' }
+                  { backgroundColor: friend.change > 0 ? Colors.dark.successBg : Colors.dark.dangerBg }
                 ]}>
                   <Text style={[
                     styles.friendChangeText,
-                    { color: friend.change > 0 ? '#10B981' : '#EF4444' }
+                    { color: friend.change > 0 ? Colors.dark.success : Colors.dark.danger }
                   ]}>
                     {friend.change > 0 ? '↗' : '↘'}
                   </Text>
@@ -160,52 +160,52 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A',
+    backgroundColor: Colors.dark.background,
   },
   header: {
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.card,
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
   },
   appName: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
     letterSpacing: 4,
     marginBottom: 24,
   },
   profileCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 16,
     padding: 24,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
     alignItems: 'center',
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.dark.text,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   avatarText: {
     fontSize: 36,
-    fontWeight: '800',
-    color: '#000000',
+    fontFamily: Fonts.display,
+    color: Colors.dark.background,
   },
   username: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
     marginBottom: 12,
   },
   poolBadge: {
-    backgroundColor: '#1F1F1F',
+    backgroundColor: Colors.dark.cardElevated,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -213,20 +213,21 @@ const styles = StyleSheet.create({
   },
   poolText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.text,
+    textTransform: 'uppercase',
   },
   rankText: {
     fontSize: 13,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.primary,
+    color: Colors.dark.icon,
   },
   unitsCard: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   unitsRow: {
     flexDirection: 'row',
@@ -236,8 +237,8 @@ const styles = StyleSheet.create({
   },
   unitsLabel: {
     fontSize: 11,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
@@ -245,25 +246,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#1F1F1F',
+    backgroundColor: Colors.dark.cardElevated,
   },
   changeText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
   },
   unitsAmount: {
     fontSize: 44,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
     letterSpacing: -1,
   },
   unitsSubtext: {
     fontSize: 14,
-    color: '#666666',
-    fontWeight: '600',
+    fontFamily: Fonts.primary,
+    color: Colors.dark.icon,
   },
   section: {
-    backgroundColor: '#141414',
+    backgroundColor: Colors.dark.card,
     marginTop: 12,
     padding: 20,
   },
@@ -275,13 +276,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
   },
   addButton: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.tint,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -291,31 +292,31 @@ const styles = StyleSheet.create({
   statItem: {
     flex: 1,
     minWidth: '47%',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.cardElevated,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   statValue: {
     fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   friendsList: {
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.cardElevated,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
     overflow: 'hidden',
   },
   friendItem: {
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#252525',
+    borderBottomColor: Colors.dark.border,
   },
   lastFriendItem: {
     borderBottomWidth: 0,
@@ -339,19 +340,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#252525',
+    backgroundColor: Colors.dark.icon,
     justifyContent: 'center',
     alignItems: 'center',
   },
   friendAvatarText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
   },
   friendUsername: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
   },
   friendRight: {
     flexDirection: 'row',
@@ -360,8 +361,8 @@ const styles = StyleSheet.create({
   },
   friendUnits: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.display,
+    color: Colors.dark.text,
   },
   friendChangeIndicator: {
     width: 28,
@@ -372,29 +373,29 @@ const styles = StyleSheet.create({
   },
   friendChangeText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontFamily: Fonts.primaryBold,
   },
   viewAllButton: {
     marginTop: 12,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.card,
     paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   viewAllText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
   },
   historicStats: {
     flexDirection: 'row',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: Colors.dark.cardElevated,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: Colors.dark.icon,
   },
   historicItem: {
     flex: 1,
@@ -402,20 +403,20 @@ const styles = StyleSheet.create({
   },
   historicLabel: {
     fontSize: 11,
-    color: '#888888',
-    fontWeight: '600',
+    fontFamily: Fonts.condensed,
+    color: Colors.dark.icon,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   historicValue: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontFamily: Fonts.primaryBold,
+    color: Colors.dark.text,
   },
   historicDivider: {
     width: 1,
-    backgroundColor: '#252525',
+    backgroundColor: Colors.dark.border,
     marginHorizontal: 8,
   },
   bottomPadding: {

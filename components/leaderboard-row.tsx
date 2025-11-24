@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import React from 'react';
 
 import { LeaderboardEntry } from '@/constants/mock-data';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 interface LeaderboardRowProps {
   entry: LeaderboardEntry;
@@ -67,7 +67,8 @@ const styles = StyleSheet.create({
   },
   userRow: {
     borderWidth: 2,
-    borderColor: Colors.dark.accent,
+    borderColor: Colors.dark.tint,
+    backgroundColor: Colors.dark.tint + '10', // Add subtle background
   },
   rankContainer: {
     width: 40,
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
   },
   rank: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   userInfo: {
@@ -84,26 +85,27 @@ const styles = StyleSheet.create({
   },
   username: {
     fontSize: 16,
-    fontWeight: '600',
+    fontFamily: Fonts.primaryBold,
     color: Colors.dark.text,
   },
   userText: {
-    color: Colors.dark.accent,
+    color: Colors.dark.tint,
   },
   units: {
     fontSize: 14,
+    fontFamily: Fonts.primary,
     color: Colors.dark.icon,
     marginTop: 2,
   },
   change: {
-    fontWeight: '500',
+    fontFamily: Fonts.primaryMedium,
   },
   potential: {
     alignItems: 'flex-end',
   },
   potentialText: {
     fontSize: 12,
+    fontFamily: Fonts.condensed,
     color: Colors.dark.success,
-    fontWeight: '500',
   },
 });
