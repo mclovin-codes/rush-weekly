@@ -203,24 +203,48 @@ export default function AccountScreen() {
         <Text style={styles.sectionTitle}>ACCOUNT ACTIONS</Text>
 
         <View style={styles.actionGrid}>
+          <TouchableOpacity style={styles.primaryAction}>
+            <View style={styles.primaryActionIcon}>
+              <Ionicons name="person-outline" size={20} color={Colors.dark.text} />
+            </View>
+            <View style={styles.primaryActionContent}>
+              <Text style={styles.primaryActionTitle}>Edit Profile</Text>
+              <Text style={styles.primaryActionSubtitle}>Update your information</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.dark.textSecondary} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.secondaryAction}>
-            <Ionicons name="pause-circle" size={20} color={Colors.dark.text} style={styles.actionIcon} />
-            <Text style={styles.secondaryActionText}>Pause Subscription</Text>
+            <View style={styles.secondaryActionIcon}>
+              <Ionicons name="pause-circle" size={20} color={Colors.dark.text} />
+            </View>
+            <View style={styles.secondaryActionContent}>
+              <Text style={styles.secondaryActionTitle}>Pause Subscription</Text>
+              <Text style={styles.secondaryActionSubtitle}>Temporarily stop billing</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.dark.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutAction} onPress={handleLogout}>
-            <Ionicons name="log-out" size={20} color={Colors.dark.text} style={styles.actionIcon} />
-            <Text style={styles.logoutActionText}>Logout</Text>
+            <View style={styles.logoutActionIcon}>
+              <Ionicons name="log-out" size={20} color={Colors.dark.warning} />
+            </View>
+            <View style={styles.logoutActionContent}>
+              <Text style={styles.logoutActionTitle}>Logout</Text>
+              <Text style={styles.logoutActionSubtitle}>Sign out of your account</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.dark.warning} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.dangerAction}>
-            <Ionicons name="close-circle" size={20} color={Colors.dark.danger} style={styles.actionIcon} />
-            <Text style={styles.dangerActionText}>Cancel Subscription</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.dangerAction}>
-            <Ionicons name="trash" size={20} color={Colors.dark.danger} style={styles.actionIcon} />
-            <Text style={styles.dangerActionText}>Delete Account</Text>
+            <View style={styles.dangerActionIcon}>
+              <Ionicons name="alert-circle" size={20} color={Colors.dark.danger} />
+            </View>
+            <View style={styles.dangerActionContent}>
+              <Text style={styles.dangerActionTitle}>Danger Zone</Text>
+              <Text style={styles.dangerActionSubtitle}>Account deletion & cancellation</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.dark.danger} />
           </TouchableOpacity>
         </View>
       </View>
@@ -476,55 +500,141 @@ const styles = StyleSheet.create({
 
   // Actions
   actionGrid: {
-    gap: 12,
+    gap: 16,
   },
-  actionIcon: {
-    marginRight: 8,
-  },
-  secondaryAction: {
-    backgroundColor: Colors.dark.cardElevated,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+
+  // Primary Action
+  primaryAction: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.dark.cardElevated,
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    gap: 16,
   },
-  secondaryActionText: {
+  primaryActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.tint + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '30',
+  },
+  primaryActionContent: {
+    flex: 1,
+  },
+  primaryActionTitle: {
+    ...Typography.body.medium,
     ...Typography.emphasis.medium,
     color: Colors.dark.text,
+    marginBottom: 2,
   },
-  logoutAction: {
-    backgroundColor: Colors.dark.warning + '20',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+  primaryActionSubtitle: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+
+  // Secondary Action
+  secondaryAction: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.dark.cardElevated,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    gap: 16,
+  },
+  secondaryActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.text + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryActionContent: {
+    flex: 1,
+  },
+  secondaryActionTitle: {
+    ...Typography.body.medium,
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    marginBottom: 2,
+  },
+  secondaryActionSubtitle: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+
+  // Logout Action
+  logoutAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.warning + '15',
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.dark.warning + '40',
-    flexDirection: 'row',
+    gap: 16,
+  },
+  logoutActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.warning + '25',
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  logoutActionText: {
+  logoutActionContent: {
+    flex: 1,
+  },
+  logoutActionTitle: {
+    ...Typography.body.medium,
     ...Typography.emphasis.medium,
     color: Colors.dark.warning,
+    marginBottom: 2,
   },
+  logoutActionSubtitle: {
+    ...Typography.body.small,
+    color: Colors.dark.warning + '80',
+  },
+
+  // Danger Action
   dangerAction: {
-    backgroundColor: Colors.dark.danger + '20',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.dark.danger + '15',
+    padding: 20,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.dark.danger + '40',
-    flexDirection: 'row',
+    gap: 16,
+  },
+  dangerActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.danger + '25',
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  dangerActionText: {
+  dangerActionContent: {
+    flex: 1,
+  },
+  dangerActionTitle: {
+    ...Typography.body.medium,
     ...Typography.emphasis.medium,
     color: Colors.dark.danger,
+    marginBottom: 2,
+  },
+  dangerActionSubtitle: {
+    ...Typography.body.small,
+    color: Colors.dark.danger + '80',
   },
 
   bottomPadding: {
