@@ -50,25 +50,7 @@ export default function AuthScreen() {
           <View style={styles.logoBackground}>
             <Text style={styles.logoText}>RUSH</Text>
           </View>
-          <Text style={styles.tagline}>Professional Sports Betting</Text>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>50K+</Text>
-            <Text style={styles.statLabel}>Active Players</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>$125K</Text>
-            <Text style={styles.statLabel}>Weekly Prizes</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>98%</Text>
-            <Text style={styles.statLabel}>Payout Rate</Text>
-          </View>
+          <Text style={styles.tagline}>Sign in to your account</Text>
         </View>
       </View>
 
@@ -114,14 +96,15 @@ export default function AuthScreen() {
                 {
                   translateX: slideAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [0, -400],
+                    outputRange: [0, -50],
                   }),
                 },
               ],
               opacity: slideAnimation.interpolate({
                 inputRange: [0, 0.5, 1],
-                outputRange: [1, 0, 1],
+                outputRange: [1, 0, 0],
               }),
+              zIndex: activeTab === 'login' ? 1 : 0,
             },
           ]}
         >
@@ -136,35 +119,20 @@ export default function AuthScreen() {
                 {
                   translateX: slideAnimation.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [400, 0],
+                    outputRange: [50, 0],
                   }),
                 },
               ],
               opacity: slideAnimation.interpolate({
                 inputRange: [0, 0.5, 1],
-                outputRange: [1, 0, 1],
+                outputRange: [0, 1, 1],
               }),
+              zIndex: activeTab === 'signup' ? 1 : 0,
             },
           ]}
         >
           <SignupScreen />
         </Animated.View>
-      </View>
-
-      {/* Trust Badges */}
-      <View style={styles.trustBadges}>
-        <View style={styles.trustBadge}>
-          <Ionicons name="shield-checkmark" size={16} color={Colors.dark.success} />
-          <Text style={styles.trustText}>SSL Encrypted</Text>
-        </View>
-        <View style={styles.trustBadge}>
-          <Ionicons name="lock-closed" size={16} color={Colors.dark.success} />
-          <Text style={styles.trustText}>Secure Platform</Text>
-        </View>
-        <View style={styles.trustBadge}>
-          <Ionicons name="checkmark-circle" size={16} color={Colors.dark.success} />
-          <Text style={styles.trustText}>Licensed & Regulated</Text>
-        </View>
       </View>
     </View>
   );
@@ -209,30 +177,6 @@ const styles = StyleSheet.create({
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
     textAlign: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 24,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.text,
-    fontFamily: Fonts.display,
-  },
-  statLabel: {
-    ...Typography.meta.small,
-    color: Colors.dark.textSecondary,
-    textTransform: 'uppercase',
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: Colors.dark.border,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -283,23 +227,5 @@ const styles = StyleSheet.create({
   backButtonText: {
     ...Typography.emphasis.medium,
     color: Colors.dark.text,
-  },
-  trustBadges: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: Colors.dark.card,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.dark.border,
-  },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  trustText: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
   },
 });

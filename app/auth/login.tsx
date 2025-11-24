@@ -42,11 +42,6 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.form}>
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>Welcome Back!</Text>
-          <Text style={styles.welcomeSubtext}>Login to access your account and continue betting</Text>
-        </View>
 
         {/* Email Input */}
         <View style={styles.inputGroup}>
@@ -129,38 +124,16 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
           <View style={styles.divider} />
         </View>
 
-        {/* Quick Login Options */}
-        <View style={styles.quickLoginContainer}>
-          <Text style={styles.quickLoginTitle}>Quick Login</Text>
-          <View style={styles.quickLoginButtons}>
-            <TouchableOpacity
-              style={[styles.quickLoginButton, styles.quickLoginGoogle]}
-              onPress={() => handleQuickLogin('Google')}
-            >
-              <Ionicons name="logo-google" size={20} color={Colors.dark.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.quickLoginButton, styles.quickLoginApple]}
-              onPress={() => handleQuickLogin('Apple')}
-            >
-              <Ionicons name="logo-apple" size={20} color={Colors.dark.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.quickLoginButton, styles.quickLoginTwitter]}
-              onPress={() => handleQuickLogin('Twitter')}
-            >
-              <Ionicons name="logo-twitter" size={20} color={Colors.dark.text} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Apple Login */}
+        <TouchableOpacity
+          style={styles.appleLoginButton}
+          onPress={() => handleQuickLogin('Apple')}
+        >
+          <Ionicons name="logo-apple" size={20} color={Colors.dark.text} />
+          <Text style={styles.appleLoginText}>Continue with Apple</Text>
+        </TouchableOpacity>
 
-        {/* Security Notice */}
-        <View style={styles.securityNotice}>
-          <Ionicons name="shield-checkmark" size={16} color={Colors.dark.success} />
-          <Text style={styles.securityText}>
-            Your login is encrypted and secured with industry-standard protection
-          </Text>
-        </View>
+      
       </View>
     </View>
   );
@@ -175,23 +148,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
-  },
-  welcomeSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  welcomeText: {
-    ...Typography.title.large,
-    color: Colors.dark.text,
-    fontFamily: Fonts.display,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  welcomeSubtext: {
-    ...Typography.body.medium,
-    color: Colors.dark.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
   },
   inputGroup: {
     marginBottom: 20,
@@ -288,55 +244,20 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     paddingHorizontal: 16,
   },
-  quickLoginContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  quickLoginTitle: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
-    marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  quickLoginButtons: {
+  appleLoginButton: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  quickLoginButton: {
-    width: 60,
-    height: 60,
+    alignItems: 'center',
+    backgroundColor: Colors.dark.card,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     borderRadius: 12,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    gap: 12,
     justifyContent: 'center',
-    borderWidth: 1,
   },
-  quickLoginGoogle: {
-    backgroundColor: Colors.dark.card,
-    borderColor: Colors.dark.border,
-  },
-  quickLoginApple: {
-    backgroundColor: Colors.dark.card,
-    borderColor: Colors.dark.border,
-  },
-  quickLoginTwitter: {
-    backgroundColor: Colors.dark.card,
-    borderColor: Colors.dark.border,
-  },
-  securityNotice: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: Colors.dark.success + '10',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.dark.success + '30',
-  },
-  securityText: {
-    ...Typography.body.small,
+  appleLoginText: {
+    ...Typography.body.medium,
     color: Colors.dark.text,
-    flex: 1,
-    marginLeft: 8,
-    lineHeight: 16,
   },
 });
