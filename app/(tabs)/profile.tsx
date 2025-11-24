@@ -1,102 +1,133 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import React from 'react';
 
 import { mockUserProfile } from '@/constants/mock-data';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 
 export default function ProfileScreen() {
-  const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak, friends } = mockUserProfile;
+  const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak } = mockUserProfile;
+
+  // Calculate additional metrics
+  const profitLoss = weeklyChange;
+  const isWinning = profitLoss > 0;
+  const percentile = Math.round((1 - rank / totalPlayers) * 100);
+  const rankCategory = rank <= 3 ? 'Elite' : rank <= 10 ? 'Prize Zone' : rank <= 50 ? 'Top 25%' : 'Chasing';
+  const trendDirection = profitLoss >= 0 ? 'up' : 'down';
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
+      {/* Header Section */}
       <View style={styles.header}>
-        <Text style={styles.appName}>PROFILE</Text>
-        
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
-          </View>
-          <Text style={styles.username}>@{username}</Text>
-          
-          {/* Pool Info */}
-          <View style={styles.poolBadge}>
-            <Text style={styles.poolText}>{currentPool}</Text>
-          </View>
-          <Text style={styles.rankText}>
-            #{rank} of {totalPlayers} players
-          </Text>
-        </View>
+        <Text style={styles.screenTitle}>PLAYER PROFILE</Text>
 
-        {/* Units Card */}
-        <View style={styles.unitsCard}>
-          <View style={styles.unitsRow}>
-            <Text style={styles.unitsLabel}>Total Balance</Text>
-            <View style={styles.changeContainer}>
-              <Text style={[
-                styles.changeText,
-                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
-              ]}>
-                {weeklyChange > 0 ? '+' : ''}{weeklyChange}
-              </Text>
+        {/* Main Balance Card */}
+        <View style={styles.balanceCard}>
+          <View style={styles.balanceHeader}>
+            <View style={styles.playerInfo}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
+              </View>
+              <View>
+                <Text style={styles.username}>@{username}</Text>
+                <View style={styles.poolInfo}>
+                  <Text style={styles.poolName}>{currentPool}</Text>
+                  <Text style={styles.rankBadgeText}>{rankCategory}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.rankInfo}>
+              <Text style={styles.rankNumber}>#{rank}</Text>
+              <Text style={styles.rankContext}>of {totalPlayers}</Text>
+              <Text style={styles.percentile}>Top {percentile}%</Text>
             </View>
           </View>
-          <Text style={styles.unitsAmount}>{units.toLocaleString()}</Text>
-          <Text style={styles.unitsSubtext}>units</Text>
-        </View>
-      </View>
 
-      {/* Weekly Stats Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>This Week</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{betsPlaced}</Text>
-            <Text style={styles.statLabel}>Bets</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{winRate}%</Text>
-            <Text style={styles.statLabel}>Win Rate</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>+{biggestWin}</Text>
-            <Text style={styles.statLabel}>Best Win</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{currentStreak}W</Text>
-            <Text style={styles.statLabel}>Streak</Text>
+          <View style={styles.balanceMain}>
+            <View style={styles.balanceLeft}>
+              <Text style={styles.balanceLabel}>TOTAL BALANCE</Text>
+              <View style={styles.balanceRow}>
+                <Text style={styles.balanceAmount}>{units.toLocaleString()}</Text>
+                <Text style={styles.balanceUnit}>units</Text>
+              </View>
+            </View>
+           
           </View>
         </View>
       </View>
 
-      
-
-      {/* Historic Stats Section */}
+      {/* Performance Overview */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>All Time</Text>
-        <View style={styles.historicStats}>
-          <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Win Rate</Text>
-            <Text style={styles.historicValue}>58%</Text>
+        <Text style={styles.sectionTitle}>PERFORMANCE OVERVIEW</Text>
+
+        <View style={styles.performanceGrid}>
+          
+
+          {/* All Time */}
+          <View style={styles.performanceSection}>
+            <Text style={styles.performanceSubtitle}>ALL TIME</Text>
+            <View style={styles.careerStats}>
+              <View style={styles.careerItem}>
+                <Text style={styles.careerValue}>58%</Text>
+                <Text style={styles.careerLabel}>Win Rate</Text>
+              </View>
+              <View style={styles.careerItem}>
+                <Text style={styles.careerValue}>#3</Text>
+                <Text style={styles.careerLabel}>Best</Text>
+              </View>
+              <View style={styles.careerItem}>
+                <Text style={styles.careerValue}>12</Text>
+                <Text style={styles.careerLabel}>Weeks</Text>
+              </View>
+              <View style={styles.careerItem}>
+                <Text style={styles.careerValue}>$2.4K</Text>
+                <Text style={styles.careerLabel}>Winnings</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.historicDivider} />
-          <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Best Finish</Text>
-            <Text style={styles.historicValue}>#3</Text>
+        </View>
+      </View>
+
+      {/* Competition Standing */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>COMPETITION STANDING</Text>
+
+        <View style={styles.standingCard}>
+          <View style={styles.standingHeader}>
+            <View style={styles.standingPosition}>
+              <Text style={styles.positionLabel}>Current Position</Text>
+              <View style={styles.positionRow}>
+                <Text style={styles.positionNumber}>#{rank}</Text>
+                <Text style={styles.positionChange}>
+                  {rank <= 10 ? 'In Prize Zone' : `${Math.max(0, rank - 10)} from prizes`}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.standingMetric}>
+              <View style={[
+                styles.standingBadge,
+                rank <= 10 ? styles.standingBadgeSuccess : styles.standingBadgeNeutral
+              ]}>
+                <Text style={[
+                  styles.standingBadgeText,
+                  rank <= 10 ? styles.standingBadgeTextSuccess : styles.standingBadgeTextNeutral
+                ]}>
+                  {rank <= 3 ? 'Elite' : rank <= 10 ? 'Qualified' : 'Chasing'}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.historicDivider} />
-          <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Competitions</Text>
-            <Text style={styles.historicValue}>12</Text>
-          </View>
-          <View style={styles.historicDivider} />
-          <View style={styles.historicItem}>
-            <Text style={styles.historicLabel}>Winnings</Text>
-            <Text style={styles.historicValue}>$2,450</Text>
+
+          <View style={styles.standingBars}>
+            <View style={styles.standingBar}>
+              <Text style={styles.standingBarLabel}>Percentile</Text>
+              <View style={styles.standingBarTrack}>
+                <View style={[styles.standingBarFill, { width: `${percentile}%` }]} />
+              </View>
+              <Text style={styles.standingBarValue}>Top {percentile}%</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -113,257 +144,351 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: Colors.dark.card,
-    paddingHorizontal: 20,
     paddingTop: 60,
+    paddingHorizontal: 16,
     paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
   },
-  appName: {
-    fontSize: 28,
-    fontFamily: Fonts.display,
+  screenTitle: {
+    ...Typography.title.large,
     color: Colors.dark.text,
-    letterSpacing: 4,
-    marginBottom: 24,
+    letterSpacing: 3,
+    marginBottom: 20,
+    fontFamily: Fonts.display,
   },
-  profileCard: {
-    backgroundColor: Colors.dark.card,
+
+  // Balance Card
+  balanceCard: {
+    backgroundColor: Colors.dark.cardElevated,
     borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: Colors.dark.icon,
+    borderColor: Colors.dark.border,
+  },
+  balanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  playerInfo: {
+    flexDirection: 'row',
+    flex: 1,
     alignItems: 'center',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.dark.text,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.dark.tint,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 12,
   },
   avatarText: {
-    fontSize: 36,
-    fontFamily: Fonts.display,
+    ...Typography.emphasis.large,
     color: Colors.dark.background,
+    fontFamily: Fonts.display,
   },
   username: {
     ...Typography.teamName.medium,
     color: Colors.dark.text,
-    marginBottom: 12,
-    
-  },
-  poolBadge: {
-    backgroundColor: Colors.dark.cardElevated,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  poolText: {
-    ...Typography.sectionHeader.small,
-    color: Colors.dark.text,
-    textTransform: 'uppercase',
-    fontFamily: Fonts.display
-  },
-  rankText: {
-    ...Typography.body.small,
-    color: Colors.dark.icon,
-  },
-  unitsCard: {
-    backgroundColor: Colors.dark.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.dark.icon,
-  },
-  unitsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  unitsLabel: {
-    ...Typography.meta.small,
-    color: Colors.dark.icon,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  changeContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: Colors.dark.cardElevated,
-  },
-  changeText: {
-    ...Typography.body.small,
-    ...Typography.emphasis.small,
-  },
-  unitsAmount: {
-    ...Typography.title.large,
-    color: Colors.dark.text,
-    letterSpacing: -1,
-  },
-  unitsSubtext: {
-    ...Typography.body.medium,
-    color: Colors.dark.icon,
-  },
-  section: {
-    backgroundColor: Colors.dark.card,
-    marginTop: 12,
-    padding: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    ...Typography.sectionHeader.medium,
-    color: Colors.dark.text,
-    paddingBottom: 11,
-    fontFamily: Fonts.display
-  },
-  addButton: {
-    ...Typography.body.medium,
-    ...Typography.emphasis.medium,
-    color: Colors.dark.tint,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  statItem: {
-    flex: 1,
-    minWidth: '47%',
-    backgroundColor: Colors.dark.cardElevated,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.dark.icon,
-  },
-  statValue: {
-    ...Typography.title.medium,
-    color: Colors.dark.text,
     marginBottom: 4,
   },
-  statLabel: {
-    ...Typography.meta.small,
-    color: Colors.dark.icon,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  friendsList: {
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.dark.icon,
-    overflow: 'hidden',
-  },
-  friendItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.border,
-  },
-  lastFriendItem: {
-    borderBottomWidth: 0,
-  },
-  friendLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  friendAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.dark.icon,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  friendAvatarText: {
-    fontSize: 16,
-    fontFamily: Fonts.primaryBold,
-    color: Colors.dark.text,
-  },
-  friendUsername: {
-    fontSize: 15,
-    fontFamily: Fonts.primaryBold,
-    color: Colors.dark.text,
-  },
-  friendRight: {
+  poolInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  friendUnits: {
-    fontSize: 15,
-    fontFamily: Fonts.display,
-    color: Colors.dark.text,
+  poolName: {
+    ...Typography.sectionHeader.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
   },
-  friendChangeIndicator: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    justifyContent: 'center',
+  rankBadgeText: {
+    ...Typography.meta.small,
+    color: Colors.dark.tint,
+    fontWeight: '600',
+  },
+  rankInfo: {
+    alignItems: 'flex-end',
+  },
+  rankNumber: {
+    ...Typography.title.large,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+  },
+  rankContext: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  percentile: {
+    ...Typography.emphasis.small,
+    color: Colors.dark.tint,
+  },
+
+  // Balance Main
+  balanceMain: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  friendChangeText: {
-    fontSize: 14,
-    fontFamily: Fonts.primaryBold,
+  balanceLeft: {
+    flex: 1,
   },
-  viewAllButton: {
-    marginTop: 12,
+  balanceLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  balanceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  balanceAmount: {
+    ...Typography.title.large,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+  },
+  balanceUnit: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  changeCard: {
     backgroundColor: Colors.dark.card,
-    paddingVertical: 14,
     borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.dark.icon,
+    minWidth: 100,
+    position: 'relative',
   },
-  viewAllText: {
-    fontSize: 15,
-    fontFamily: Fonts.primaryBold,
+  changeCardPositive: {
+    borderColor: Colors.dark.success + '40',
+    backgroundColor: Colors.dark.success + '10',
+  },
+  changeCardNegative: {
+    borderColor: Colors.dark.danger + '40',
+    backgroundColor: Colors.dark.danger + '10',
+  },
+  changeLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  changeValue: {
+    ...Typography.emphasis.medium,
+    fontFamily: Fonts.display,
+  },
+  changeValuePositive: {
+    color: Colors.dark.success,
+  },
+  changeValueNegative: {
+    color: Colors.dark.danger,
+  },
+  trendIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendUp: {
+    backgroundColor: Colors.dark.success + '20',
+  },
+  trendDown: {
+    backgroundColor: Colors.dark.danger + '20',
+  },
+  trendIcon: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+  // Section
+  section: {
+    backgroundColor: Colors.dark.card,
+    marginTop: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  sectionTitle: {
+    ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
+    marginBottom: 20,
+    fontFamily: Fonts.display,
   },
-  historicStats: {
-    flexDirection: 'row',
+
+  // Performance Overview
+  performanceGrid: {
+    gap: 20,
+  },
+  performanceSection: {
     backgroundColor: Colors.dark.cardElevated,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: Colors.dark.icon,
+    borderColor: Colors.dark.border,
   },
-  historicItem: {
+  performanceSubtitle: {
+    ...Typography.sectionHeader.small,
+    color: Colors.dark.textSecondary,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  metricItem: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: Colors.dark.card,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  metricValue: {
+    ...Typography.title.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    marginBottom: 4,
+  },
+  metricLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+  },
+
+  // Career Stats
+  careerStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  careerItem: {
     flex: 1,
     alignItems: 'center',
   },
-  historicLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.condensed,
-    color: Colors.dark.icon,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  historicValue: {
-    fontSize: 18,
-    fontFamily: Fonts.primaryBold,
+  careerValue: {
+    ...Typography.emphasis.medium,
     color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    marginBottom: 4,
   },
-  historicDivider: {
-    width: 1,
-    backgroundColor: Colors.dark.border,
-    marginHorizontal: 8,
+  careerLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
   },
+
+  // Competition Standing
+  standingCard: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  standingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  standingPosition: {
+    flex: 1,
+  },
+  positionLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  positionRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  positionNumber: {
+    ...Typography.title.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+  },
+  positionChange: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  standingMetric: {
+    alignItems: 'flex-end',
+  },
+  standingBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  standingBadgeSuccess: {
+    backgroundColor: Colors.dark.success + '20',
+  },
+  standingBadgeNeutral: {
+    backgroundColor: Colors.dark.card,
+    borderColor: Colors.dark.border,
+    borderWidth: 1,
+  },
+  standingBadgeText: {
+    ...Typography.emphasis.small,
+    fontWeight: '600',
+  },
+  standingBadgeTextSuccess: {
+    color: Colors.dark.success,
+  },
+  standingBadgeTextNeutral: {
+    color: Colors.dark.textSecondary,
+  },
+
+  // Standing Bars
+  standingBars: {
+    gap: 16,
+  },
+  standingBar: {
+    gap: 8,
+  },
+  standingBarLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+  },
+  standingBarTrack: {
+    height: 8,
+    backgroundColor: Colors.dark.card,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  standingBarFill: {
+    height: '100%',
+    backgroundColor: Colors.dark.tint,
+    borderRadius: 4,
+  },
+  standingBarValue: {
+    ...Typography.emphasis.small,
+    color: Colors.dark.text,
+    textAlign: 'right',
+  },
+
   bottomPadding: {
-    height: 20,
+    height: 40,
   },
 });

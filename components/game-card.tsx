@@ -32,13 +32,11 @@ export default function GameCard({ game, onPress, onOddsPress }: GameCardProps) 
   const isPositiveOdds = (odds: number) => odds > 0;
 
   return (
-    <TouchableOpacity
+    <View
       style={[
         styles.card,
         game.isLive && styles.cardLive
       ]}
-      onPress={onPress}
-      activeOpacity={0.9}
     >
       {/* Timer badge top-right */}
       {game.isLive ? (
@@ -119,7 +117,7 @@ export default function GameCard({ game, onPress, onOddsPress }: GameCardProps) 
         <Text style={styles.viewMarketsText}>View Markets</Text>
         <Text style={styles.arrow}>→</Text>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 }
 

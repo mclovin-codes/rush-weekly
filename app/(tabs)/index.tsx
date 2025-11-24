@@ -61,7 +61,8 @@ export default function HomeScreen() {
   };
 
   const handleOddsPress = (team: 'home' | 'away', game: any) => {
-    console.log(`Odds pressed for ${team} team:`, game);
+    setSelectedBet({ game, team });
+    setBetSlipVisible(true);
   };
 
   const handleCloseBetSlip = () => {
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
   },
   changeText: {
     fontSize: 13,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
   },
   unitsAmount: {
     fontSize: 44,
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   },
   unitsSubtext: {
     fontSize: 14,
-    fontFamily: Fonts.primary,
+    fontFamily: Fonts.regular,
     color: Colors.dark.icon,
   },
   competitionBar: {
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
   },
   competitionLabel: {
     fontSize: 15,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.regular,
     color: Colors.dark.text,
     marginBottom: 2,
   },
   competitionTime: {
     fontSize: 12,
-    fontFamily: Fonts.primary,
+    fontFamily: Fonts.regular,
     color: Colors.dark.icon,
   },
   liveBadge: {
@@ -260,7 +261,7 @@ const styles = StyleSheet.create({
   },
   liveText: {
     fontSize: 12,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.text,
   },
   filterWrapper: {
@@ -288,11 +289,11 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontSize: 14,
-    fontFamily: Fonts.primaryMedium,
+    fontFamily: Fonts.medium,
     color: Colors.dark.icon,
   },
   activeFilterText: {
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.medium,
     color: Colors.dark.background,
   },
   gamesContainer: {
