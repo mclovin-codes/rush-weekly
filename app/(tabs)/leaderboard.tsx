@@ -36,11 +36,11 @@ export default function LeaderboardScreen() {
             <Text style={styles.statusLabel}>Your Rank</Text>
             <Text style={styles.statusValue}>#{currentUserRank}</Text>
           </View>
-          <View style={styles.divider} />
+          {/* <View style={styles.divider} />
           <View style={styles.statusItem}>
             <Text style={styles.statusLabel}>Prize Zone</Text>
             <Text style={[styles.statusValue, styles.prizeValue]}>Top {prizePositions}</Text>
-          </View>
+          </View> */}
         </View>
       </View>
 

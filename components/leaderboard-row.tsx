@@ -9,28 +9,10 @@ interface LeaderboardRowProps {
 }
 
 export default function LeaderboardRow({ entry }: LeaderboardRowProps) {
-  const getMedalIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return '🥇';
-      case 2:
-        return '🥈';
-      case 3:
-        return '🥉';
-      default:
-        return '';
-    }
-  };
-
-  const medalIcon = getMedalIcon(entry.rank);
-
+  
   return (
     <View style={[styles.row, entry.isUser && styles.userRow]}>
-      <View style={styles.rankContainer}>
-        <Text style={styles.rank}>
-          {medalIcon || `#${entry.rank}`}
-        </Text>
-      </View>
+      
       <View style={styles.userInfo}>
         <Text style={[styles.username, entry.isUser && styles.userText]}>
           {entry.username}
@@ -45,13 +27,13 @@ export default function LeaderboardRow({ entry }: LeaderboardRowProps) {
           </Text>
         </Text>
       </View>
-      <View style={styles.potential}>
+      {/* <View style={styles.potential}>
         {entry.potentialWinnings > 0 && (
           <Text style={styles.potentialText}>
             Potential: ${entry.potentialWinnings}
           </Text>
         )}
-      </View>
+      </View> */}
     </View>
   );
 }

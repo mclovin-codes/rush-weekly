@@ -26,7 +26,7 @@ export default function AccountScreen() {
       <View style={styles.section}>
         <View style={styles.subscriptionCard}>
           <View style={styles.subscriptionHeader}>
-            <Text style={styles.subscriptionEmoji}>🎟️</Text>
+
             <Text style={styles.subscriptionStatus}>ACTIVE SUBSCRIPTION</Text>
           </View>
           <View style={styles.subscriptionDetails}>
@@ -101,28 +101,6 @@ export default function AccountScreen() {
         </View>
       </View>
 
-      {/* App Preferences */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Preferences</Text>
-        <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Default stake amount</Text>
-          <Text style={styles.menuItemValue}>100 units</Text>
-        </View>
-        <View style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Odds format</Text>
-          <Text style={styles.menuItemValue}>American</Text>
-        </View>
-        <View style={styles.switchItem}>
-          <Text style={styles.switchLabel}>Dark Theme</Text>
-          <Switch
-            value={settings.darkTheme}
-            onValueChange={(value) => setSettings(prev => ({ ...prev, darkTheme: value }))}
-            trackColor={{ false: Colors.dark.cardElevated, true: Colors.dark.tint }}
-            thumbColor={Colors.dark.text}
-            ios_backgroundColor={Colors.dark.cardElevated}
-          />
-        </View>
-      </View>
 
       {/* Privacy Settings */}
       <View style={styles.section}>
