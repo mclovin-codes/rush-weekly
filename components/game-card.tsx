@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import React from 'react';
 
 import { Game } from '@/constants/mock-data';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 interface GameCardProps {
   game: Game;
@@ -94,8 +94,8 @@ const styles = StyleSheet.create({
   },
   sport: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: Colors.dark.text,
+    fontFamily: Fonts.primaryBold
   },
   liveDot: {
     width: 8,
@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     flex: 1,
     textAlign: 'right',
+    fontFamily: Fonts.primaryMedium
   },
   vs: {
     fontSize: 16,
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.dark.icon,
     marginBottom: 8,
-    fontWeight: '500',
+   
   },
   oddsContainer: {
     flexDirection: 'row',
@@ -157,8 +158,8 @@ const styles = StyleSheet.create({
   },
   oddsText: {
     fontSize: 16,
-    fontWeight: 'bold',
     color: Colors.dark.text,
+    fontFamily: Fonts.display
   },
   viewMarkets: {
     alignItems: 'center',
@@ -169,6 +170,6 @@ const styles = StyleSheet.create({
   viewMarketsText: {
     fontSize: 14,
     color: Colors.dark.tint,
-    fontWeight: '500',
+    fontFamily: Fonts.display
   },
 });

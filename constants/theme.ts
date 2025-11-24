@@ -78,7 +78,7 @@ export const Fonts = {
 
   /** Medium weight Inter */
   primaryMedium: Platform.select({
-    default: 'Inter', // Fallback to regular for now
+    default: 'Inter_500Medium', // Fallback to regular for now
     web: "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   }),
 
