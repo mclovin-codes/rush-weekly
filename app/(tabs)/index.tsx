@@ -1,23 +1,92 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
-import React, { useState, useRef, useEffect } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Animated,
+  Easing,
+} from "react-native";
+import React, { useState, useRef, useEffect } from "react";
 
-import { mockGames, mockFilters } from '@/constants/mock-data';
-import { Colors, Fonts } from '@/constants/theme';
-import GameCard from '@/components/game-card';
-import BetSlipBottomSheet from '@/app/modal';
+import { mockGames, mockFilters } from "@/constants/mock-data";
+import { Colors, Fonts } from "@/constants/theme";
+import GameCard from "@/components/game-card";
+import BetSlipBottomSheet from "@/app/modal";
 
 export default function HomeScreen() {
-  const [selectedFilter, setSelectedFilter] = useState('All');
+  const [selectedFilter, setSelectedFilter] = useState("All");
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [betSlipVisible, setBetSlipVisible] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
     game: any;
-    team: 'home' | 'away';
+    team: "home" | "away";
   } | null>(null);
+  const [countdown, setCountdown] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(shimmerAnim, {
+        toValue: 1,
+        duration: 1500,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+
+  const shimmerTranslate = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-300, 300],
+  });
+  const [weeklyChange, setWeeklyChange] = useState(-20);
 
   // Mock user data
   const userUnits = 980;
-  const weeklyChange = -20;
+
+  // Calculate countdown to Monday 00:00 CET
+  const calculateCountdown = () => {
+    const now = new Date();
+
+    // Get Monday of next week at 00:00 CET (Central European Time)
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7; // Get days until next Monday (1-7)
+    const nextMonday = new Date(now);
+    nextMonday.setDate(now.getDate() + daysUntilMonday);
+    nextMonday.setHours(0, 0, 0, 0);
+
+    // Convert CET to UTC (CET is UTC+1, but we need to handle daylight saving)
+    const cetOffset = 1; // Standard CET offset
+    const nextMondayUTC = new Date(
+      nextMonday.getTime() - cetOffset * 60 * 60 * 1000
+    );
+
+    const difference = nextMondayUTC.getTime() - now.getTime();
+
+    if (difference > 0) {
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setCountdown({ days, hours, minutes, seconds });
+    }
+  };
+
+  // Countdown effect
+  useEffect(() => {
+    calculateCountdown();
+    const interval = setInterval(calculateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Pulse animation for live indicator
   useEffect(() => {
@@ -35,32 +104,32 @@ export default function HomeScreen() {
         }),
       ])
     ).start();
-  }, []);
+  }, [pulseAnim]);
 
-  const filteredGames = mockGames.filter(game => {
-    if (selectedFilter === 'All') return true;
-    if (selectedFilter === 'Live Now') return game.isLive;
-    if (selectedFilter === 'Today') {
+  const filteredGames = mockGames.filter((game) => {
+    if (selectedFilter === "All") return true;
+    if (selectedFilter === "Live Now") return game.isLive;
+    if (selectedFilter === "Today") {
       const today = new Date();
       return game.startTime.toDateString() === today.toDateString();
     }
-    if (selectedFilter === 'Tomorrow') {
+    if (selectedFilter === "Tomorrow") {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       return game.startTime.toDateString() === tomorrow.toDateString();
     }
-    if (selectedFilter === 'Soccer') return game.sport === 'Soccer';
-    if (selectedFilter === 'Basketball') return game.sport === 'Basketball';
-    if (selectedFilter === 'Football') return game.sport === 'Football';
+    if (selectedFilter === "Soccer") return game.sport === "Soccer";
+    if (selectedFilter === "Basketball") return game.sport === "Basketball";
+    if (selectedFilter === "Football") return game.sport === "Football";
     return true;
   });
 
   const handleGamePress = (game: any) => {
-    setSelectedBet({ game, team: 'home' }); // Set both game and default team
+    setSelectedBet({ game, team: "home" }); // Set both game and default team
     setBetSlipVisible(true);
   };
 
-  const handleOddsPress = (team: 'home' | 'away', game: any) => {
+  const handleOddsPress = (team: "home" | "away", game: any) => {
     setSelectedBet({ game, team });
     setBetSlipVisible(true);
   };
@@ -76,17 +145,25 @@ export default function HomeScreen() {
       <View style={styles.header}>
         {/* App Name */}
         <Text style={styles.appName}>RUSH</Text>
-       
+
         {/* Units Card */}
         <View style={styles.unitsCard}>
           <View style={styles.unitsRow}>
             <Text style={styles.unitsLabel}>Balance</Text>
             <View style={styles.changeContainer}>
-              <Text style={[
-                styles.changeText,
-                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
-              ]}>
-                {weeklyChange > 0 ? '+' : ''}{weeklyChange}
+              <Text
+                style={[
+                  styles.changeText,
+                  {
+                    color:
+                      weeklyChange >= 0
+                        ? Colors.dark.success
+                        : Colors.dark.danger,
+                  },
+                ]}
+              >
+                {weeklyChange > 0 ? "+" : ""}
+                {weeklyChange}
               </Text>
             </View>
           </View>
@@ -94,15 +171,42 @@ export default function HomeScreen() {
           <Text style={styles.unitsSubtext}>units</Text>
         </View>
 
-        {/* Competition Info */}
         <View style={styles.competitionBar}>
-          <View>
-            <Text style={styles.competitionLabel}>Week 14</Text>
-            <Text style={styles.competitionTime}>Ends in 2d 14h</Text>
-          </View>
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>3 Live</Text>
+          <Animated.View
+            style={[
+              styles.shimmerOverlay,
+              {
+                transform: [{ translateX: shimmerTranslate }],
+              },
+            ]}
+          />
+          <Text style={styles.competitionLabel}>WEEK ENDS IN:</Text>
+          <View style={styles.countdownContainer}>
+            <View style={styles.countdownSegment}>
+              <Text style={styles.countdownValue}>{countdown.days}</Text>
+              <Text style={styles.countdownUnit}>DAYS</Text>
+            </View>
+            <Text style={styles.countdownSeparator}>:</Text>
+            <View style={styles.countdownSegment}>
+              <Text style={styles.countdownValue}>
+                {countdown.hours.toString().padStart(2, "0")}
+              </Text>
+              <Text style={styles.countdownUnit}>HRS</Text>
+            </View>
+            <Text style={styles.countdownSeparator}>:</Text>
+            <View style={styles.countdownSegment}>
+              <Text style={styles.countdownValue}>
+                {countdown.minutes.toString().padStart(2, "0")}
+              </Text>
+              <Text style={styles.countdownUnit}>MIN</Text>
+            </View>
+            <Text style={styles.countdownSeparator}>:</Text>
+            <View style={styles.countdownSegment}>
+              <Text style={styles.countdownValue}>
+                {countdown.seconds.toString().padStart(2, "0")}
+              </Text>
+              <Text style={styles.countdownUnit}>SEC</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -119,15 +223,17 @@ export default function HomeScreen() {
               key={filter}
               style={[
                 styles.filterTab,
-                selectedFilter === filter && styles.activeFilterTab
+                selectedFilter === filter && styles.activeFilterTab,
               ]}
               onPress={() => setSelectedFilter(filter)}
               activeOpacity={0.7}
             >
-              <Text style={[
-                styles.filterText,
-                selectedFilter === filter && styles.activeFilterText
-              ]}>
+              <Text
+                style={[
+                  styles.filterText,
+                  selectedFilter === filter && styles.activeFilterText,
+                ]}
+              >
                 {filter}
               </Text>
             </TouchableOpacity>
@@ -136,7 +242,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Game Cards */}
-      <ScrollView 
+      <ScrollView
         style={styles.gamesContainer}
         showsVerticalScrollIndicator={false}
       >
@@ -150,13 +256,13 @@ export default function HomeScreen() {
         ))}
         <View style={styles.bottomPadding} />
         <BetSlipBottomSheet
-        visible={betSlipVisible}
-        onClose={handleCloseBetSlip}
-        game={selectedBet?.game}
-        selectedTeam={selectedBet?.team || 'home'}
-        userUnits={userUnits}
-      />
-          </ScrollView>
+          visible={betSlipVisible}
+          onClose={handleCloseBetSlip}
+          game={selectedBet?.game}
+          selectedTeam={selectedBet?.team || "home"}
+          userUnits={userUnits}
+        />
+      </ScrollView>
     </View>
   );
 }
@@ -178,7 +284,6 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     letterSpacing: 4,
     marginBottom: 24,
-    
   },
   unitsCard: {
     backgroundColor: Colors.dark.card,
@@ -189,9 +294,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.dark.icon,
   },
   unitsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   unitsLabel: {
@@ -199,7 +304,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.condensed,
     color: Colors.dark.icon,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   },
   changeContainer: {
     paddingHorizontal: 8,
@@ -223,30 +328,75 @@ const styles = StyleSheet.create({
     color: Colors.dark.icon,
   },
   competitionBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.dark.card,
-    borderRadius: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#1c3540",
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: Colors.dark.icon,
+    borderColor: "#2a4a56",
+    overflow: "hidden", // Important for shimmer effect
+    position: "relative",
+  },
+  shimmerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    width: 100,
+    transform: [{ skewX: "-20deg" }],
+    shadowColor: "#00d4ff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
   competitionLabel: {
-    fontSize: 15,
+    fontSize: 11,
     fontFamily: Fonts.regular,
-    color: Colors.dark.text,
-    marginBottom: 2,
+    color: "#5fa5ba",
+    letterSpacing: 1.5,
+    textAlign: "center",
+    marginBottom: 12,
+    textTransform: "uppercase",
+    zIndex: 1,
   },
-  competitionTime: {
-    fontSize: 12,
+  countdownContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    zIndex: 1,
+  },
+  countdownSegment: {
+    alignItems: "center",
+    minWidth: 48,
+  },
+  countdownValue: {
+    fontSize: 28,
+    fontFamily: Fonts.bold,
+    color: "#00d4ff",
+    lineHeight: 32,
+  },
+  countdownUnit: {
+    fontSize: 9,
     fontFamily: Fonts.regular,
-    color: Colors.dark.icon,
+    color: "#6a8895",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginTop: 2,
+  },
+  countdownSeparator: {
+    fontSize: 24,
+    fontFamily: Fonts.bold,
+    color: "#4a6a75",
+    marginBottom: 12,
   },
   liveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.dark.card,
     paddingHorizontal: 10,
     paddingVertical: 6,
