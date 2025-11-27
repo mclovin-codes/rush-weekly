@@ -27,7 +27,7 @@ export default function AccountScreen() {
   const currentPlan = 'Weekly Pass';
   const renewalDate = 'Monday, Nov 30';
   const daysUntilRenewal = 3;
-  const planPrice = '$9.99';
+  const planPrice = '$299';
   const planBenefits = ['Full competition access', 'Unlimited bets', 'Prize eligibility', 'Premium features'];
 
   const handleLogout = () => {
@@ -85,7 +85,7 @@ export default function AccountScreen() {
           </View>
 
           <TouchableOpacity style={styles.manageButton}>
-            <Text style={styles.manageButtonText}>MANAGE SUBSCRIPTION</Text>
+            <Text style={styles.manageButtonText}>MANAGE MEMBERSHIP</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -219,7 +219,7 @@ export default function AccountScreen() {
               <Ionicons name="pause-circle" size={20} color={Colors.dark.text} />
             </View>
             <View style={styles.secondaryActionContent}>
-              <Text style={styles.secondaryActionTitle}>Pause Subscription</Text>
+              <Text style={styles.secondaryActionTitle}>Pause Membership</Text>
               <Text style={styles.secondaryActionSubtitle}>Temporarily stop billing</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={Colors.dark.textSecondary} />

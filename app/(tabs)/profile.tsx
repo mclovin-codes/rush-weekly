@@ -1,11 +1,26 @@
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import React from 'react';
 
-import { mockUserProfile } from '@/constants/mock-data';
+import { mockUserProfile, mockGames } from '@/constants/mock-data';
 import { Colors, Fonts, Typography } from '@/constants/theme';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { username, currentPool, rank, totalPlayers, units, weeklyChange, betsPlaced, winRate, biggestWin, currentStreak } = mockUserProfile;
+
+  // Mock top competitors for gap analysis
+  const topCompetitors = [
+    { name: "Alex", units: 2450, position: 1 },
+    { name: "Sarah", units: 1890, position: 2 },
+    { name: "Mike", units: 1420, position: 3 }
+  ];
+
+  // Calculate competitive gaps
+  const thirdPlaceUnits = topCompetitors[2].units;
+  const gapToThird = Math.max(0, thirdPlaceUnits - units);
+  const gapToFirst = Math.max(0, topCompetitors[0].units - units);
+  const isPrizeZone = rank <= 10;
 
   // Calculate additional metrics
   const profitLoss = weeklyChange;
@@ -55,6 +70,38 @@ export default function ProfileScreen() {
             </View>
            
           </View>
+        </View>
+      </View>
+
+      {/* Competitive Gap Analysis */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>COMPETITIVE GAP</Text>
+
+        <View style={styles.gapCard}>
+          <View style={styles.gapHeader}>
+            <Text style={styles.gapTitle}>Current Balance</Text>
+            <Text style={[
+              styles.gapAmount,
+              { color: isPrizeZone ? Colors.dark.success : Colors.dark.text }
+            ]}>
+              {units.toLocaleString()}
+            </Text>
+          </View>
+
+          <View style={styles.gapDetails}>
+           
+            <View style={styles.gapRow}>
+              <Text style={styles.gapLabel}>To catch 1st place:</Text>
+              <Text style={styles.gapValue}>+{gapToFirst.toLocaleString()}</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.competeNowButton}
+            onPress={() => router.push('/')}
+          >
+            <Text style={styles.competeNowText}>Start competing to close the gap</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -486,6 +533,67 @@ const styles = StyleSheet.create({
     ...Typography.emphasis.small,
     color: Colors.dark.text,
     textAlign: 'right',
+  },
+
+  // Competitive Gap
+  gapCard: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  gapHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  gapTitle: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  gapAmount: {
+    ...Typography.title.large,
+    fontFamily: Fonts.display,
+  },
+  gapDetails: {
+    gap: 16,
+    marginBottom: 20,
+  },
+  gapRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.card,
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  gapLabel: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    flex: 1,
+  },
+  gapValue: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.bold,
+  },
+  competeNowButton: {
+    backgroundColor: Colors.dark.tint,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  competeNowText: {
+    ...Typography.body.small,
+    color: Colors.dark.background,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 
   bottomPadding: {
