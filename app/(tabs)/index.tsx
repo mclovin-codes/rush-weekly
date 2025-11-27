@@ -51,6 +51,14 @@ export default function HomeScreen() {
   // Mock user data
   const userUnits = 980;
 
+  // Mock leaderboard data - just top 3
+  const userRank = 47; // User's current position
+  const topLeaders = [
+    { name: "Alex", units: 2450 },
+    { name: "Sarah", units: 1890 },
+    { name: "Mike", units: 1420 },
+  ];
+
   // Calculate countdown to Monday 00:00 CET
   const calculateCountdown = () => {
     const now = new Date();
@@ -146,29 +154,30 @@ export default function HomeScreen() {
         {/* App Name */}
         <Text style={styles.appName}>RUSH</Text>
 
-        {/* Units Card */}
-        <View style={styles.unitsCard}>
-          <View style={styles.unitsRow}>
-            <Text style={styles.unitsLabel}>Balance</Text>
-            <View style={styles.changeContainer}>
-              <Text
-                style={[
-                  styles.changeText,
-                  {
-                    color:
-                      weeklyChange >= 0
-                        ? Colors.dark.success
-                        : Colors.dark.danger,
-                  },
-                ]}
-              >
-                {weeklyChange > 0 ? "+" : ""}
-                {weeklyChange}
+        {/* Refined Mini Balance Card */}
+        <View style={styles.miniCard}>
+          <View style={styles.miniRow}>
+            <View style={styles.balanceInfo}>
+              <Text style={styles.miniAmount}>{userUnits.toLocaleString()}</Text>
+              <Text style={styles.miniLabel}>units</Text>
+            </View>
+            <View style={styles.miniMetrics}>
+              <Text style={[
+                styles.miniChange,
+                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
+              ]}>
+                {weeklyChange > 0 ? "↗" : "↘"} {Math.abs(weeklyChange)}
               </Text>
+              <Text style={styles.miniRank}>#{userRank}</Text>
             </View>
           </View>
-          <Text style={styles.unitsAmount}>{userUnits.toLocaleString()}</Text>
-          <Text style={styles.unitsSubtext}>units</Text>
+
+          {/* Subtle Competition Hint */}
+          <View style={styles.subtleCompetition}>
+            <Text style={styles.competitionHint}>
+              <Text style={styles.leaderName}>{topLeaders[0].name}</Text> leads with {topLeaders[0].units.toLocaleString()}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.competitionBar}>
@@ -285,47 +294,67 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     marginBottom: 24,
   },
-  unitsCard: {
+  miniCard: {
     backgroundColor: Colors.dark.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: Colors.dark.icon,
+    borderColor: 'rgba(95, 165, 186, 0.2)',
   },
-  unitsRow: {
+  miniRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
   },
-  unitsLabel: {
-    fontSize: 13,
-    fontFamily: Fonts.condensed,
-    color: Colors.dark.icon,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+  balanceInfo: {
+    flex: 1,
   },
-  changeContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: Colors.dark.card,
-  },
-  changeText: {
-    fontSize: 13,
-    fontFamily: Fonts.bold,
-  },
-  unitsAmount: {
-    fontSize: 44,
+  miniAmount: {
+    fontSize: 28,
     fontFamily: Fonts.display,
     color: Colors.dark.text,
     letterSpacing: -1,
   },
-  unitsSubtext: {
-    fontSize: 14,
+  miniLabel: {
+    fontSize: 10,
     fontFamily: Fonts.regular,
     color: Colors.dark.icon,
+    marginTop: 2,
+  },
+  miniMetrics: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  miniChange: {
+    fontSize: 16,
+    fontFamily: Fonts.bold,
+  },
+  miniRank: {
+    fontSize: 11,
+    fontFamily: Fonts.bold,
+    color: '#00d4ff',
+    backgroundColor: 'rgba(0, 212, 255, 0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  subtleCompetition: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(95, 165, 186, 0.1)',
+  },
+  competitionHint: {
+    fontSize: 10,
+    fontFamily: Fonts.regular,
+    color: '#6a8895',
+    lineHeight: 14,
+  },
+  leaderName: {
+    fontFamily: Fonts.medium,
+    color: Colors.dark.text,
   },
   competitionBar: {
     paddingVertical: 20,
