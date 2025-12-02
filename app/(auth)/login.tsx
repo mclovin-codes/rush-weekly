@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-import { Colors, Fonts, Typography } from '@/constants/theme';
+import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
 interface LoginScreenProps {
   onForgotPassword: () => void;
@@ -42,6 +43,16 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
   return (
     <View style={styles.container}>
       <View style={styles.form}>
+
+        {/* Header with Logo */}
+        <View style={styles.headerSection}>
+          <View style={[styles.logoContainer, { backgroundColor: Colors.dark.tint, ...Shadows.glow }]}>
+            <Text style={[styles.logoText, { color: Colors.dark.background }]}>RUSH</Text>
+          </View>
+          <Text style={[styles.headerTitle, { color: Colors.dark.text }]}>
+            Welcome Back
+          </Text>
+        </View>
 
         {/* Email Input */}
         <View style={styles.inputGroup}>
@@ -127,10 +138,14 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
         {/* Apple Login */}
         <TouchableOpacity
           style={styles.appleLoginButton}
-          onPress={() => handleQuickLogin('Apple')}
+          onPress={() => router.push("/(auth)/signup")}
         >
-          <Ionicons name="logo-apple" size={20} color={Colors.dark.text} />
-          <Text style={styles.appleLoginText}>Continue with Apple</Text>
+          <Ionicons
+            name="person-add-outline"
+            size={20}
+            color={Colors.dark.text}
+          />
+          <Text style={styles.appleLoginText}>Create New Account</Text>
         </TouchableOpacity>
 
       
@@ -148,6 +163,30 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: Spacing['2xl'],
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  logoText: {
+    ...Typography.title.medium,
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 3,
+    fontFamily: Fonts.display,
+  },
+  headerTitle: {
+    ...Typography.title.small,
+    textAlign: 'center',
+    lineHeight: 32,
   },
   inputGroup: {
     marginBottom: 20,

@@ -1,8 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
-import { Colors, Fonts, Typography } from '@/constants/theme';
+import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 
 interface SignupScreenProps {
   onSignupComplete?: () => void;
@@ -71,12 +72,9 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
     }
 
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      // Handle successful signup
       console.log('Signup successful');
-      // Call onSignupComplete if provided
       if (onSignupComplete) {
         onSignupComplete();
       }
@@ -87,9 +85,9 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
     Alert.alert('Quick Signup', `Signup with ${provider} feature coming soon`);
   };
 
-  const renderStep1 = () => (
+const renderStep1 = () => (
     <View>
-      <View style={styles.stepIndicator}>
+      <View style={styles.compactStepIndicator}>
         <View style={[styles.stepDot, styles.stepDotActive]} />
         <View style={styles.stepLine} />
         <View style={[styles.stepDot]} />
@@ -97,13 +95,12 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         <View style={[styles.stepDot]} />
       </View>
 
-      <Text style={styles.stepTitle}>Create Your Account</Text>
-      <Text style={styles.stepSubtitle}>Step 1 of 3: Basic Information</Text>
+      <Text style={styles.compactStepTitle}>Basic Info</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>USERNAME</Text>
+        <Text style={styles.inputLabel}>Username</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="person" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
+          <Ionicons name="person-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Choose a username"
@@ -117,9 +114,9 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
+        <Text style={styles.inputLabel}>Email</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="mail" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Your email address"
@@ -135,8 +132,8 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
 
       <View style={styles.stepNavigation}>
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>NEXT</Text>
-          <Ionicons name="arrow-forward" size={20} color={Colors.dark.background} />
+          <Text style={styles.nextButtonText}>CONTINUE</Text>
+          <Ionicons name="arrow-forward" size={16} color={Colors.dark.background} />
         </TouchableOpacity>
       </View>
     </View>
@@ -144,7 +141,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
 
   const renderStep2 = () => (
     <View>
-      <View style={styles.stepIndicator}>
+      <View style={styles.compactStepIndicator}>
         <View style={[styles.stepDot, styles.stepDotCompleted]} />
         <View style={[styles.stepLine, styles.stepLineCompleted]} />
         <View style={[styles.stepDot, styles.stepDotActive]} />
@@ -152,18 +149,15 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         <View style={[styles.stepDot]} />
       </View>
 
-      <Text style={styles.stepTitle}>Set Your Password</Text>
-      <Text style={styles.stepSubtitle}>Step 2 of 3: Security Setup</Text>
-
-    <View style={{height: 20}}/>
+      <Text style={styles.compactStepTitle}>Security</Text>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>PASSWORD</Text>
+        <Text style={styles.inputLabel}>Password</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Create a strong password"
+            placeholder="Create password"
             placeholderTextColor={Colors.dark.textSecondary}
             value={password}
             onChangeText={(text) => setFormData({...formData, password: text})}
@@ -175,7 +169,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
             onPress={() => setShowPassword(!showPassword)}
           >
             <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
               color={Colors.dark.textSecondary}
             />
@@ -184,12 +178,12 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>CONFIRM PASSWORD</Text>
+        <Text style={styles.inputLabel}>Confirm Password</Text>
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Confirm your password"
+            placeholder="Confirm password"
             placeholderTextColor={Colors.dark.textSecondary}
             value={confirmPassword}
             onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
@@ -200,7 +194,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
           >
             <Ionicons
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
+              name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
               size={20}
               color={Colors.dark.textSecondary}
             />
@@ -210,12 +204,12 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
 
       <View style={styles.stepNavigation}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={20} color={Colors.dark.textSecondary} />
+          <Ionicons name="arrow-back" size={16} color={Colors.dark.textSecondary} />
           <Text style={styles.backButtonText}>BACK</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>NEXT</Text>
-          <Ionicons name="arrow-forward" size={20} color={Colors.dark.background} />
+          <Text style={styles.nextButtonText}>CONTINUE</Text>
+          <Ionicons name="arrow-forward" size={16} color={Colors.dark.background} />
         </TouchableOpacity>
       </View>
     </View>
@@ -223,7 +217,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
 
   const renderStep3 = () => (
     <View>
-      <View style={styles.stepIndicator}>
+      <View style={styles.compactStepIndicator}>
         <View style={[styles.stepDot, styles.stepDotCompleted]} />
         <View style={[styles.stepLine, styles.stepLineCompleted]} />
         <View style={[styles.stepDot, styles.stepDotCompleted]} />
@@ -231,22 +225,19 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         <View style={[styles.stepDot, styles.stepDotActive]} />
       </View>
 
-      <Text style={styles.stepTitle}>Finalize Your Account</Text>
-      <Text style={styles.stepSubtitle}>Step 3 of 3: Terms & Preferences</Text>
+      <Text style={styles.compactStepTitle}>Terms</Text>
 
-      <View style={styles.termsContainer}>
-        <Text style={styles.termsTitle}>Legal Requirements</Text>
-
+      <View style={styles.compactTermsContainer}>
         <TouchableOpacity
           style={styles.checkboxContainer}
           onPress={() => setFormData({...formData, agreeToTerms: !agreeToTerms})}
         >
           <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
             {agreeToTerms && (
-              <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
+              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
             )}
           </View>
-          <Text style={styles.checkboxLabel}>I agree to the Terms of Service</Text>
+          <Text style={styles.checkboxLabel}>I agree to Terms of Service</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -255,10 +246,10 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         >
           <View style={[styles.checkbox, agreeToPrivacy && styles.checkboxChecked]}>
             {agreeToPrivacy && (
-              <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
+              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
             )}
           </View>
-          <Text style={styles.checkboxLabel}>I agree to the Privacy Policy</Text>
+          <Text style={styles.checkboxLabel}>I agree to Privacy Policy</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -267,19 +258,19 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         >
           <View style={[styles.checkbox, marketingConsent && styles.checkboxChecked]}>
             {marketingConsent && (
-              <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
+              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
             )}
           </View>
-          <Text style={styles.checkboxLabel}>I want to receive promotional emails</Text>
-          <Text style={styles.checkboxSubtext}>(Optional)</Text>
+          <Text style={styles.checkboxLabel}>
+            Marketing emails
+            <Text style={styles.optionalText}> (optional)</Text>
+          </Text>
         </TouchableOpacity>
       </View>
 
-    
-
       <View style={styles.stepNavigation}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={20} color={Colors.dark.textSecondary} />
+          <Ionicons name="arrow-back" size={16} color={Colors.dark.textSecondary} />
           <Text style={styles.backButtonText}>BACK</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -288,7 +279,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
           disabled={isLoading}
         >
           {isLoading ? (
-            <Text style={styles.signupButtonText}>Creating Account...</Text>
+            <Text style={styles.signupButtonText}>CREATING...</Text>
           ) : (
             <Text style={styles.signupButtonText}>CREATE ACCOUNT</Text>
           )}
@@ -300,9 +291,55 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
+        {/* Header */}
+        <View style={styles.sleekHeader}>
+          <View style={[styles.miniLogo, { backgroundColor: Colors.dark.tint }]}>
+            <Text style={styles.miniLogoText}>R</Text>
+          </View>
+          <Text style={[styles.headerTitle, { color: Colors.dark.text }]}>
+            Join the Rush
+          </Text>
+        </View>
+
+        {/* Login Link */}
+        <View style={styles.loginPrompt}>
+          <Text style={[styles.loginPromptText, { color: Colors.dark.textSecondary }]}>
+            Already have an account?{' '}
+          </Text>
+          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+            <Text style={[styles.loginPromptLink, { color: Colors.dark.tint }]}>
+              Sign In
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Form Content */}
+        <View style={styles.formContainer}>
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+        </View>
+
+        {/* Quick Signup */}
+        <View style={styles.quickSignupSection}>
+          <Text style={[styles.quickSignupLabel, { color: Colors.dark.textSecondary }]}>
+            Or continue with
+          </Text>
+          <View style={styles.quickSignupButtons}>
+            <TouchableOpacity
+              style={[styles.quickSignupButton, { backgroundColor: Colors.dark.cardElevated, borderColor: Colors.dark.border }]}
+              onPress={() => handleQuickSignup('Google')}
+            >
+              <Ionicons name="logo-google" size={18} color={Colors.dark.text} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.quickSignupButton, { backgroundColor: Colors.dark.cardElevated, borderColor: Colors.dark.border }]}
+              onPress={() => handleQuickSignup('Apple')}
+            >
+              <Ionicons name="logo-apple" size={18} color={Colors.dark.text} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -314,18 +351,69 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.background,
   },
   form: {
-    padding: 24,
+    flex: 1,
+    padding: Spacing.lg,
+    paddingTop: Spacing.xl,
   },
-  stepIndicator: {
+  sleekHeader: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  miniLogo: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+    ...Shadows.glow,
+  },
+  miniLogoText: {
+    ...Typography.title.medium,
+    fontSize: 20,
+    fontWeight: '900',
+    color: Colors.dark.background,
+    fontFamily: Fonts.display,
+  },
+  headerTitle: {
+    ...Typography.title.small,
+    textAlign: 'center',
+    fontFamily: Fonts.display,
+  },
+  loginPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  loginPromptText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  loginPromptLink: {
+    ...Typography.body.small,
+    fontWeight: '600',
+    color: Colors.dark.tint,
+  },
+  formContainer: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    marginBottom: Spacing.xl,
+    minHeight: 320,
+  },
+  compactStepIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 32,
+    marginBottom: Spacing.md,
   },
   stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.dark.border,
   },
   stepDotActive: {
@@ -335,148 +423,71 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.success,
   },
   stepLine: {
-    width: 32,
-    height: 2,
+    width: 20,
+    height: 1,
     backgroundColor: Colors.dark.border,
-    marginHorizontal: 8,
+    marginHorizontal: 4,
   },
   stepLineCompleted: {
     backgroundColor: Colors.dark.success,
   },
-  stepTitle: {
-    ...Typography.title.medium,
+  compactStepTitle: {
+    ...Typography.sectionHeader.small,
     color: Colors.dark.text,
     textAlign: 'center',
+    marginBottom: Spacing.lg,
     fontFamily: Fonts.display,
-    marginBottom: 4,
-  },
-  stepSubtitle: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
-    textAlign: 'center',
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: Spacing.md,
   },
   inputLabel: {
-    ...Typography.sectionHeader.small,
-    color: Colors.dark.textSecondary,
-    marginBottom: 8,
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    marginBottom: Spacing.xs,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
+    backgroundColor: Colors.dark.background,
+    borderRadius: BorderRadius.md,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    paddingHorizontal: 16,
+    paddingHorizontal: Spacing.sm,
   },
   inputIcon: {
-    marginRight: 12,
+    marginRight: Spacing.sm,
   },
   input: {
     flex: 1,
     ...Typography.body.medium,
     color: Colors.dark.text,
-    paddingVertical: 16,
+    paddingVertical: Spacing.sm,
   },
   passwordToggle: {
-    marginLeft: 12,
-    padding: 4,
+    padding: Spacing.xs,
   },
-  passwordRequirements: {
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-  },
-  requirementsTitle: {
-    ...Typography.body.small,
-    ...Typography.emphasis.small,
-    color: Colors.dark.text,
-    marginBottom: 12,
-  },
-  requirementItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  requirementText: {
-    ...Typography.body.small,
-    color: Colors.dark.text,
-    marginLeft: 8,
-  },
-  stepNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 16,
-    marginTop: 24,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: Colors.dark.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    gap: 8,
-  },
-  backButtonText: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.textSecondary,
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    backgroundColor: Colors.dark.tint,
-    borderRadius: 10,
-    gap: 8,
-    shadowColor: Colors.dark.tint,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  nextButtonText: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.background,
-    fontFamily: Fonts.bold,
-    letterSpacing: 1,
-  },
-  termsContainer: {
-    marginBottom: 24,
-    paddingVertical: 36
-  },
-  termsTitle: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.text,
-    marginBottom: 16,
+  compactTermsContainer: {
+    marginBottom: Spacing.md,
   },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: Spacing.sm,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
     borderColor: Colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
+    marginRight: Spacing.sm,
+    marginTop: 1,
   },
   checkboxChecked: {
     backgroundColor: Colors.dark.tint,
@@ -486,72 +497,89 @@ const styles = StyleSheet.create({
     ...Typography.body.small,
     color: Colors.dark.text,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
-  checkboxSubtext: {
-    ...Typography.body.small,
+  optionalText: {
     color: Colors.dark.textSecondary,
-    marginTop: 2,
-    marginLeft: 32,
+    fontWeight: '400',
   },
-  bonusContainer: {
-    backgroundColor: Colors.dark.warning + '15',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.dark.warning + '40',
+  stepNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.lg,
+    gap: Spacing.sm,
   },
-  bonusHeader: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.dark.card,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    gap: Spacing.xs,
   },
-  bonusTextContainer: {
+  backButtonText: {
+    ...Typography.body.small,
+    fontWeight: '600',
+    color: Colors.dark.textSecondary,
+  },
+  nextButton: {
     flex: 1,
-    marginLeft: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.dark.tint,
+    borderRadius: BorderRadius.md,
+    gap: Spacing.xs,
   },
-  bonusTitle: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.text,
-    fontFamily: Fonts.bold,
-  },
-  bonusSubtitle: {
+  nextButtonText: {
     ...Typography.body.small,
-    color: Colors.dark.text,
-    marginTop: 2,
-  },
-  bonusDetails: {
-    gap: 4,
-  },
-  bonusDetail: {
-    ...Typography.body.small,
-    color: Colors.dark.text,
-    paddingLeft: 36,
+    fontWeight: '600',
+    color: Colors.dark.background,
+    letterSpacing: 0.5,
   },
   signupButton: {
+    flex: 1,
     backgroundColor: Colors.dark.tint,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
-    shadowColor: Colors.dark.tint,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    minHeight: 56,
     justifyContent: 'center',
   },
   signupButtonDisabled: {
     backgroundColor: Colors.dark.textSecondary,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   signupButtonText: {
-    ...Typography.emphasis.medium,
+    ...Typography.body.small,
+    fontWeight: '600',
     color: Colors.dark.background,
-    fontFamily: Fonts.bold,
+    letterSpacing: 0.5,
+  },
+  quickSignupSection: {
+    alignItems: 'center',
+  },
+  quickSignupLabel: {
+    ...Typography.body.small,
+    marginBottom: Spacing.sm,
+    textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  quickSignupButtons: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  quickSignupButton: {
+    width: 50,
+    height: 50,
+    borderRadius: BorderRadius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
   },
 });
