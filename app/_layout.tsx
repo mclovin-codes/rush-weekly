@@ -14,6 +14,7 @@ import {
   BarlowCondensed_400Regular,
   BarlowCondensed_600SemiBold,
 } from '@expo-google-fonts/barlow-condensed';
+import { QueryProvider } from '@/providers/QueryProvider';
 
 
 export const unstable_settings = {
@@ -52,13 +53,16 @@ export default function RootLayout() {
 
   // Force dark theme as specified in README
   return (
+    <QueryProvider>
     <ThemeProvider value={DarkTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal'}}  />
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="light" />
     </ThemeProvider>
+    </QueryProvider>
   );
 }
