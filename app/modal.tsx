@@ -37,8 +37,12 @@ export default function BetSlipBottomSheet({
 
   const selectedOdds = selectedTeam === 'home' ? game?.moneyline?.home : game?.moneyline?.away;
   const selectedTeamName = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
-  const potentialWin = betAmount ? (parseFloat(betAmount) * selectedOdds)?.toFixed(0) : '0';
-  const potentialProfit = betAmount ? (parseFloat(betAmount) * selectedOdds - parseFloat(betAmount)).toFixed(0) : '0';
+  // Safety checks to prevent crashes
+  const betAmountNum = betAmount ? parseFloat(betAmount) : 0;
+  const selectedOddsNum = selectedOdds ? selectedOdds : 1; // Default to 1 if undefined
+
+  const potentialWin = betAmountNum && selectedOddsNum ? (betAmountNum * selectedOddsNum).toFixed(0) : '0';
+  const potentialProfit = betAmountNum && selectedOddsNum ? ((betAmountNum * selectedOddsNum) - betAmountNum).toFixed(0) : '0';
 
   const panResponder = useRef(
     PanResponder.create({
@@ -160,7 +164,7 @@ export default function BetSlipBottomSheet({
                   <Text style={styles.selectionTeam}>{selectedTeamName}</Text>
                 </View>
                 <View style={styles.oddsContainer}>
-                  <Text style={styles.oddsValue}>{selectedOdds.toFixed(2)}</Text>
+                  <Text style={styles.oddsValue}>{selectedOddsNum.toFixed(2)}</Text>
                 </View>
               </View>
             </View>
@@ -271,7 +275,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.display,
     color: Colors.dark.text,
   },
   closeButton: {
@@ -301,7 +305,7 @@ const styles = StyleSheet.create({
   },
   matchupText: {
     fontSize: 14,
-    fontFamily: Fonts.primary,
+    fontFamily: Fonts.bold,
     color: Colors.dark.text,
   },
   divider: {
@@ -324,7 +328,7 @@ const styles = StyleSheet.create({
   },
   selectionTeam: {
     fontSize: 18,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.text,
   },
   oddsContainer: {
@@ -369,12 +373,12 @@ const styles = StyleSheet.create({
   },
   inputUnit: {
     fontSize: 16,
-    fontFamily: Fonts.primaryMedium,
+    fontFamily: Fonts.medium,
     color: Colors.dark.icon,
   },
   balanceText: {
     fontSize: 13,
-    fontFamily: Fonts.primary,
+    fontFamily: Fonts.bold,
     color: Colors.dark.icon,
     marginTop: 8,
   },
@@ -395,7 +399,7 @@ const styles = StyleSheet.create({
   },
   quickButtonText: {
     fontSize: 16,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.text,
   },
   potentialWinCard: {
@@ -415,17 +419,17 @@ const styles = StyleSheet.create({
   },
   potentialLabel: {
     fontSize: 14,
-    fontFamily: Fonts.primaryMedium,
+    fontFamily: Fonts.bold,
     color: Colors.dark.icon,
   },
   potentialValue: {
     fontSize: 16,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.text,
   },
   profitValue: {
     fontSize: 16,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.success,
   },
   placeBetButton: {
@@ -440,7 +444,7 @@ const styles = StyleSheet.create({
   },
   placeBetButtonText: {
     fontSize: 17,
-    fontFamily: Fonts.primaryBold,
+    fontFamily: Fonts.bold,
     color: Colors.dark.background,
   },
 });

@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatLis
 import React, { useEffect, useRef, useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle } from "phosphor-react-native";
+import BetSlipBottomSheet from '@/app/modal';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -139,6 +140,16 @@ function PulsingText({ children, style }: { children: React.ReactNode; style?: a
 
 export default function HomeScreen() {
   const [selectedLeague, setSelectedLeague] = useState('NFL');
+  const [betSlipVisible, setBetSlipVisible] = useState(false);
+  const [selectedBet, setSelectedBet] = useState<{
+    game: any;
+    team: 'home' | 'away';
+  } | null>(null);
+
+  const handleCloseBetSlip = () => {
+    setBetSlipVisible(false);
+    setSelectedBet(null);
+  };
 
   return (
     <View style={styles.container}>
@@ -263,10 +274,17 @@ export default function HomeScreen() {
 
                 {/* Second Row: Moneyline with Visual Cues */}
                 <View style={styles.betRow}>
-                  <TouchableOpacity style={[
-                    styles.betCell,
-                    game.favorite === 'away' ? styles.favoriteCell : styles.underdogCell
-                  ]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.betCell,
+                      game.favorite === 'away' ? styles.favoriteCell : styles.underdogCell
+                    ]}
+                    onPress={() => {
+                      setSelectedBet({ game, team: 'away' });
+                      setBetSlipVisible(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
                     <View style={styles.betCellHeader}>
                       <Text style={[
                         styles.betCellLabel,
@@ -282,11 +300,18 @@ export default function HomeScreen() {
                       {game.awayML}
                     </Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity style={[
-                    styles.betCell,
-                    game.favorite === 'home' ? styles.favoriteCell : styles.underdogCell
-                  ]}>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.betCell,
+                      game.favorite === 'home' ? styles.favoriteCell : styles.underdogCell
+                    ]}
+                    onPress={() => {
+                      setSelectedBet({ game, team: 'home' });
+                      setBetSlipVisible(true);
+                    }}
+                    activeOpacity={0.8}
+                  >
                     <View style={styles.betCellHeader}>
                       <Text style={[
                         styles.betCellLabel,
@@ -310,6 +335,15 @@ export default function HomeScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Bet Slip Bottom Sheet */}
+      <BetSlipBottomSheet
+        visible={betSlipVisible}
+        onClose={handleCloseBetSlip}
+        game={selectedBet?.game}
+        selectedTeam={selectedBet?.team || 'home'}
+        userUnits={mockUser.units}
+      />
     </View>
   );
 }

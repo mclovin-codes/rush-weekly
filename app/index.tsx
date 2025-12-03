@@ -3,6 +3,7 @@ import { Redirect, router } from "expo-router";
 import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Typography, Spacing, BorderRadius, Shadows } from "@/constants/theme";
+import HomeScreenSkeleton from "@/components/homeskeleton";
 
 export default function WelcomeScreen() {
   const { data: session, isPending } = authClient.useSession();
@@ -15,7 +16,7 @@ export default function WelcomeScreen() {
   if (isPending) {
     return (
       <View style={[styles.container]}>
-        <ActivityIndicator color={tint as string} size="large" />
+        <HomeScreenSkeleton/>
       </View>
     );
   }
