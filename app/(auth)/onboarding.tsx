@@ -62,14 +62,13 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       });
     } else {
       // Complete onboarding
-      onComplete();
+   
       // Redirect to tabs index page
       router.replace('/(app)/(tabs)');
     }
   };
 
   const handleSkip = () => {
-    onComplete();
     // Redirect to tabs index page
     router.replace('/(app)/(tabs)');
   };

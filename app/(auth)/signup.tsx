@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -15,75 +15,37 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
     username: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    agreeToTerms: false,
-    agreeToPrivacy: false,
-    marketingConsent: false,
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const { username, email, password, confirmPassword, agreeToTerms, agreeToPrivacy, marketingConsent } = formData;
-
-  const handleNext = () => {
-    if (step === 1) {
-      if (!username || !email) {
-        Alert.alert('Validation Error', 'Please enter both username and email');
-        return;
-      }
-      if (!email.includes('@')) {
-        Alert.alert('Validation Error', 'Please enter a valid email address');
-        return;
-      }
-      if (username.length < 3) {
-        Alert.alert('Validation Error', 'Username must be at least 3 characters');
-        return;
-      }
-      setStep(2);
-    } else if (step === 2) {
-      if (!password || !confirmPassword) {
-        Alert.alert('Validation Error', 'Please enter and confirm your password');
-        return;
-      }
-      if (password.length < 8) {
-        Alert.alert('Validation Error', 'Password must be at least 8 characters');
-        return;
-      }
-      if (password !== confirmPassword) {
-        Alert.alert('Validation Error', 'Passwords do not match');
-        return;
-      }
-      setStep(3);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
+  const { username, email, password } = formData;
 
   const handleSignup = async () => {
-    if (!username || !email || !password || !confirmPassword) {
-      Alert.alert('Validation Error', 'Please fill in all required fields');
+    if (!username || !email || !password) {
+      Alert.alert('Required', 'Please fill in all fields');
       return;
     }
 
     if (!email.includes('@')) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Validation Error', 'Passwords do not match');
+    if (username.length < 3) {
+      Alert.alert('Invalid Username', 'Username must be at least 3 characters');
       return;
     }
 
-    if (!agreeToTerms || !agreeToPrivacy) {
-      Alert.alert('Validation Error', 'Please agree to Terms of Service and Privacy Policy');
+    if (password.length < 8) {
+      Alert.alert('Invalid Password', 'Password must be at least 8 characters');
+      return;
+    }
+
+    if (!agreedToTerms) {
+      Alert.alert('Terms Required', 'Please agree to the Terms of Service');
       return;
     }
 
@@ -96,13 +58,11 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
       });
 
       if (error) {
-        Alert.alert('Signup Error', error.message || 'Failed to create account');
+        Alert.alert('Signup Failed', error.message || 'Failed to create account');
         return;
       }
 
       if (authData) {
-        console.log('Signup successful', authData);
-        // Navigate to main app or call callback
         if (onSignupComplete) {
           onSignupComplete();
         } else {
@@ -111,260 +71,134 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
       }
     } catch (err) {
       console.error('Signup error:', err);
-      Alert.alert('Signup Error', 'An unexpected error occurred');
+      Alert.alert('Error', 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleQuickSignup = (provider: string) => {
-    Alert.alert('Quick Signup', `Signup with ${provider} feature coming soon`);
-  };
-
-const renderStep1 = () => (
-    <View>
-      <View style={styles.compactStepIndicator}>
-        <View style={[styles.stepDot, styles.stepDotActive]} />
-        <View style={styles.stepLine} />
-        <View style={[styles.stepDot]} />
-        <View style={styles.stepLine} />
-        <View style={[styles.stepDot]} />
-      </View>
-
-      <Text style={styles.compactStepTitle}>Basic Info</Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Username</Text>
-        <View style={styles.inputContainer}>
-          <Ionicons name="person-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Choose a username"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={username}
-            onChangeText={(text) => setFormData({...formData, username: text})}
-            autoCapitalize="none"
-            autoComplete="username"
-          />
-        </View>
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Email</Text>
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Your email address"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={email}
-            onChangeText={(text) => setFormData({...formData, email: text})}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-        </View>
-      </View>
-
-      <View style={styles.stepNavigation}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>CONTINUE</Text>
-          <Ionicons name="arrow-forward" size={16} color={Colors.dark.background} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderStep2 = () => (
-    <View>
-      <View style={styles.compactStepIndicator}>
-        <View style={[styles.stepDot, styles.stepDotCompleted]} />
-        <View style={[styles.stepLine, styles.stepLineCompleted]} />
-        <View style={[styles.stepDot, styles.stepDotActive]} />
-        <View style={styles.stepLine} />
-        <View style={[styles.stepDot]} />
-      </View>
-
-      <Text style={styles.compactStepTitle}>Security</Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Password</Text>
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Create password"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={password}
-            onChangeText={(text) => setFormData({...formData, password: text})}
-            secureTextEntry={!showPassword}
-            autoComplete="password"
-          />
-          <TouchableOpacity
-            style={styles.passwordToggle}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
-              color={Colors.dark.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.inputLabel}>Confirm Password</Text>
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.textSecondary} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm password"
-            placeholderTextColor={Colors.dark.textSecondary}
-            value={confirmPassword}
-            onChangeText={(text) => setFormData({...formData, confirmPassword: text})}
-            secureTextEntry={!showConfirmPassword}
-          />
-          <TouchableOpacity
-            style={styles.passwordToggle}
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <Ionicons
-              name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={20}
-              color={Colors.dark.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.stepNavigation}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={16} color={Colors.dark.textSecondary} />
-          <Text style={styles.backButtonText}>BACK</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>CONTINUE</Text>
-          <Ionicons name="arrow-forward" size={16} color={Colors.dark.background} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderStep3 = () => (
-    <View>
-      <View style={styles.compactStepIndicator}>
-        <View style={[styles.stepDot, styles.stepDotCompleted]} />
-        <View style={[styles.stepLine, styles.stepLineCompleted]} />
-        <View style={[styles.stepDot, styles.stepDotCompleted]} />
-        <View style={[styles.stepLine, styles.stepLineCompleted]} />
-        <View style={[styles.stepDot, styles.stepDotActive]} />
-      </View>
-
-      <Text style={styles.compactStepTitle}>Terms</Text>
-
-      <View style={styles.compactTermsContainer}>
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => setFormData({...formData, agreeToTerms: !agreeToTerms})}
-        >
-          <View style={[styles.checkbox, agreeToTerms && styles.checkboxChecked]}>
-            {agreeToTerms && (
-              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
-            )}
-          </View>
-          <Text style={styles.checkboxLabel}>I agree to Terms of Service</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => setFormData({...formData, agreeToPrivacy: !agreeToPrivacy})}
-        >
-          <View style={[styles.checkbox, agreeToPrivacy && styles.checkboxChecked]}>
-            {agreeToPrivacy && (
-              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
-            )}
-          </View>
-          <Text style={styles.checkboxLabel}>I agree to Privacy Policy</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.checkboxContainer}
-          onPress={() => setFormData({...formData, marketingConsent: !marketingConsent})}
-        >
-          <View style={[styles.checkbox, marketingConsent && styles.checkboxChecked]}>
-            {marketingConsent && (
-              <Ionicons name="checkmark" size={12} color={Colors.dark.background} />
-            )}
-          </View>
-          <Text style={styles.checkboxLabel}>
-            Marketing emails
-            <Text style={styles.optionalText}> (optional)</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.stepNavigation}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={16} color={Colors.dark.textSecondary} />
-          <Text style={styles.backButtonText}>BACK</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.signupButton, isLoading && styles.signupButtonDisabled]}
-          onPress={handleSignup}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Text style={styles.signupButtonText}>CREATING...</Text>
-          ) : (
-            <Text style={styles.signupButtonText}>CREATE ACCOUNT</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.form}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Header */}
-        <View style={{height: 100}}></View>
-        <View style={styles.sleekHeader}>
-          <View style={[styles.miniLogo, { backgroundColor: Colors.dark.tint }]}>
-            <Text style={styles.miniLogoText}>R</Text>
+        <View style={styles.header}>
+          <View style={styles.logoCircle}>
+            <Text style={styles.logoText}>R</Text>
           </View>
-          <Text style={[styles.headerTitle, { color: Colors.dark.text }]}>
-            Join the Rush
-          </Text>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join RUSH and start competing</Text>
         </View>
 
-        
+        {/* Form */}
+        <View style={styles.form}>
+          {/* Username */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Username</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="person-outline" size={20} color={Colors.dark.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder="Choose a username"
+                placeholderTextColor={Colors.dark.textSecondary}
+                value={username}
+                onChangeText={(text) => setFormData({...formData, username: text})}
+                autoCapitalize="none"
+                autoComplete="username"
+              />
+            </View>
+          </View>
 
-        {/* Form Content */}
-        <View style={styles.formContainer}>
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-        </View>
+          {/* Email */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={20} color={Colors.dark.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder="your@email.com"
+                placeholderTextColor={Colors.dark.textSecondary}
+                value={email}
+                onChangeText={(text) => setFormData({...formData, email: text})}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
+          </View>
 
-        {/* Login Link - polished */}
-        <View style={styles.polishedLoginPrompt}>
-          <Text style={[styles.polishedLoginText, { color: Colors.dark.textSecondary }]}>
-            Already have an account?
-          </Text>
+          {/* Password */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.textSecondary} />
+              <TextInput
+                style={styles.input}
+                placeholder="At least 8 characters"
+                placeholderTextColor={Colors.dark.textSecondary}
+                value={password}
+                onChangeText={(text) => setFormData({...formData, password: text})}
+                secureTextEntry={!showPassword}
+                autoComplete="password"
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={Colors.dark.textSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Terms Checkbox */}
           <TouchableOpacity
-            style={styles.polishedLoginButton}
-            onPress={() => router.push("/(auth)/login")}
+            style={styles.termsContainer}
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+            activeOpacity={0.7}
           >
-            <Text style={[styles.polishedLoginLink, { color: Colors.dark.background }]}>
-              Sign In
+            <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+              {agreedToTerms && (
+                <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
+              )}
+            </View>
+            <Text style={styles.termsText}>
+              I agree to the{' '}
+              <Text style={styles.termsLink}>Terms of Service</Text>
+              {' '}and{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
             </Text>
           </TouchableOpacity>
-        </View>
 
-       
-      </View>
-    </ScrollView>
+          {/* Signup Button */}
+          <TouchableOpacity
+            style={[styles.signupButton, isLoading && styles.signupButtonDisabled]}
+            onPress={handleSignup}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.signupButtonText}>
+              {isLoading ? 'Creating Account...' : 'Create Account'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Login Link */}
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+              <Text style={styles.loginLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -373,259 +207,146 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
-  form: {
+  scrollView: {
     flex: 1,
-    padding: Spacing.lg,
-    paddingTop: Spacing.xl,
   },
-  sleekHeader: {
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 40,
+  },
+
+  // Header
+  header: {
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: 48,
   },
-  miniLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: BorderRadius.full,
+  logoCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.dark.tint,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: 20,
     ...Shadows.glow,
   },
-  miniLogoText: {
-    ...Typography.title.medium,
-    fontSize: 20,
+  logoText: {
+    ...Typography.title.large,
+    fontSize: 32,
     fontWeight: '900',
     color: Colors.dark.background,
     fontFamily: Fonts.display,
   },
-  headerTitle: {
-    ...Typography.title.small,
-    textAlign: 'center',
-    fontFamily: Fonts.display,
-  },
-  loginPrompt: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
-  polishedLoginPrompt: {
-    alignItems: 'center',
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.lg,
-  },
-  polishedLoginText: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
-    marginBottom: Spacing.sm,
-  },
-  polishedLoginButton: {
-    backgroundColor: Colors.dark.tint,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
-    ...Shadows.pillGlow,
-  },
-  polishedLoginLink: {
-    ...Typography.body.small,
-    fontWeight: '600',
-    color: Colors.dark.background,
-  },
-  formContainer: {
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    marginBottom: Spacing.xl,
-    minHeight: 320,
-  },
-  compactStepIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  stepDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.dark.border,
-  },
-  stepDotActive: {
-    backgroundColor: Colors.dark.tint,
-  },
-  stepDotCompleted: {
-    backgroundColor: Colors.dark.success,
-  },
-  stepLine: {
-    width: 20,
-    height: 1,
-    backgroundColor: Colors.dark.border,
-    marginHorizontal: 4,
-  },
-  stepLineCompleted: {
-    backgroundColor: Colors.dark.success,
-  },
-  compactStepTitle: {
-    ...Typography.sectionHeader.small,
+  title: {
+    ...Typography.title.large,
     color: Colors.dark.text,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
     fontFamily: Fonts.display,
+    marginBottom: 8,
+  },
+  subtitle: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+  },
+
+  // Form
+  form: {
+    gap: 20,
   },
   inputGroup: {
-    marginBottom: Spacing.md,
+    gap: 8,
   },
-  inputLabel: {
+  label: {
     ...Typography.body.small,
     color: Colors.dark.text,
-    marginBottom: Spacing.sm,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
-  inputContainer: {
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.dark.background,
-    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.dark.card,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    height: 44,
-  },
-  inputIcon: {
-    marginRight: Spacing.sm,
+    paddingHorizontal: 16,
+    height: 52,
+    gap: 12,
   },
   input: {
     flex: 1,
     ...Typography.body.medium,
     color: Colors.dark.text,
-    paddingVertical: Spacing.xs,
+    height: '100%',
   },
-  passwordToggle: {
-    padding: Spacing.xs,
-  },
-  compactTermsContainer: {
-    marginBottom: Spacing.md,
-  },
-  checkboxContainer: {
+
+  // Terms
+  termsContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: Spacing.sm,
+    gap: 12,
+    marginTop: 4,
   },
   checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 2,
     borderColor: Colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.sm,
-    marginTop: 1,
+    marginTop: 2,
   },
   checkboxChecked: {
     backgroundColor: Colors.dark.tint,
     borderColor: Colors.dark.tint,
   },
-  checkboxLabel: {
+  termsText: {
     ...Typography.body.small,
-    color: Colors.dark.text,
-    flex: 1,
-    lineHeight: 16,
-  },
-  optionalText: {
     color: Colors.dark.textSecondary,
-    fontWeight: '400',
+    flex: 1,
+    lineHeight: 20,
   },
-  stepNavigation: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    backgroundColor: Colors.dark.card,
-    borderRadius: BorderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    gap: Spacing.xs,
-  },
-  backButtonText: {
-    ...Typography.body.small,
+  termsLink: {
+    color: Colors.dark.tint,
     fontWeight: '600',
-    color: Colors.dark.textSecondary,
   },
-  nextButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: Colors.dark.tint,
-    height: 56,
-    gap: Spacing.sm,
-    ...Shadows.pillGlow,
-  },
-  nextButtonText: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.background,
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: Fonts.bold,
-  },
+
+  // Buttons
   signupButton: {
-    flex: 1,
     backgroundColor: Colors.dark.tint,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.xl,
+    borderRadius: 12,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
+    marginTop: 8,
     ...Shadows.pillGlow,
   },
   signupButtonDisabled: {
     backgroundColor: Colors.dark.textSecondary,
-    shadowOpacity: 0,
-    elevation: 0,
+    opacity: 0.6,
   },
   signupButtonText: {
     ...Typography.emphasis.medium,
     color: Colors.dark.background,
-    fontSize: 18,
     fontWeight: '700',
-    fontFamily: Fonts.bold,
+    fontSize: 16,
   },
-  quickSignupSection: {
-    alignItems: 'center',
-  },
-  quickSignupLabel: {
-    ...Typography.body.small,
-    marginBottom: Spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  quickSignupButtons: {
+
+  // Login Link
+  loginContainer: {
     flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  quickSignupButton: {
-    width: 50,
-    height: 50,
-    borderRadius: BorderRadius.full,
-    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  loginText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  loginLink: {
+    ...Typography.body.small,
+    color: Colors.dark.tint,
+    fontWeight: '600',
   },
 });
