@@ -15,28 +15,28 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   const onboardingSteps = [
     {
-      icon: 'analytics',
+      icon: 'people',
       title: 'Welcome to RUSH',
-      description: 'Professional sports betting with real-time analytics and expert insights.',
-      details: ['Live betting odds', 'Expert predictions', 'Advanced analytics', 'Real-time updates'],
+      description: 'A fantasy sports betting experience where you compete in weekly pools—no real money wagered.',
+      details: ['100 virtual credits to start', 'Weekly pool competitions', 'Bet on spreads, moneylines & totals', 'No financial risk'],
     },
     {
-      icon: 'trophy',
-      title: 'Compete & Win',
-      description: 'Join weekly competitions and compete against other sports enthusiasts.',
-      details: ['Weekly contests', 'Prize pools', 'Leaderboards', 'Achievement system'],
+      icon: 'shuffle',
+      title: 'Weekly Pool System',
+      description: 'Every week, you\'re placed into a new randomized pool of ~100 players.',
+      details: ['Fresh competition each week', 'Equal starting credits for all', 'Climb the leaderboard', 'Top performers earn rewards'],
     },
     {
-      icon: 'wallet',
-      title: 'Manage Your Bankroll',
-      description: 'Professional tools to manage your betting strategy and track performance.',
-      details: ['Budget management', 'Performance tracking', 'Betting history', 'Risk analysis'],
+      icon: 'podium',
+      title: 'Compete & Rank Up',
+      description: 'Make smart bets to grow your credits and outperform others in your pool.',
+      details: ['Real-time odds from sports API', 'Track your pool ranking', 'Weekly leaderboards', 'Strategic betting wins'],
     },
     {
       icon: 'shield-checkmark',
-      title: 'Safe & Secure',
-      description: 'Enterprise-grade security with responsible gaming tools built-in.',
-      details: ['SSL encryption', 'Data protection', 'Responsible gaming', '24/7 support'],
+      title: 'Safe & Social',
+      description: 'Pure fantasy gaming with all the excitement of sports betting, zero financial risk.',
+      details: ['No real money wagered', 'Virtual credits only', 'Social competition', 'Legal & responsible'],
     },
   ];
 
@@ -62,7 +62,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       });
     } else {
       // Complete onboarding
-      // onComplete();
+      onComplete();
       // Redirect to tabs index page
       router.replace('/(app)/(tabs)');
     }
@@ -71,7 +71,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const handleSkip = () => {
     onComplete();
     // Redirect to tabs index page
-    router.replace('/(tabs)');
+    router.replace('/(app)/(tabs)');
   };
 
   const currentStepData = onboardingSteps[currentStep];

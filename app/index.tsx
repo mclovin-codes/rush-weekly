@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
 
   if (isPending) {
     return (
-      <View style={[styles.container, { backgroundColor }]}>
+      <View style={[styles.container]}>
         <ActivityIndicator color={tint as string} size="large" />
       </View>
     );
@@ -36,11 +36,30 @@ export default function WelcomeScreen() {
           </View>
 
           <Text style={[styles.tagline, { color: textColor as string }]}>
-            Sports Betting{'\n'}Reimagined
+            Fantasy Sports Betting{'\n'}No Risk, All Thrill
+          </Text>
+
+          <Text style={[styles.subtitle, { color: textColor as string }]}>
+            Compete in weekly pools with virtual credits.{'\n'}
+            No real money. Pure competition.
           </Text>
         </View>
 
-       
+        {/* Feature Pills */}
+        <View style={styles.features}>
+          <View style={[styles.featurePill, { backgroundColor: tint as string + '20' }]}>
+            <Text style={[styles.featureText, { color: tint as string }]}>100 Credits Weekly</Text>
+          </View>
+          <View style={[styles.featurePill, { backgroundColor: tint as string + '20' }]}>
+            <Text style={[styles.featureText, { color: tint as string }]}>~100 Player Pools</Text>
+          </View>
+          <View style={[styles.featurePill, { backgroundColor: tint as string + '20' }]}>
+            <Text style={[styles.featureText, { color: tint as string }]}>Real Odds</Text>
+          </View>
+          <View style={[styles.featurePill, { backgroundColor: tint as string + '20' }]}>
+            <Text style={[styles.featureText, { color: tint as string }]}>Zero Risk</Text>
+          </View>
+        </View>
       </View>
 
       {/* Bottom Action Section */}
@@ -85,7 +104,7 @@ const styles = StyleSheet.create({
   },
   brandSection: {
     alignItems: 'center',
-    marginBottom: Spacing['3xl'],
+    marginBottom: Spacing['2xl'],
   },
   logoContainer: {
     width: 120,
@@ -104,8 +123,15 @@ const styles = StyleSheet.create({
   tagline: {
     ...Typography.title.medium,
     textAlign: 'center',
-    lineHeight: 44,
+    lineHeight: 40,
     marginTop: Spacing.md,
+  },
+  subtitle: {
+    ...Typography.body.medium,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginTop: Spacing.lg,
+    opacity: 0.8,
   },
   features: {
     flexDirection: 'row',
@@ -113,6 +139,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.sm,
     marginTop: Spacing.xl,
+    paddingHorizontal: Spacing.md,
   },
   featurePill: {
     paddingHorizontal: Spacing.md,

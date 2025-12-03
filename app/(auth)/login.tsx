@@ -6,11 +6,7 @@ import { router } from 'expo-router';
 import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
 
-interface LoginScreenProps {
-  onForgotPassword: () => void;
-}
-
-export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -127,7 +123,7 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
             </View>
             <Text style={styles.checkboxLabel}>Remember me</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={onForgotPassword}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
             <Text style={styles.forgotPasswordText}>Forgot password?</Text>
           </TouchableOpacity>
         </View>
