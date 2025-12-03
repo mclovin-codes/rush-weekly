@@ -2,31 +2,62 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView 
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-
+import { authClient } from "@/lib/auth-client";
 import { Colors, Fonts, Typography } from '@/constants/theme';
+// import { authClient } from '@/lib/auth-client'; // TODO: Uncomment when ready to integrate
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
-  const handleSendResetLink = () => {
-    if (!email) {
+  const handleSendResetLink = async () => {
+    if (!email.trim()) {
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
 
-    if (!email.includes('@')) {
+    // Enhanced email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+
+    try {
+      console.log('Password reset requested for:', email.trim());
+
+      const { data, error } = await (authClient as any).forgotPassword({
+        email: email.trim(),
+        redirectTo: '/reset-password'
+      });
+
+      if (error) {
+        console.error('Forgot password error:', error);
+        Alert.alert(
+          'Error',
+          error.message || 'Failed to send reset link. Please try again.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      if (data) {
+        console.log('Reset link sent successfully:', data);
+        setEmailSent(true);
+      }
+    } catch (err) {
+      console.error('Unexpected forgot password error:', err);
+      Alert.alert(
+        'Error',
+        'An unexpected error occurred. Please try again later.',
+        [{ text: 'OK' }]
+      );
+    } finally {
       setIsLoading(false);
-      setEmailSent(true);
-    }, 1500);
+    }
   };
 
   if (emailSent) {
@@ -38,10 +69,12 @@ export default function ForgotPasswordScreen() {
               <Ionicons name="checkmark-circle" size={64} color={Colors.dark.success} />
             </View>
 
-            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.title}>Reset Link Sent!</Text>
             <Text style={styles.subtitle}>
               We&apos;ve sent a password reset link to{'\n'}
               <Text style={styles.emailHighlight}>{email}</Text>
+              {'\n\n'}
+              Check your inbox and spam folder. The link will expire in 1 hour for security.
             </Text>
 
             <TouchableOpacity
@@ -56,6 +89,16 @@ export default function ForgotPasswordScreen() {
               onPress={() => setEmailSent(false)}
             >
               <Text style={styles.linkText}>Try different email</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={handleSendResetLink}
+              disabled={isLoading}
+            >
+              <Text style={styles.linkText}>
+                {isLoading ? 'SENDING...' : 'RESEND LINK'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

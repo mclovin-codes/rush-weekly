@@ -39,7 +39,7 @@ export default function LoginScreen() {
       if (authData) {
         console.log('Login successful', authData);
         // Navigate to main app or home screen
-        router.replace('/(tabs)');
+        router.replace('/(app)/(tabs)');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -49,9 +49,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleQuickLogin = (provider: string) => {
-    Alert.alert('Quick Login', `Login with ${provider} feature coming soon`);
-  };
 
   return (
     <View style={styles.container}>
