@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 
@@ -61,12 +62,16 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       });
     } else {
       // Complete onboarding
-      onComplete();
+      // onComplete();
+      // Redirect to tabs index page
+      router.replace('/(app)/(tabs)');
     }
   };
 
   const handleSkip = () => {
     onComplete();
+    // Redirect to tabs index page
+    router.replace('/(tabs)');
   };
 
   const currentStepData = onboardingSteps[currentStep];

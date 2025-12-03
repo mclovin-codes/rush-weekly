@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { authClient } from "@/lib/auth-client";
 
 interface LoginScreenProps {
   onForgotPassword: () => void;
@@ -16,7 +17,7 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Validation Error', 'Please enter both email and password');
       return;
@@ -28,12 +29,28 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
     }
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      const { data: authData, error } = await authClient.signIn.email({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        Alert.alert('Login Error', error.message || 'Failed to sign in');
+        return;
+      }
+
+      if (authData) {
+        console.log('Login successful', authData);
+        // Navigate to main app or home screen
+        router.replace('/(tabs)');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      Alert.alert('Login Error', 'An unexpected error occurred');
+    } finally {
       setIsLoading(false);
-      // Handle successful login
-      console.log('Login successful');
-    }, 2000);
+    }
   };
 
   const handleQuickLogin = (provider: string) => {

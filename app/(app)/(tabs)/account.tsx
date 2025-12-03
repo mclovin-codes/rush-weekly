@@ -4,9 +4,12 @@ import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
+import { authClient } from "@/lib/auth-client";
+
 
 export default function AccountScreen() {
   const router = useRouter();
+  const { data: session, isPending } = authClient.useSession();
   const [notifications, setNotifications] = useState({
     newWeek: true,
     gameResults: true,
@@ -27,8 +30,23 @@ export default function AccountScreen() {
   const currentPlan = 'Weekly Pass';
   const renewalDate = 'Monday, Nov 30';
   const daysUntilRenewal = 3;
-  const planPrice = '$299';
+  const planPrice = '$25';
   const planBenefits = ['Full competition access', 'Unlimited bets', 'Prize eligibility', 'Premium features'];
+
+  const signOut = async () => {
+    try {
+      // Sign out from better-auth
+      await authClient.signOut();
+
+      
+
+      // Navigate to auth screen
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error("Sign out error:", error);
+      Alert.alert("Error", "Failed to sign out. Please try again.");
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -42,10 +60,7 @@ export default function AccountScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            // Navigate to auth screen
-            router.replace('/auth');
-          },
+          onPress: signOut,
         },
       ]
     );

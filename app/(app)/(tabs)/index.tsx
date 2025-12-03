@@ -1,276 +1,314 @@
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Animated,
-  Easing,
-} from "react-native";
-import React, { useState, useRef, useEffect } from "react";
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Colors, Fonts, Typography } from '@/constants/theme';
+import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle } from "phosphor-react-native";
 
-import { mockGames, mockFilters } from "@/constants/mock-data";
-import { Colors, Fonts } from "@/constants/theme";
-import GameCard from "@/components/game-card";
-import BetSlipBottomSheet from "@/app/modal";
+// League data with text-based icon representations
+const getLeagueSymbol = (sportID: string) => {
+  switch (sportID) {
+    case "BASEBALL": return <Baseball size={22} weight="duotone" />;
+    case "BASKETBALL": return <Basketball size={22} weight="duotone" />;
+    case "FOOTBALL": return <Football size={22} weight="duotone" />;
+    case "HOCKEY": return <Hockey size={22} weight="duotone" />;
+    case "SOCCER": return <SoccerBall size={22} weight="duotone" />;
+    default: return <XCircle size={22} weight="duotone" />;
+  }
+};
 
-export default function HomeScreen() {
-  const [selectedFilter, setSelectedFilter] = useState("All");
+const leagues = [
+  { sportID: 'BASEBALL', leagueID: 'MLB', enabled: true, name: 'MLB', shortName: 'MLB' },
+  { sportID: 'SOCCER', leagueID: 'MLS', enabled: true, name: 'MLS', shortName: 'MLS' },
+  { sportID: 'BASKETBALL', leagueID: 'NBA', enabled: true, name: 'NBA', shortName: 'NBA' },
+  { sportID: 'BASKETBALL', leagueID: 'NCAAB', enabled: true, name: 'College Basketball', shortName: 'CBB' },
+  { sportID: 'FOOTBALL', leagueID: 'NCAAF', enabled: true, name: 'College Football', shortName: 'CFB' },
+  { sportID: 'FOOTBALL', leagueID: 'NFL', enabled: true, name: 'NFL', shortName: 'NFL' },
+  { sportID: 'HOCKEY', leagueID: 'NHL', enabled: true, name: 'NHL', shortName: 'NHL' },
+  { sportID: 'SOCCER', leagueID: 'UEFA_CHAMPIONS_LEAGUE', enabled: true, name: 'Champions League', shortName: 'UCL' },
+];
+
+// Mock data
+const mockUser = {
+  username: 'Player123',
+  units: 980,
+  unitsChange: 20,
+  rank: 23,
+};
+
+const mockLeaderboardPreview = [
+  { rank: 1, username: 'ChampionPlayer', units: 2450 },
+  { rank: 2, username: 'SecondPlace', units: 2380 },
+  { rank: 3, username: 'ThirdPlace', units: 2310 },
+];
+
+const mockGames = [
+  {
+    id: '1',
+    date: 'Tomorrow',
+    time: 'Thu 8:15pm',
+    awayTeam: 'DET Lions',
+    awayTeamAbbr: 'DET',
+    homeTeam: 'DAL Cowboys',
+    homeTeamAbbr: 'DAL',
+    spread: '+3',
+    total: '54.5',
+    favorite: 'away',
+    awayML: '-170',
+    homeML: '+142',
+  },
+  {
+    id: '2',
+    date: 'Sun 7 Dec',
+    time: 'Sun 1:00pm',
+    awayTeam: 'TB Buccaneers',
+    awayTeamAbbr: 'TB',
+    homeTeam: 'NO Saints',
+    homeTeamAbbr: 'NO',
+    spread: '-8.5',
+    total: '42.5',
+    favorite: 'away',
+    awayML: '-440',
+    homeML: '+340',
+  },
+];
+
+// Pulsing glow animation component
+function PulsingText({ children, style }: { children: React.ReactNode; style?: any }) {
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [betSlipVisible, setBetSlipVisible] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<{
-    game: any;
-    team: "home" | "away";
-  } | null>(null);
-  const [countdown, setCountdown] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(shimmerAnim, {
-        toValue: 1,
-        duration: 1500,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
-  const shimmerTranslate = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-300, 300],
-  });
-  const [weeklyChange, setWeeklyChange] = useState(-20);
-
-  // Mock user data
-  const userUnits = 980;
-
-  // Mock leaderboard data - just top 3
-  const userRank = 47; // User's current position
-  const topLeaders = [
-    { name: "Alex", units: 2450 },
-    { name: "Sarah", units: 1890 },
-    { name: "Mike", units: 1420 },
-  ];
-
-  // Calculate countdown to Monday 00:00 CET
-  const calculateCountdown = () => {
-    const now = new Date();
-
-    // Get Monday of next week at 00:00 CET (Central European Time)
-    const daysUntilMonday = (8 - now.getDay()) % 7 || 7; // Get days until next Monday (1-7)
-    const nextMonday = new Date(now);
-    nextMonday.setDate(now.getDate() + daysUntilMonday);
-    nextMonday.setHours(0, 0, 0, 0);
-
-    // Convert CET to UTC (CET is UTC+1, but we need to handle daylight saving)
-    const cetOffset = 1; // Standard CET offset
-    const nextMondayUTC = new Date(
-      nextMonday.getTime() - cetOffset * 60 * 60 * 1000
-    );
-
-    const difference = nextMondayUTC.getTime() - now.getTime();
-
-    if (difference > 0) {
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-      setCountdown({ days, hours, minutes, seconds });
-    }
-  };
-
-  // Countdown effect
-  useEffect(() => {
-    calculateCountdown();
-    const interval = setInterval(calculateCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Pulse animation for live indicator
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.3,
+            duration: 1200,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: false,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0.7,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 1,
+            duration: 1200,
+            useNativeDriver: true,
+          }),
+        ]),
       ])
     ).start();
-  }, [pulseAnim]);
+  }, []);
 
-  const filteredGames = mockGames.filter((game) => {
-    if (selectedFilter === "All") return true;
-    if (selectedFilter === "Live Now") return game.isLive;
-    if (selectedFilter === "Today") {
-      const today = new Date();
-      return game.startTime.toDateString() === today.toDateString();
-    }
-    if (selectedFilter === "Tomorrow") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return game.startTime.toDateString() === tomorrow.toDateString();
-    }
-    if (selectedFilter === "Soccer") return game.sport === "Soccer";
-    if (selectedFilter === "Basketball") return game.sport === "Basketball";
-    if (selectedFilter === "Football") return game.sport === "Football";
-    return true;
-  });
+  return (
+    <Animated.View
+      style={{
+        shadowColor: Colors.dark.tint,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: pulseAnim.interpolate({
+          inputRange: [1, 1.3],
+          outputRange: [0.3, 0.8],
+        }),
+        shadowRadius: pulseAnim.interpolate({
+          inputRange: [1, 1.3],
+          outputRange: [8, 20],
+        }),
+        elevation: 10,
+      }}
+    >
+      <Animated.Text
+        style={[
+          style,
+          {
+            opacity: opacityAnim,
+          },
+        ]}
+      >
+        {children}
+      </Animated.Text>
+    </Animated.View>
+  );
+}
 
-  const handleGamePress = (game: any) => {
-    setSelectedBet({ game, team: "home" }); // Set both game and default team
-    setBetSlipVisible(true);
-  };
-
-  const handleOddsPress = (team: "home" | "away", game: any) => {
-    setSelectedBet({ game, team });
-    setBetSlipVisible(true);
-  };
-
-  const handleCloseBetSlip = () => {
-    setBetSlipVisible(false);
-    setSelectedBet(null);
-  };
+export default function HomeScreen() {
+  const [selectedLeague, setSelectedLeague] = useState('NFL');
 
   return (
     <View style={styles.container}>
-      {/* Header Section */}
+      {/* Header with User Info */}
       <View style={styles.header}>
-        {/* App Name */}
-        <Text style={styles.appName}>RUSH</Text>
-
-        {/* Refined Mini Balance Card */}
-        <View style={styles.miniCard}>
-          <View style={styles.miniRow}>
-            <View style={styles.balanceInfo}>
-              <Text style={styles.miniAmount}>{userUnits.toLocaleString()}</Text>
-              <Text style={styles.miniLabel}>units</Text>
-            </View>
-            <View style={styles.miniMetrics}>
-              <Text style={[
-                styles.miniChange,
-                { color: weeklyChange >= 0 ? Colors.dark.success : Colors.dark.danger }
-              ]}>
-                {weeklyChange > 0 ? "↗" : "↘"} {Math.abs(weeklyChange)}
-              </Text>
-              <Text style={styles.miniRank}>#{userRank}</Text>
-            </View>
-          </View>
-
-          {/* Subtle Competition Hint */}
-          <View style={styles.subtleCompetition}>
-            <Text style={styles.competitionHint}>
-              <Text style={styles.leaderName}>{topLeaders[0].name}</Text> leads with {topLeaders[0].units.toLocaleString()}
+        <View style={styles.headerLeft}>
+          <Text style={styles.logo}>NFL</Text>
+        </View>
+        
+        <TouchableOpacity style={styles.userInfo}>
+          <Text style={styles.username}>{mockUser.username}</Text>
+          <View style={styles.statsRow}>
+            <Text style={styles.unitsLabel}>Units: </Text>
+            <Text style={styles.unitsValue}>{mockUser.units}</Text>
+            <Text style={[
+              styles.unitsChange,
+              { color: mockUser.unitsChange >= 0 ? Colors.dark.success : Colors.dark.danger }
+            ]}>
+              {mockUser.unitsChange >= 0 ? '↑' : '↓'}{Math.abs(mockUser.unitsChange)}
             </Text>
+            <Text style={styles.rankText}>(#{mockUser.rank})</Text>
           </View>
-        </View>
-
-        <View style={styles.competitionBar}>
-          <Animated.View
-            style={[
-              styles.shimmerOverlay,
-              {
-                transform: [{ translateX: shimmerTranslate }],
-              },
-            ]}
-          />
-          <Text style={styles.competitionLabel}>WEEK ENDS IN:</Text>
-          <View style={styles.countdownContainer}>
-            <View style={styles.countdownSegment}>
-              <Text style={styles.countdownValue}>{countdown.days}</Text>
-              <Text style={styles.countdownUnit}>DAYS</Text>
-            </View>
-            <Text style={styles.countdownSeparator}>:</Text>
-            <View style={styles.countdownSegment}>
-              <Text style={styles.countdownValue}>
-                {countdown.hours.toString().padStart(2, "0")}
-              </Text>
-              <Text style={styles.countdownUnit}>HRS</Text>
-            </View>
-            <Text style={styles.countdownSeparator}>:</Text>
-            <View style={styles.countdownSegment}>
-              <Text style={styles.countdownValue}>
-                {countdown.minutes.toString().padStart(2, "0")}
-              </Text>
-              <Text style={styles.countdownUnit}>MIN</Text>
-            </View>
-            <Text style={styles.countdownSeparator}>:</Text>
-            <View style={styles.countdownSegment}>
-              <Text style={styles.countdownValue}>
-                {countdown.seconds.toString().padStart(2, "0")}
-              </Text>
-              <Text style={styles.countdownUnit}>SEC</Text>
-            </View>
-          </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
-      {/* Filter Tabs */}
-      <View style={styles.filterWrapper}>
-        <ScrollView
+      {/* League Filter Pills */}
+      <View style={styles.leagueFilterContainer}>
+        <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterContent}
-        >
-          {mockFilters.map((filter) => (
+          data={leagues}
+          keyExtractor={(item) => item.leagueID}
+          contentContainerStyle={styles.leagueFilterContent}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={filter}
               style={[
-                styles.filterTab,
-                selectedFilter === filter && styles.activeFilterTab,
+                styles.leaguePill,
+                selectedLeague === item.leagueID && styles.leaguePillActive,
               ]}
-              onPress={() => setSelectedFilter(filter)}
-              activeOpacity={0.7}
+              onPress={() => setSelectedLeague(item.leagueID)}
             >
-              <Text
-                style={[
-                  styles.filterText,
-                  selectedFilter === filter && styles.activeFilterText,
-                ]}
-              >
-                {filter}
-              </Text>
+              <View style={styles.leaguePillContent}>
+                <View style={[
+                  styles.leagueBadge,
+                  selectedLeague === item.leagueID && styles.leagueBadgeActive
+                ]}>
+                  <Text style={[
+                    styles.leagueSymbol,
+                    selectedLeague === item.leagueID && styles.leagueSymbolActive
+                  ]}>
+                    {getLeagueSymbol(item.sportID)}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.leaguePillText,
+                    selectedLeague === item.leagueID && styles.leaguePillTextActive,
+                  ]}
+                >
+                  {item.name}
+                </Text>
+              </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+        />
       </View>
 
-      {/* Game Cards */}
-      <ScrollView
-        style={styles.gamesContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {filteredGames.map((game) => (
-          <GameCard
-            key={game.id}
-            game={game}
-            onPress={() => handleGamePress(game)}
-            onOddsPress={(team) => handleOddsPress(team, game)}
-          />
-        ))}
-        <View style={styles.bottomPadding} />
-        <BetSlipBottomSheet
-          visible={betSlipVisible}
-          onClose={handleCloseBetSlip}
-          game={selectedBet?.game}
-          selectedTeam={selectedBet?.team || "home"}
-          userUnits={userUnits}
-        />
+      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        {/* Week Countdown - Pulsing */}
+        <View style={styles.countdownSection}>
+          <PulsingText style={styles.countdownText}>
+            Week 14 ends in 2d 14h 23m
+          </PulsingText>
+        </View>
+
+        {/* Leaderboard Preview - Simplified */}
+        <TouchableOpacity style={styles.leaderboardPreview}>
+          <View style={styles.previewHeader}>
+            <Text style={styles.previewTitle}>LEADERBOARD</Text>
+            <Text style={styles.viewAllText}>View All</Text>
+          </View>
+
+          {mockLeaderboardPreview.map((player) => (
+            <View key={player.rank} style={styles.previewRow}>
+              <Text style={styles.previewRankText}>#{player.rank}</Text>
+              <Text style={styles.previewUsername}>{player.username}</Text>
+              <Text style={styles.previewUnits}>{player.units}</Text>
+            </View>
+          ))}
+        </TouchableOpacity>
+
+        {/* Games Section */}
+        <View style={styles.gamesSection}>
+          {mockGames.map((game) => (
+            <View key={game.id} style={styles.gameCard}>
+              {/* Compact Header with Matchup */}
+              <View style={styles.compactHeader}>
+                <View style={styles.matchupInfo}>
+                  <Text style={styles.teamAbbr}>{game.awayTeamAbbr}</Text>
+                  <Text style={styles.vsText}>@</Text>
+                  <Text style={styles.teamAbbr}>{game.homeTeamAbbr}</Text>
+                </View>
+                <View style={styles.gameTimeInfo}>
+                  <Text style={styles.gameTime}>{game.time}</Text>
+                </View>
+              </View>
+
+              {/* Grid Layout for Bets */}
+              <View style={styles.betsGrid}>
+                {/* First Row: Spread and Total */}
+                <View style={styles.betRow}>
+                  <TouchableOpacity style={styles.betCell}>
+                    <Text style={styles.betCellLabel}>SPREAD</Text>
+                    <Text style={styles.betCellValue}>{game.spread}</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={styles.betCell}>
+                    <Text style={styles.betCellLabel}>TOTAL</Text>
+                    <Text style={styles.betCellValue}>{game.total}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Second Row: Moneyline with Visual Cues */}
+                <View style={styles.betRow}>
+                  <TouchableOpacity style={[
+                    styles.betCell,
+                    game.favorite === 'away' ? styles.favoriteCell : styles.underdogCell
+                  ]}>
+                    <View style={styles.betCellHeader}>
+                      <Text style={[
+                        styles.betCellLabel,
+                        game.favorite === 'away' ? styles.favoriteLabel : styles.underdogLabel
+                      ]}>
+                        {game.favorite === 'away' ? '★ FAV' : '◆ DOG'}
+                      </Text>
+                    </View>
+                    <Text style={[
+                      styles.betCellValue,
+                      game.favorite === 'away' ? styles.favoriteValue : styles.underdogValue
+                    ]}>
+                      {game.awayML}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity style={[
+                    styles.betCell,
+                    game.favorite === 'home' ? styles.favoriteCell : styles.underdogCell
+                  ]}>
+                    <View style={styles.betCellHeader}>
+                      <Text style={[
+                        styles.betCellLabel,
+                        game.favorite === 'home' ? styles.favoriteLabel : styles.underdogLabel
+                      ]}>
+                        {game.favorite === 'home' ? '★ FAV' : '◆ DOG'}
+                      </Text>
+                    </View>
+                    <Text style={[
+                      styles.betCellValue,
+                      game.favorite === 'home' ? styles.favoriteValue : styles.underdogValue
+                    ]}>
+                      {game.homeML}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.bottomSpacing} />
       </ScrollView>
     </View>
   );
@@ -281,205 +319,303 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.dark.background,
   },
+
+  // Header
   header: {
-    backgroundColor: Colors.dark.card,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    backgroundColor: Colors.dark.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
   },
-  appName: {
-    fontSize: 28,
-    fontFamily: Fonts.display,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    ...Typography.title.large,
     color: Colors.dark.text,
-    letterSpacing: 4,
-    marginBottom: 24,
+    fontFamily: Fonts.display,
+    letterSpacing: 2,
   },
-  miniCard: {
+  userInfo: {
+    alignItems: 'flex-end',
+  },
+  username: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    marginBottom: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  unitsLabel: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+  },
+  unitsValue: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+  },
+  unitsChange: {
+    ...Typography.body.small,
+    fontFamily: Fonts.medium,
+    marginLeft: 4,
+  },
+  rankText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    marginLeft: 4,
+  },
+
+  // League Filter Pills
+  leagueFilterContainer: {
+    backgroundColor: Colors.dark.card,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+    paddingVertical: 10,
+  },
+  leagueFilterContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  leaguePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: Colors.dark.cardElevated,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  leaguePillActive: {
+    backgroundColor: Colors.dark.tint + '15',
+    borderColor: Colors.dark.tint,
+    borderWidth: 1.5,
+  },
+  leaguePillContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  leagueBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.dark.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  leagueBadgeActive: {
+    backgroundColor: Colors.dark.tint,
+  },
+  leagueSymbol: {
+    fontSize: 10,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+  },
+  leagueSymbolActive: {
+    color: Colors.dark.text,
+  },
+  leaguePillText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  leaguePillTextActive: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+  },
+
+  scrollContainer: {
+    flex: 1,
+  },
+
+  // Week Countdown
+  countdownSection: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    backgroundColor: Colors.dark.background,
+  },
+  countdownText: {
+    ...Typography.body.medium,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+
+  // Leaderboard Preview - Simplified
+  leaderboardPreview: {
+    marginHorizontal: 16,
+    marginBottom: 14,
     backgroundColor: Colors.dark.card,
     borderRadius: 10,
     padding: 12,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(95, 165, 186, 0.2)',
+    borderColor: Colors.dark.border,
   },
-  miniRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  balanceInfo: {
-    flex: 1,
-  },
-  miniAmount: {
-    fontSize: 28,
-    fontFamily: Fonts.display,
+  previewTitle: {
+    ...Typography.sectionHeader.small,
     color: Colors.dark.text,
-    letterSpacing: -1,
-  },
-  miniLabel: {
-    fontSize: 10,
-    fontFamily: Fonts.regular,
-    color: Colors.dark.icon,
-    marginTop: 2,
-  },
-  miniMetrics: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  miniChange: {
-    fontSize: 16,
-    fontFamily: Fonts.bold,
-  },
-  miniRank: {
-    fontSize: 11,
-    fontFamily: Fonts.bold,
-    color: '#00d4ff',
-    backgroundColor: 'rgba(0, 212, 255, 0.08)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  subtleCompetition: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(95, 165, 186, 0.1)',
-  },
-  competitionHint: {
-    fontSize: 10,
-    fontFamily: Fonts.regular,
-    color: '#6a8895',
-    lineHeight: 14,
-  },
-  leaderName: {
-    fontFamily: Fonts.medium,
-    color: Colors.dark.text,
-  },
-  competitionBar: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    backgroundColor: "#1c3540",
-    borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#2a4a56",
-    overflow: "hidden", // Important for shimmer effect
-    position: "relative",
-  },
-  shimmerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
-    width: 100,
-    transform: [{ skewX: "-20deg" }],
-    shadowColor: "#00d4ff",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-  },
-  competitionLabel: {
-    fontSize: 11,
-    fontFamily: Fonts.regular,
-    color: "#5fa5ba",
     letterSpacing: 1.5,
-    textAlign: "center",
-    marginBottom: 12,
-    textTransform: "uppercase",
-    zIndex: 1,
+    fontSize: 11,
   },
-  countdownContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    zIndex: 1,
+  viewAllText: {
+    ...Typography.body.small,
+    color: Colors.dark.tint,
+    fontSize: 11,
   },
-  countdownSegment: {
-    alignItems: "center",
-    minWidth: 48,
-  },
-  countdownValue: {
-    fontSize: 28,
-    fontFamily: Fonts.bold,
-    color: "#00d4ff",
-    lineHeight: 32,
-  },
-  countdownUnit: {
-    fontSize: 9,
-    fontFamily: Fonts.regular,
-    color: "#6a8895",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginTop: 2,
-  },
-  countdownSeparator: {
-    fontSize: 24,
-    fontFamily: Fonts.bold,
-    color: "#4a6a75",
-    marginBottom: 12,
-  },
-  liveBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.dark.card,
-    paddingHorizontal: 10,
+  previewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
-    borderRadius: 8,
   },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.dark.danger,
-    marginRight: 6,
+  previewRankText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+    width: 28,
+    fontSize: 11,
   },
-  liveText: {
+  previewUsername: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    flex: 1,
     fontSize: 12,
-    fontFamily: Fonts.bold,
+  },
+  previewUnits: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+  },
+
+  // Games Section - Compact Grid Design
+  gamesSection: {
+    paddingHorizontal: 16,
+  },
+  gameCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+
+  // Compact Header
+  compactHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  matchupInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  teamAbbr: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 15,
+  },
+  vsText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+  },
+  gameTimeInfo: {
+    alignItems: 'flex-end',
+  },
+  gameTime: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+  },
+
+  // Grid Layout for Bets
+  betsGrid: {
+    gap: 6,
+  },
+  betRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  betCell: {
+    flex: 1,
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    alignItems: 'center',
+  },
+  betCellHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  betCellLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 3,
+  },
+  betCellValue: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    fontSize: 13,
+  },
+  
+  // Favorite/Underdog Visual Cues
+  favoriteCell: {
+    backgroundColor: Colors.dark.tint + '15',
+    borderColor: Colors.dark.tint + '40',
+    borderWidth: 1.5,
+  },
+  underdogCell: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderColor: Colors.dark.border,
+  },
+  favoriteLabel: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+  },
+  underdogLabel: {
+    color: Colors.dark.textSecondary,
+  },
+  favoriteValue: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+  },
+  underdogValue: {
     color: Colors.dark.text,
   },
-  filterWrapper: {
-    backgroundColor: Colors.dark.card,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.icon,
-  },
-  filterContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 8,
-  },
-  filterTab: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginRight: 8,
-    backgroundColor: Colors.dark.card,
-    borderWidth: 1,
-    borderColor: Colors.dark.icon,
-  },
-  activeFilterTab: {
-    backgroundColor: Colors.dark.text,
-    borderColor: Colors.dark.text,
-  },
-  filterText: {
-    fontSize: 14,
-    fontFamily: Fonts.medium,
-    color: Colors.dark.icon,
-  },
-  activeFilterText: {
-    fontFamily: Fonts.medium,
-    color: Colors.dark.background,
-  },
-  gamesContainer: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  bottomPadding: {
-    height: 20,
+
+  bottomSpacing: {
+    height: 80,
   },
 });

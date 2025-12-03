@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { authClient } from "@/lib/auth-client";
 
 interface SignupScreenProps {
   onSignupComplete?: () => void;
@@ -65,20 +66,55 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
     }
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
+    if (!username || !email || !password || !confirmPassword) {
+      Alert.alert('Validation Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (!email.includes('@')) {
+      Alert.alert('Validation Error', 'Please enter a valid email address');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Validation Error', 'Passwords do not match');
+      return;
+    }
+
     if (!agreeToTerms || !agreeToPrivacy) {
       Alert.alert('Validation Error', 'Please agree to Terms of Service and Privacy Policy');
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log('Signup successful');
-      if (onSignupComplete) {
-        onSignupComplete();
+    try {
+      const { data: authData, error } = await authClient.signUp.email({
+        email: email,
+        password: password,
+        name: username,
+      });
+
+      if (error) {
+        Alert.alert('Signup Error', error.message || 'Failed to create account');
+        return;
       }
-    }, 2000);
+
+      if (authData) {
+        console.log('Signup successful', authData);
+        // Navigate to main app or call callback
+        if (onSignupComplete) {
+          onSignupComplete();
+        } else {
+          router.replace('/(auth)/onboarding');
+        }
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
+      Alert.alert('Signup Error', 'An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleQuickSignup = (provider: string) => {
@@ -292,6 +328,7 @@ const renderStep1 = () => (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.form}>
         {/* Header */}
+        <View style={{height: 100}}></View>
         <View style={styles.sleekHeader}>
           <View style={[styles.miniLogo, { backgroundColor: Colors.dark.tint }]}>
             <Text style={styles.miniLogoText}>R</Text>
@@ -301,17 +338,7 @@ const renderStep1 = () => (
           </Text>
         </View>
 
-        {/* Login Link */}
-        <View style={styles.loginPrompt}>
-          <Text style={[styles.loginPromptText, { color: Colors.dark.textSecondary }]}>
-            Already have an account?{' '}
-          </Text>
-          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-            <Text style={[styles.loginPromptLink, { color: Colors.dark.tint }]}>
-              Sign In
-            </Text>
-          </TouchableOpacity>
-        </View>
+        
 
         {/* Form Content */}
         <View style={styles.formContainer}>
@@ -320,26 +347,22 @@ const renderStep1 = () => (
           {step === 3 && renderStep3()}
         </View>
 
-        {/* Quick Signup */}
-        <View style={styles.quickSignupSection}>
-          <Text style={[styles.quickSignupLabel, { color: Colors.dark.textSecondary }]}>
-            Or continue with
+        {/* Login Link - polished */}
+        <View style={styles.polishedLoginPrompt}>
+          <Text style={[styles.polishedLoginText, { color: Colors.dark.textSecondary }]}>
+            Already have an account?
           </Text>
-          <View style={styles.quickSignupButtons}>
-            <TouchableOpacity
-              style={[styles.quickSignupButton, { backgroundColor: Colors.dark.cardElevated, borderColor: Colors.dark.border }]}
-              onPress={() => handleQuickSignup('Google')}
-            >
-              <Ionicons name="logo-google" size={18} color={Colors.dark.text} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.quickSignupButton, { backgroundColor: Colors.dark.cardElevated, borderColor: Colors.dark.border }]}
-              onPress={() => handleQuickSignup('Apple')}
-            >
-              <Ionicons name="logo-apple" size={18} color={Colors.dark.text} />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.polishedLoginButton}
+            onPress={() => router.push("/(auth)/login")}
+          >
+            <Text style={[styles.polishedLoginLink, { color: Colors.dark.background }]}>
+              Sign In
+            </Text>
+          </TouchableOpacity>
         </View>
+
+       
       </View>
     </ScrollView>
   );
@@ -386,14 +409,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.xl,
   },
-  loginPromptText: {
+  polishedLoginPrompt: {
+    alignItems: 'center',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.lg,
+  },
+  polishedLoginText: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    marginBottom: Spacing.sm,
   },
-  loginPromptLink: {
+  polishedLoginButton: {
+    backgroundColor: Colors.dark.tint,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    ...Shadows.pillGlow,
+  },
+  polishedLoginLink: {
     ...Typography.body.small,
     fontWeight: '600',
-    color: Colors.dark.tint,
+    color: Colors.dark.background,
   },
   formContainer: {
     backgroundColor: Colors.dark.cardElevated,
@@ -444,7 +480,7 @@ const styles = StyleSheet.create({
   inputLabel: {
     ...Typography.body.small,
     color: Colors.dark.text,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -457,6 +493,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
     paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    height: 44,
   },
   inputIcon: {
     marginRight: Spacing.sm,
@@ -465,7 +503,7 @@ const styles = StyleSheet.create({
     flex: 1,
     ...Typography.body.medium,
     color: Colors.dark.text,
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xs,
   },
   passwordToggle: {
     padding: Spacing.xs,
@@ -531,35 +569,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.xl,
     backgroundColor: Colors.dark.tint,
-    borderRadius: BorderRadius.md,
-    gap: Spacing.xs,
+    height: 56,
+    gap: Spacing.sm,
+    ...Shadows.pillGlow,
   },
   nextButtonText: {
-    ...Typography.body.small,
-    fontWeight: '600',
+    ...Typography.emphasis.medium,
     color: Colors.dark.background,
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   signupButton: {
     flex: 1,
     backgroundColor: Colors.dark.tint,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 56,
+    ...Shadows.pillGlow,
   },
   signupButtonDisabled: {
     backgroundColor: Colors.dark.textSecondary,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   signupButtonText: {
-    ...Typography.body.small,
-    fontWeight: '600',
+    ...Typography.emphasis.medium,
     color: Colors.dark.background,
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: Fonts.bold,
   },
   quickSignupSection: {
     alignItems: 'center',
