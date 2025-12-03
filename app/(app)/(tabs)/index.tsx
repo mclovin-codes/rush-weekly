@@ -145,7 +145,7 @@ export default function HomeScreen() {
       {/* Header with User Info */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.logo}>NFL</Text>
+          <Text style={styles.logo}>RUSH</Text>
         </View>
         
         <TouchableOpacity style={styles.userInfo}>
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   username: {
     ...Typography.body.medium,
     color: Colors.dark.text,
-    fontFamily: Fonts.medium,
+    fontFamily: Fonts.display,
     marginBottom: 2,
   },
   statsRow: {

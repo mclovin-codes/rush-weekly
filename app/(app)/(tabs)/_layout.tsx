@@ -35,6 +35,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="mybets"
+        options={{
+          title: 'My Bets',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="ticket.fill" color={color} />,
+        }}
+      />
+      
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

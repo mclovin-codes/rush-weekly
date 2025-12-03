@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import React from 'react';
 
 import { mockLeaderboard } from '@/constants/mock-data';
@@ -6,30 +6,32 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 
 export default function LeaderboardScreen() {
   const currentUserRank = 23;
+  const currentUserId = 'user-123'; // This would come from auth context
   const totalPlayers = mockLeaderboard.length;
 
-  // Calculate prize distribution (top 10 positions)
-  const prizeDistribution = [
-    { rank: 1, prize: '$12,500' },
-    { rank: 2, prize: '$7,500' },
-    { rank: 3, prize: '$5,000' },
-    { rank: 4, prize: '$3,500' },
-    { rank: 5, prize: '$2,500' },
-    { rank: '6-10', prize: '$1,250' },
-  ];
-
-  const getPrizeForRank = (rank: number) => {
-    if (rank === 1) return prizeDistribution[0].prize;
-    if (rank === 2) return prizeDistribution[1].prize;
-    if (rank === 3) return prizeDistribution[2].prize;
-    if (rank === 4) return prizeDistribution[3].prize;
-    if (rank === 5) return prizeDistribution[4].prize;
-    if (rank >= 6 && rank <= 10) return prizeDistribution[5].prize;
-    return '-';
+  // Weekly pool info (from pools table)
+  const poolInfo = {
+    weekNumber: 14,
+    weekStart: '2025-11-25',
+    weekEnd: '2025-12-01',
+    poolSize: 100,
+    isActive: true,
   };
 
   const isTopTier = (rank: number) => rank <= 3;
-  const isPrizeZone = (rank: number) => rank <= 10;
+  const isTop10 = (rank: number) => rank <= 10;
+
+  // Calculate time remaining in the week
+  const getTimeRemaining = () => {
+    const now = new Date();
+    const end = new Date(poolInfo.weekEnd);
+    const diff = end.getTime() - now.getTime();
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    return `${days}d ${hours}h`;
+  };
 
   return (
     <View style={styles.container}>
@@ -37,21 +39,21 @@ export default function LeaderboardScreen() {
       <View style={styles.header}>
         <Text style={styles.screenTitle}>LEADERBOARD</Text>
 
-        {/* Competition Overview */}
-        <View style={styles.competitionOverview}>
+        {/* Pool Overview */}
+        <View style={styles.poolOverview}>
           <View style={styles.overviewItem}>
             <Text style={styles.overviewLabel}>Week</Text>
-            <Text style={styles.overviewValue}>14</Text>
+            <Text style={styles.overviewValue}>{poolInfo.weekNumber}</Text>
           </View>
           <View style={styles.overviewDivider} />
           <View style={styles.overviewItem}>
-            <Text style={styles.overviewLabel}>Players</Text>
-            <Text style={styles.overviewValue}>{totalPlayers}</Text>
+            <Text style={styles.overviewLabel}>Pool Size</Text>
+            <Text style={styles.overviewValue}>{poolInfo.poolSize}</Text>
           </View>
           <View style={styles.overviewDivider} />
           <View style={styles.overviewItem}>
-            <Text style={styles.overviewLabel}>Prize Pool</Text>
-            <Text style={styles.overviewValue}>$50,000</Text>
+            <Text style={styles.overviewLabel}>Ends In</Text>
+            <Text style={styles.overviewValue}>{getTimeRemaining()}</Text>
           </View>
         </View>
 
@@ -62,47 +64,28 @@ export default function LeaderboardScreen() {
             <View style={styles.rankContainer}>
               <Text style={styles.rankNumber}>#{currentUserRank}</Text>
               <Text style={styles.statusText}>
-                {isPrizeZone(currentUserRank) ? 'IN PRIZE ZONE' : `${currentUserRank - 10} spots from prizes`}
+                {isTop10(currentUserRank) 
+                  ? 'Top 10%' 
+                  : `${Math.round((currentUserRank / totalPlayers) * 100)}th percentile`}
               </Text>
             </View>
           </View>
           <View style={styles.positionRight}>
-            <Text style={styles.prizeLabel}>Current Prize</Text>
-            <Text style={[styles.prizeAmount, {
-              color: isPrizeZone(currentUserRank) ? Colors.dark.success : Colors.dark.textSecondary
-            }]}>
-              {getPrizeForRank(currentUserRank)}
+            <Text style={styles.unitsLabel}>Your Units</Text>
+            <Text style={styles.unitsAmount}>
+              {mockLeaderboard.find(p => p.rank === currentUserRank)?.units || 980}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Prize Breakdown */}
-      <View style={styles.prizeBreakdown}>
-        <Text style={styles.breakdownTitle}>PRIZE BREAKDOWN</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.prizeScrollContent}
-        >
-          {prizeDistribution.map((prize, index) => (
-            <View key={index} style={[
-              styles.prizeCard,
-              isTopTier(Number(prize.rank)) && styles.topTierCard
-            ]}>
-              <Text style={styles.prizeRank}>#{prize.rank}</Text>
-              <Text style={styles.prizeCardAmount}>{prize.prize}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+    
 
       {/* Table Header */}
       <View style={styles.tableHeader}>
         <Text style={[styles.headerText, styles.rankHeader]}>RANK</Text>
         <Text style={[styles.headerText, styles.playerHeader]}>PLAYER</Text>
         <Text style={[styles.headerText, styles.unitsHeader]}>UNITS</Text>
-        <Text style={[styles.headerText, styles.prizeHeader]}>PRIZE</Text>
       </View>
 
       {/* Leaderboard List */}
@@ -110,14 +93,20 @@ export default function LeaderboardScreen() {
         style={styles.listContainer}
         showsVerticalScrollIndicator={false}
       >
-        {mockLeaderboard.map((entry, index) => (
-          <View key={entry.id} style={[
-            styles.row,
-            entry.rank === currentUserRank && styles.currentUserRow,
-            isPrizeZone(entry.rank) && styles.prizeZoneRow
-          ]}>
+        {mockLeaderboard.map((entry) => (
+          <TouchableOpacity 
+            key={entry.id} 
+            style={[
+              styles.row,
+              entry.rank === currentUserRank && styles.currentUserRow,
+              isTop10(entry.rank) && styles.top10Row
+            ]}
+          >
             {/* Rank Column */}
-            <View style={[styles.rankColumn, isTopTier(entry.rank) && styles.topTierRank]}>
+            <View style={[
+              styles.rankColumn, 
+              isTopTier(entry.rank) && styles.topTierRank
+            ]}>
               <Text style={[
                 styles.rankText,
                 isTopTier(entry.rank) && styles.topTierRankText,
@@ -136,8 +125,10 @@ export default function LeaderboardScreen() {
                 {entry.username}
               </Text>
               {isTopTier(entry.rank) && (
-                <Text style={styles.medalText}>
-                  {entry.rank === 1 ? 'CHAMPION' : entry.rank === 2 ? 'RUNNER UP' : 'THIRD PLACE'}
+                <Text style={styles.tierBadge}>
+                  {entry.rank === 1 ? 'CHAMPION' : 
+                   entry.rank === 2 ? 'RUNNER UP' : 
+                   'THIRD'}
                 </Text>
               )}
             </View>
@@ -149,16 +140,7 @@ export default function LeaderboardScreen() {
             ]}>
               {entry.units.toLocaleString()}
             </Text>
-
-            {/* Prize Column */}
-            <Text style={[
-              styles.prizeText,
-              entry.rank === currentUserRank && styles.currentUserText,
-              isPrizeZone(entry.rank) && styles.prizeZoneText
-            ]}>
-              {getPrizeForRank(entry.rank)}
-            </Text>
-          </View>
+          </TouchableOpacity>
         ))}
 
         <View style={styles.bottomSpacing} />
@@ -176,7 +158,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.card,
     paddingTop: 60,
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
@@ -184,17 +166,17 @@ const styles = StyleSheet.create({
     ...Typography.title.large,
     color: Colors.dark.text,
     letterSpacing: 3,
-    marginBottom: 20,
+    marginBottom: 16,
     fontFamily: Fonts.display,
   },
 
-  // Competition Overview
-  competitionOverview: {
+  // Pool Overview
+  poolOverview: {
     flexDirection: 'row',
     backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
-    paddingVertical: 16,
-    marginBottom: 16,
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
@@ -208,11 +190,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
+    fontSize: 10,
   },
   overviewValue: {
     ...Typography.emphasis.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
+    fontSize: 16,
   },
   overviewDivider: {
     width: 1,
@@ -223,8 +207,8 @@ const styles = StyleSheet.create({
   yourPositionCard: {
     flexDirection: 'row',
     backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 10,
+    padding: 12,
     borderWidth: 1,
     borderColor: Colors.dark.tint + '30',
   },
@@ -236,7 +220,8 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 8,
+    marginBottom: 6,
+    fontSize: 10,
   },
   rankContainer: {
     flexDirection: 'column',
@@ -246,67 +231,104 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontFamily: Fonts.display,
     marginBottom: 2,
+    fontSize: 28,
   },
   statusText: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    fontSize: 11,
   },
   positionRight: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  prizeLabel: {
+  unitsLabel: {
     ...Typography.meta.small,
     color: Colors.dark.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 4,
+    fontSize: 10,
   },
-  prizeAmount: {
+  unitsAmount: {
     ...Typography.emphasis.medium,
     fontFamily: Fonts.display,
+    color: Colors.dark.tint,
+    fontSize: 20,
   },
 
-  // Prize Breakdown
-  prizeBreakdown: {
+  // Podium Section
+  podiumSection: {
     backgroundColor: Colors.dark.card,
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
-  breakdownTitle: {
+  podiumTitle: {
     ...Typography.sectionHeader.small,
     color: Colors.dark.textSecondary,
     marginBottom: 12,
     textTransform: 'uppercase',
+    fontSize: 11,
+    letterSpacing: 1.5,
   },
-  prizeScrollContent: {
-    gap: 12,
+  podiumContainer: {
+    flexDirection: 'row',
+    gap: 10,
   },
-  prizeCard: {
+  podiumCard: {
+    flex: 1,
     backgroundColor: Colors.dark.cardElevated,
     borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    minWidth: 80,
   },
-  topTierCard: {
-    backgroundColor: Colors.dark.tint + '15',
-    borderColor: Colors.dark.tint + '40',
+  firstPlace: {
+    backgroundColor: Colors.dark.tint + '20',
+    borderColor: Colors.dark.tint,
+    borderWidth: 2,
   },
-  prizeRank: {
+  secondPlace: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderColor: Colors.dark.border + '80',
+  },
+  thirdPlace: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderColor: Colors.dark.border + '60',
+  },
+  podiumRankBadge: {
+    backgroundColor: Colors.dark.tint + '30',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  podiumRankText: {
     ...Typography.meta.small,
-    color: Colors.dark.textSecondary,
-    marginBottom: 4,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+    fontSize: 10,
   },
-  prizeCardAmount: {
-    ...Typography.teamName.small,
+  podiumUsername: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    marginBottom: 4,
+    fontSize: 12,
+  },
+  podiumUnits: {
+    ...Typography.emphasis.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
+    fontSize: 16,
+  },
+  podiumUnitsLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
   },
 
   // Table Header
@@ -314,7 +336,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: Colors.dark.cardElevated,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
@@ -323,6 +345,7 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
+    fontSize: 10,
   },
   rankHeader: {
     width: 50,
@@ -335,10 +358,6 @@ const styles = StyleSheet.create({
     width: 70,
     textAlign: 'right',
   },
-  prizeHeader: {
-    width: 70,
-    textAlign: 'right',
-  },
 
   // List
   listContainer: {
@@ -347,7 +366,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
     alignItems: 'center',
@@ -357,8 +376,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.dark.tint,
   },
-  prizeZoneRow: {
-    backgroundColor: Colors.dark.card + '30',
+  top10Row: {
+    backgroundColor: Colors.dark.card,
   },
 
   // Rank Column
@@ -366,7 +385,7 @@ const styles = StyleSheet.create({
     width: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 32,
+    height: 28,
     borderRadius: 6,
   },
   topTierRank: {
@@ -375,6 +394,7 @@ const styles = StyleSheet.create({
   rankText: {
     ...Typography.teamName.small,
     color: Colors.dark.text,
+    fontSize: 13,
   },
   topTierRankText: {
     color: Colors.dark.tint,
@@ -394,16 +414,18 @@ const styles = StyleSheet.create({
     ...Typography.body.medium,
     color: Colors.dark.text,
     marginBottom: 2,
+    fontSize: 13,
   },
   currentUserText: {
     color: Colors.dark.tint,
     fontFamily: Fonts.medium,
   },
-  medalText: {
+  tierBadge: {
     ...Typography.meta.small,
     color: Colors.dark.tint,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontSize: 9,
   },
 
   // Units Column
@@ -413,21 +435,10 @@ const styles = StyleSheet.create({
     width: 70,
     textAlign: 'right',
     fontFamily: Fonts.medium,
-  },
-
-  // Prize Column
-  prizeText: {
-    ...Typography.body.medium,
-    color: Colors.dark.textSecondary,
-    width: 70,
-    textAlign: 'right',
-    fontFamily: Fonts.medium,
-  },
-  prizeZoneText: {
-    color: Colors.dark.success,
+    fontSize: 13,
   },
 
   bottomSpacing: {
-    height: 100,
+    height: 80,
   },
 });
