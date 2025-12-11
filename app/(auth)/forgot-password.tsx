@@ -29,9 +29,8 @@ export default function ForgotPasswordScreen() {
     try {
       console.log('Password reset requested for:', email.trim());
 
-      const { data, error } = await (authClient as any).forgotPassword({
-        email: email.trim(),
-        redirectTo: '/reset-password'
+      const { data, error } = await (authClient as any).requestPasswordReset({
+        email: email.trim()
       });
 
       if (error) {
