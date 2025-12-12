@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,13 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Colors, Fonts } from '@/constants/theme';
+import { PopulatedGame, GameOdds, Bet } from '@/types';
+import { gameOddsService } from '@/services/game-odds';
+import { betService } from '@/services/bets';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
@@ -20,10 +25,21 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
 interface BetSlipBottomSheetProps {
   visible: boolean;
   onClose: () => void;
-  game: any;
+  game: PopulatedGame | null;
   selectedTeam: 'home' | 'away';
   userUnits: number;
 }
+
+// Helper function to calculate payout from American odds
+const calculatePayout = (stake: number, americanOdds: number): number => {
+  if (americanOdds > 0) {
+    // Underdog: (Stake × Odds) / 100
+    return stake + (stake * americanOdds) / 100;
+  } else {
+    // Favorite: Stake + (Stake / |Odds|) × 100
+    return stake + (stake / Math.abs(americanOdds)) * 100;
+  }
+};
 
 export default function BetSlipBottomSheet({
   visible,
@@ -33,16 +49,44 @@ export default function BetSlipBottomSheet({
   userUnits,
 }: BetSlipBottomSheetProps) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const [betAmount, setBetAmount] = React.useState('');
+  const [betAmount, setBetAmount] = useState('');
+  const [gameOdds, setGameOdds] = useState<GameOdds | null>(null);
+  const [isLoadingOdds, setIsLoadingOdds] = useState(false);
+  const [isPlacingBet, setIsPlacingBet] = useState(false);
 
-  const selectedOdds = selectedTeam === 'home' ? game?.moneyline?.home : game?.moneyline?.away;
-  const selectedTeamName = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
-  // Safety checks to prevent crashes
+  // Fetch game odds when modal opens
+  useEffect(() => {
+    if (visible && game) {
+      fetchGameOdds();
+    }
+  }, [visible, game]);
+
+  const fetchGameOdds = async () => {
+    if (!game) return;
+
+    setIsLoadingOdds(true);
+    try {
+      const odds = await gameOddsService.getActiveOdds(game.id);
+      setGameOdds(odds);
+    } catch (error) {
+      console.error('Error fetching game odds:', error);
+      Alert.alert('Error', 'Failed to load betting odds');
+    } finally {
+      setIsLoadingOdds(false);
+    }
+  };
+
+  // Get selected team info
+  const selectedTeamObj = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
+  const selectedTeamName = typeof selectedTeamObj === 'object' ? selectedTeamObj?.name : 'Unknown';
+
+  // Get moneyline odds for selected team
+  const selectedOdds = gameOdds?.moneyline?.[selectedTeam] || 0;
+
+  // Calculate potential win and profit
   const betAmountNum = betAmount ? parseFloat(betAmount) : 0;
-  const selectedOddsNum = selectedOdds ? selectedOdds : 1; // Default to 1 if undefined
-
-  const potentialWin = betAmountNum && selectedOddsNum ? (betAmountNum * selectedOddsNum).toFixed(0) : '0';
-  const potentialProfit = betAmountNum && selectedOddsNum ? ((betAmountNum * selectedOddsNum) - betAmountNum).toFixed(0) : '0';
+  const potentialWin = betAmountNum && selectedOdds ? calculatePayout(betAmountNum, selectedOdds).toFixed(2) : '0';
+  const potentialProfit = betAmountNum && selectedOdds ? (calculatePayout(betAmountNum, selectedOdds) - betAmountNum).toFixed(2) : '0';
 
   const panResponder = useRef(
     PanResponder.create({
@@ -96,15 +140,55 @@ export default function BetSlipBottomSheet({
     setBetAmount(amount.toString());
   };
 
-  const handlePlaceBet = () => {
-    // TODO: Implement bet placement logic
-    console.log('Placing bet:', {
-      game,
-      team: selectedTeam,
-      amount: betAmount,
-      odds: selectedOdds,
-    });
-    closeSheet();
+  const handlePlaceBet = async () => {
+    if (!game || !betAmount || betAmountNum <= 0) {
+      Alert.alert('Invalid Bet', 'Please enter a valid bet amount');
+      return;
+    }
+
+    if (betAmountNum > userUnits) {
+      Alert.alert('Insufficient Units', `You only have ${userUnits} units available`);
+      return;
+    }
+
+    if (!gameOdds) {
+      Alert.alert('No Odds Available', 'Betting odds are not available for this game');
+      return;
+    }
+
+    setIsPlacingBet(true);
+    try {
+      const betData = {
+        gameId: game.id,
+        betType: 'moneyline' as Bet['betType'],
+        selection: selectedTeam,
+        stake: betAmountNum,
+      };
+
+      const response = await betService.placeBet(betData);
+
+      Alert.alert(
+        'Bet Placed!',
+        `Your bet of ${betAmountNum} units on ${selectedTeamName} has been placed successfully.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              closeSheet();
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Error placing bet:', error);
+      Alert.alert(
+        'Bet Failed',
+        error?.message || 'Failed to place bet. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsPlacingBet(false);
+    }
   };
 
   if (!game) return null;
@@ -154,19 +238,28 @@ export default function BetSlipBottomSheet({
               <View style={styles.matchup}>
                 <Text style={styles.matchupLabel}>Match</Text>
                 <Text style={styles.matchupText}>
-                  {game.homeTeam} vs {game.awayTeam}
+                  {typeof game.awayTeam === 'object' ? game.awayTeam.name : 'TBD'} @ {typeof game.homeTeam === 'object' ? game.homeTeam.name : 'TBD'}
                 </Text>
               </View>
               <View style={styles.divider} />
-              <View style={styles.selection}>
-                <View>
-                  <Text style={styles.selectionLabel}>Your Pick</Text>
-                  <Text style={styles.selectionTeam}>{selectedTeamName}</Text>
+              {isLoadingOdds ? (
+                <View style={styles.loadingOdds}>
+                  <ActivityIndicator size="small" color={Colors.dark.tint} />
+                  <Text style={styles.loadingText}>Loading odds...</Text>
                 </View>
-                <View style={styles.oddsContainer}>
-                  <Text style={styles.oddsValue}>{selectedOddsNum.toFixed(2)}</Text>
+              ) : (
+                <View style={styles.selection}>
+                  <View>
+                    <Text style={styles.selectionLabel}>Your Pick (Moneyline)</Text>
+                    <Text style={styles.selectionTeam}>{selectedTeamName}</Text>
+                  </View>
+                  <View style={styles.oddsContainer}>
+                    <Text style={styles.oddsValue}>
+                      {selectedOdds > 0 ? `+${selectedOdds}` : selectedOdds}
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              )}
             </View>
 
             {/* Bet Amount Input */}
@@ -218,17 +311,24 @@ export default function BetSlipBottomSheet({
             <TouchableOpacity
               style={[
                 styles.placeBetButton,
-                !betAmount && styles.placeBetButtonDisabled,
+                (!betAmount || isPlacingBet || isLoadingOdds) && styles.placeBetButtonDisabled,
               ]}
               onPress={handlePlaceBet}
-              disabled={!betAmount || parseFloat(betAmount) <= 0}
+              disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || isLoadingOdds}
               activeOpacity={0.7}
             >
-              <Text style={styles.placeBetButtonText}>
-                {betAmount && parseFloat(betAmount) > 0
-                  ? `Place Bet - ${betAmount} units`
-                  : 'Enter Amount'}
-              </Text>
+              {isPlacingBet ? (
+                <View style={styles.loadingButton}>
+                  <ActivityIndicator size="small" color={Colors.dark.background} />
+                  <Text style={styles.placeBetButtonText}>Placing Bet...</Text>
+                </View>
+              ) : (
+                <Text style={styles.placeBetButtonText}>
+                  {betAmount && parseFloat(betAmount) > 0
+                    ? `Place Bet - ${betAmount} units`
+                    : 'Enter Amount'}
+                </Text>
+              )}
             </TouchableOpacity>
           </Animated.View>
         </KeyboardAvoidingView>
@@ -446,5 +546,22 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: Fonts.bold,
     color: Colors.dark.background,
+  },
+  loadingOdds: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: Fonts.medium,
+    color: Colors.dark.icon,
+  },
+  loadingButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
