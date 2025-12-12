@@ -70,7 +70,10 @@ export interface GameOdds extends BaseDocument {
 export interface User extends BaseDocument {
   username: string;
   email: string;
-  credits: number;
+  credits: number; // Alias for current_credits for backwards compatibility
+  current_credits?: number;
+  is_paid_member?: boolean;
+  subscription_end_date?: string;
 }
 
 export interface Pool extends BaseDocument {

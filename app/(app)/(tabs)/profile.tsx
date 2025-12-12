@@ -1,34 +1,33 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useRouter } from 'expo-router';
+import { authClient } from '@/lib/auth-client';
+import { useCurrentUser, useUserStats } from '@/hooks/useUser';
+import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 
 export default function ProfileScreen() {
   const router = useRouter();
 
-  // Based on README schema: users table
-  const user = {
-    username: "player_123",
-    credits: 1250, // Current betting currency
-    created_at: "2024-01-15"
-  };
+  // Get session and user data
+  const { data: session } = authClient.useSession();
+  const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
+  const { data: stats, isLoading: isLoadingStats } = useUserStats();
+  const { data: myPool, isLoading: isLoadingMyPool } = useMyPool();
+  const { data: activePool, isLoading: isLoadingPool } = useActivePool();
+  const { data: leaderboardData } = useLeaderboard(activePool?.id);
 
-  // Based on README schema: pool_memberships
-  const currentPool = {
-    week_start: "2024-12-02",
-    week_end: "2024-12-08",
-    rank: 23,
-    total_players: 100,
-    score: 1250
-  };
+  // Calculate user's rank from leaderboard
+  const leaderboard = leaderboardData?.docs || [];
+  const currentUserEntry = leaderboard.find((entry) => {
+    const user = typeof entry.user === 'object' ? entry.user : null;
+    return user?.id === session?.user?.id;
+  });
+  const currentUserRank = currentUserEntry?.rank || 0;
 
-  // Calculate some basic stats from schema
-  const weekNumber = 4; // Could be calculated from created_at
-  const totalBets = 47; // From bets table count
-  const wonBets = 28; // From bets where status='won'
-  const winRate = Math.round((wonBets / totalBets) * 100);
+  const isLoading = isLoadingUser || isLoadingStats || isLoadingMyPool || isLoadingPool;
 
   return (
     <ScrollView
@@ -40,101 +39,144 @@ export default function ProfileScreen() {
         <Text style={styles.screenTitle}>PROFILE</Text>
       </View>
 
-      {/* User Info Card */}
-      <View style={styles.section}>
-        <View style={styles.userCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user.username[0].toUpperCase()}</Text>
-          </View>
-          <Text style={styles.username}>{user.username}</Text>
-          <Text style={styles.memberSince}>
-            Member since {new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-          </Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.dark.tint} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
-      </View>
-
-      {/* Credits Balance */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>CURRENT BALANCE</Text>
-        <View style={styles.creditsCard}>
-          <View style={styles.creditsMain}>
-            <Text style={styles.creditsAmount}>{user.credits}</Text>
-            <Text style={styles.creditsLabel}>Credits</Text>
-          </View>
-          <View style={styles.creditsInfo}>
-            <Ionicons name="information-circle-outline" size={16} color={Colors.dark.textSecondary} />
-            <Text style={styles.creditsInfoText}>
-              Virtual currency for betting
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Current Pool */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>THIS WEEK&apos;S POOL</Text>
-        <View style={styles.poolCard}>
-          <View style={styles.poolHeader}>
-            <View>
-              <Text style={styles.poolLabel}>Your Rank</Text>
-              <Text style={styles.poolRank}>#{currentPool.rank}</Text>
-            </View>
-            <View style={styles.poolPlayers}>
-              <Ionicons name="people" size={20} color={Colors.dark.textSecondary} />
-              <Text style={styles.poolPlayersText}>{currentPool.total_players} players</Text>
-            </View>
-          </View>
-          
-          <View style={styles.poolDates}>
-            <View style={styles.poolDateItem}>
-              <Text style={styles.poolDateLabel}>Starts</Text>
-              <Text style={styles.poolDateValue}>
-                {new Date(currentPool.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      ) : (
+        <>
+          {/* User Info Card */}
+          <View style={styles.section}>
+            <View style={styles.userCard}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {(currentUser?.username || session?.user?.name || 'U')[0].toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.username}>{currentUser?.username || session?.user?.name || 'User'}</Text>
+              <Text style={styles.memberSince}>
+                {currentUser?.email || session?.user?.email}
               </Text>
+              {currentUser?.createdAt && (
+                <Text style={styles.memberDate}>
+                  Member since {new Date(currentUser.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                </Text>
+              )}
+              {/* Subscription Status */}
+              {currentUser?.is_paid_member && (
+                <View style={styles.membershipBadge}>
+                  <Ionicons name="checkmark-circle" size={16} color={Colors.dark.success} />
+                  <Text style={styles.membershipText}>Active Member</Text>
+                </View>
+              )}
+              {currentUser?.subscription_end_date && (
+                <Text style={styles.subscriptionEnd}>
+                  Subscription ends {new Date(currentUser.subscription_end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </Text>
+              )}
             </View>
-            <View style={styles.poolDateDivider} />
-            <View style={styles.poolDateItem}>
-              <Text style={styles.poolDateLabel}>Ends</Text>
-              <Text style={styles.poolDateValue}>
-                {new Date(currentPool.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </Text>
+          </View>
+
+          {/* Credits Balance */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>CURRENT BALANCE</Text>
+            <View style={styles.creditsCard}>
+              <View style={styles.creditsMain}>
+                <Text style={styles.creditsAmount}>
+                  {currentUser?.current_credits || currentUser?.credits || 0}
+                </Text>
+                <Text style={styles.creditsLabel}>Credits</Text>
+              </View>
+              <View style={styles.creditsInfo}>
+                <Ionicons name="information-circle-outline" size={16} color={Colors.dark.textSecondary} />
+                <Text style={styles.creditsInfoText}>
+                  Virtual currency for betting
+                </Text>
+              </View>
             </View>
           </View>
+        </>
+      )}
 
-          <TouchableOpacity
-            style={styles.viewLeaderboardButton}
-            onPress={() => router.push('/leaderboard')}
-          >
-            <Text style={styles.viewLeaderboardText}>View Leaderboard</Text>
-            <Ionicons name="arrow-forward" size={16} color={Colors.dark.tint} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {!isLoading && (
+        <>
+          {/* Current Pool */}
+          {activePool && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>THIS WEEK&apos;S POOL</Text>
+              <View style={styles.poolCard}>
+                <View style={styles.poolHeader}>
+                  <View>
+                    <Text style={styles.poolLabel}>Your Rank</Text>
+                    <Text style={styles.poolRank}>
+                      {currentUserRank > 0 ? `#${currentUserRank}` : '--'}
+                    </Text>
+                  </View>
+                  <View style={styles.poolPlayers}>
+                    <Ionicons name="people" size={20} color={Colors.dark.textSecondary} />
+                    <Text style={styles.poolPlayersText}>{leaderboard.length} players</Text>
+                  </View>
+                </View>
 
-      {/* Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>BETTING STATS</Text>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{totalBets}</Text>
-            <Text style={styles.statLabel}>Total Bets</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: Colors.dark.success }]}>{wonBets}</Text>
-            <Text style={styles.statLabel}>Won</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={[styles.statValue, { color: Colors.dark.danger }]}>{totalBets - wonBets}</Text>
-            <Text style={styles.statLabel}>Lost</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{winRate}%</Text>
-            <Text style={styles.statLabel}>Win Rate</Text>
-          </View>
-        </View>
-      </View>
+                <View style={styles.poolDates}>
+                  <View style={styles.poolDateItem}>
+                    <Text style={styles.poolDateLabel}>Starts</Text>
+                    <Text style={styles.poolDateValue}>
+                      {new Date(activePool.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                  <View style={styles.poolDateDivider} />
+                  <View style={styles.poolDateItem}>
+                    <Text style={styles.poolDateLabel}>Ends</Text>
+                    <Text style={styles.poolDateValue}>
+                      {new Date(activePool.weekEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </Text>
+                  </View>
+                </View>
 
-    
+                {myPool && (
+                  <View style={styles.poolScore}>
+                    <Text style={styles.poolScoreLabel}>Your Score</Text>
+                    <Text style={styles.poolScoreValue}>{myPool.score?.toFixed(0) || 0}</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  style={styles.viewLeaderboardButton}
+                  onPress={() => router.push('/(app)/(tabs)/leaderboard')}
+                >
+                  <Text style={styles.viewLeaderboardText}>View Leaderboard</Text>
+                  <Ionicons name="arrow-forward" size={16} color={Colors.dark.tint} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Stats */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>BETTING STATS</Text>
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats?.totalBets || 0}</Text>
+                <Text style={styles.statLabel}>Total Bets</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={[styles.statValue, { color: Colors.dark.success }]}>{stats?.wonBets || 0}</Text>
+                <Text style={styles.statLabel}>Won</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={[styles.statValue, { color: Colors.dark.danger }]}>{stats?.lostBets || 0}</Text>
+                <Text style={styles.statLabel}>Lost</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats?.winRate || 0}%</Text>
+                <Text style={styles.statLabel}>Win Rate</Text>
+              </View>
+            </View>
+          </View>
+        </>
+      )}
 
       <View style={styles.bottomPadding} />
     </ScrollView>
@@ -205,6 +247,32 @@ const styles = StyleSheet.create({
   memberSince: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    marginBottom: 4,
+  },
+  memberDate: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    marginTop: 8,
+  },
+  membershipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: Colors.dark.success + '20',
+    borderRadius: 12,
+  },
+  membershipText: {
+    ...Typography.body.small,
+    color: Colors.dark.success,
+    fontFamily: Fonts.medium,
+  },
+  subscriptionEnd: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    marginTop: 8,
   },
 
   // Credits Card
@@ -302,6 +370,24 @@ const styles = StyleSheet.create({
     ...Typography.emphasis.medium,
     color: Colors.dark.text,
   },
+  poolScore: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  poolScoreLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    marginBottom: 4,
+  },
+  poolScoreValue: {
+    ...Typography.title.large,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 32,
+  },
   viewLeaderboardButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,5 +466,18 @@ const styles = StyleSheet.create({
 
   bottomPadding: {
     height: 40,
+  },
+
+  // Loading State
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    marginTop: 16,
   },
 });

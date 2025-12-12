@@ -72,7 +72,16 @@ export const API_ROUTES = {
       UPDATE: (id: string) => `/api/bets/${id}`,
       DELETE: (id: string) => `/api/bets/${id}`,
     },
-  
+
+    // ==================== USERS ====================
+    USERS: {
+      GET: '/api/users',
+      GET_ME: '/api/users/me',
+      GET_BY_ID: (id: string) => `/api/users/${id}`,
+      UPDATE: (id: string) => `/api/users/${id}`,
+      DELETE: (id: string) => `/api/users/${id}`,
+    },
+
     // ==================== CUSTOM ENDPOINTS ====================
     CUSTOM: {
       PLACE_BET: '/api/custom/place-bet',
