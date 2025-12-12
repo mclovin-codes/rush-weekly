@@ -5,6 +5,10 @@ import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle } from "pho
 import BetSlipBottomSheet from '@/app/modal';
 import { useLeagues } from '@/hooks/useLeagues';
 import { useGames } from '@/hooks/useGames';
+import { useCurrentUser } from '@/hooks/useUser';
+import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
+import { authClient } from '@/lib/auth-client';
+import { useRouter } from 'expo-router';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -27,21 +31,6 @@ const getSportIdFromExternalId = (externalId: string): string => {
   if (externalId.toLowerCase().includes('mls') || externalId.toLowerCase().includes('uefa') || externalId.toLowerCase().includes('soccer')) return 'SOCCER';
   return 'FOOTBALL';
 };
-
-// Mock data
-const mockUser = {
-  username: 'Player123',
-  units: 980,
-  unitsChange: 20,
-  rank: 23,
-};
-
-const mockLeaderboardPreview = [
-  { rank: 1, username: 'ChampionPlayer', units: 2450 },
-  { rank: 2, username: 'SecondPlace', units: 2380 },
-  { rank: 3, username: 'ThirdPlace', units: 2310 },
-];
-
 
 // Pulsing glow animation component
 function PulsingText({ children, style }: { children: React.ReactNode; style?: any }) {
@@ -110,6 +99,8 @@ function PulsingText({ children, style }: { children: React.ReactNode; style?: a
 }
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   // Use 'all' as default to show all games
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [betSlipVisible, setBetSlipVisible] = useState(false);
@@ -117,6 +108,13 @@ export default function HomeScreen() {
     game: any;
     team: 'home' | 'away';
   } | null>(null);
+
+  // Fetch user and pool data
+  const { data: session } = authClient.useSession();
+  const { data: currentUser } = useCurrentUser();
+  const { data: activePool } = useActivePool();
+  const { data: myPool } = useMyPool();
+  const { data: leaderboardData } = useLeaderboard(activePool?.id, { limit: 100 });
 
   // Fetch leagues from API
   const { data: leaguesData, isLoading: isLoadingLeagues } = useLeagues({
@@ -131,6 +129,44 @@ export default function HomeScreen() {
     limit: 50, // Increased limit to show more games when showing all
   });
 
+  // Calculate user's rank and stats
+  const leaderboard = leaderboardData?.docs || [];
+  const currentUserEntry = leaderboard.find((entry) => {
+    const user = typeof entry.user === 'object' ? entry.user : null;
+    return user?.id === session?.user?.id;
+  });
+  const currentUserRank = currentUserEntry?.rank || 0;
+
+  // Get previous score to calculate change (for now, just use 0 as we don't have historical data)
+  const unitsChange = 0; // TODO: Calculate from historical data when available
+
+  // Get top 3 for leaderboard preview
+  const leaderboardPreview = leaderboard.slice(0, 3);
+
+  // Calculate time remaining in the week
+  const getTimeRemaining = () => {
+    if (!activePool?.weekEnd) return 'No active pool';
+    const now = new Date();
+    const end = new Date(activePool.weekEnd);
+    const diff = end.getTime() - now.getTime();
+
+    if (diff <= 0) return 'Pool ended';
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    return `Week ends in ${days}d ${hours}h ${minutes}m`;
+  };
+
+  // Get week number from pool
+  const getWeekNumber = () => {
+    if (!activePool?.weekStart) return 0;
+    const start = new Date(activePool.weekStart);
+    const weekNumber = Math.ceil((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+    return weekNumber;
+  };
+
   const handleCloseBetSlip = () => {
     setBetSlipVisible(false);
     setSelectedBet(null);
@@ -143,19 +179,30 @@ export default function HomeScreen() {
         <View style={styles.headerLeft}>
           <Text style={styles.logo}>RUSH</Text>
         </View>
-        
-        <TouchableOpacity style={styles.userInfo}>
-          <Text style={styles.username}>{mockUser.username}</Text>
+
+        <TouchableOpacity
+          style={styles.userInfo}
+          onPress={() => router.push('/(app)/(tabs)/profile')}
+        >
+          <Text style={styles.username}>
+            {currentUser?.username || session?.user?.name || 'Player'}
+          </Text>
           <View style={styles.statsRow}>
             <Text style={styles.unitsLabel}>Units: </Text>
-            <Text style={styles.unitsValue}>{mockUser.units}</Text>
-            <Text style={[
-              styles.unitsChange,
-              { color: mockUser.unitsChange >= 0 ? Colors.dark.success : Colors.dark.danger }
-            ]}>
-              {mockUser.unitsChange >= 0 ? '↑' : '↓'}{Math.abs(mockUser.unitsChange)}
+            <Text style={styles.unitsValue}>
+              {currentUser?.current_credits || currentUser?.credits || 0}
             </Text>
-            <Text style={styles.rankText}>(#{mockUser.rank})</Text>
+            {unitsChange !== 0 && (
+              <Text style={[
+                styles.unitsChange,
+                { color: unitsChange >= 0 ? Colors.dark.success : Colors.dark.danger }
+              ]}>
+                {unitsChange >= 0 ? '↑' : '↓'}{Math.abs(unitsChange)}
+              </Text>
+            )}
+            {currentUserRank > 0 && (
+              <Text style={styles.rankText}>(#{currentUserRank})</Text>
+            )}
           </View>
         </TouchableOpacity>
       </View>
@@ -249,26 +296,42 @@ export default function HomeScreen() {
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Week Countdown - Pulsing */}
-        <View style={styles.countdownSection}>
-          <PulsingText style={styles.countdownText}>
-            Week 14 ends in 2d 14h 23m
-          </PulsingText>
-        </View>
+        {activePool && (
+          <View style={styles.countdownSection}>
+            <PulsingText style={styles.countdownText}>
+              {getTimeRemaining()}
+            </PulsingText>
+          </View>
+        )}
 
         {/* Leaderboard Preview - Simplified */}
-        <TouchableOpacity style={styles.leaderboardPreview}>
+        <TouchableOpacity
+          style={styles.leaderboardPreview}
+          onPress={() => router.push('/(app)/(tabs)/leaderboard')}
+        >
           <View style={styles.previewHeader}>
             <Text style={styles.previewTitle}>LEADERBOARD</Text>
             <Text style={styles.viewAllText}>View All</Text>
           </View>
 
-          {mockLeaderboardPreview.map((player) => (
-            <View key={player.rank} style={styles.previewRow}>
-              <Text style={styles.previewRankText}>#{player.rank}</Text>
-              <Text style={styles.previewUsername}>{player.username}</Text>
-              <Text style={styles.previewUnits}>{player.units}</Text>
+          {leaderboardPreview.length > 0 ? (
+            leaderboardPreview.map((entry) => {
+              const user = typeof entry.user === 'object' ? entry.user : null;
+              return (
+                <View key={entry.rank} style={styles.previewRow}>
+                  <Text style={styles.previewRankText}>#{entry.rank}</Text>
+                  <Text style={styles.previewUsername}>
+                    {user?.username || 'Unknown'}
+                  </Text>
+                  <Text style={styles.previewUnits}>{entry.score.toFixed(0)}</Text>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyLeaderboard}>
+              <Text style={styles.emptyLeaderboardText}>No rankings yet</Text>
             </View>
-          ))}
+          )}
         </TouchableOpacity>
 
         {/* Games Section */}
@@ -376,7 +439,7 @@ export default function HomeScreen() {
         onClose={handleCloseBetSlip}
         game={selectedBet?.game}
         selectedTeam={selectedBet?.team || 'home'}
-        userUnits={mockUser.units}
+        userUnits={currentUser?.current_credits || currentUser?.credits || 0}
       />
     </View>
   );
@@ -530,6 +593,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderColor: Colors.dark.border,
+    marginTop: 11
   },
   previewHeader: {
     flexDirection: 'row',
@@ -571,6 +635,15 @@ const styles = StyleSheet.create({
     color: Colors.dark.textSecondary,
     fontFamily: Fonts.medium,
     fontSize: 12,
+  },
+  emptyLeaderboard: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  emptyLeaderboardText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 11,
   },
 
   // Games Section - Compact Grid Design

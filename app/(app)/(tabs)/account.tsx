@@ -10,7 +10,7 @@ import { useCurrentUser } from '@/hooks/useUser';
 
 export default function AccountScreen() {
   const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
   const [notifications, setNotifications] = useState({
