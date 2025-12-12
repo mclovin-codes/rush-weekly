@@ -32,20 +32,62 @@ export default function LoginScreen() {
       });
 
       if (error) {
+        setIsLoading(false);
+
+        // Check if error is due to unverified email
+        if (error.code === 'EMAIL_NOT_VERIFIED') {
+          console.log('Email not verified, redirecting to verify-email');
+          setTimeout(() => {
+            router.replace({
+              pathname: '/(auth)/verify-email',
+              params: {
+                email: email,
+                username: '',
+              },
+            });
+          }, 100);
+          return;
+        }
+
+        // Show error for other cases
         Alert.alert('Login Error', error.message || 'Failed to sign in');
         return;
       }
 
       if (authData) {
         console.log('Login successful', authData);
+        console.log('User data:', authData.user);
+
+        // Check if email is verified
+        const user = authData.user;
+
+        // Stop loading before navigation
+        setIsLoading(false);
+
+        if (user && user.emailVerified === false) {
+          console.log('Email not verified, redirecting to verify-email');
+          // Redirect to email verification screen
+          setTimeout(() => {
+            router.replace({
+              pathname: '/(auth)/verify-email',
+              params: {
+                email: user.email || email,
+                username: user.name || '',
+              },
+            });
+          }, 100);
+          return;
+        }
+
         // Navigate to main app or home screen
-        router.replace('/(app)/(tabs)');
+        setTimeout(() => {
+          router.replace('/(app)/(tabs)');
+        }, 100);
       }
     } catch (err) {
       console.error('Login error:', err);
-      Alert.alert('Login Error', 'An unexpected error occurred');
-    } finally {
       setIsLoading(false);
+      Alert.alert('Login Error', 'An unexpected error occurred');
     }
   };
 

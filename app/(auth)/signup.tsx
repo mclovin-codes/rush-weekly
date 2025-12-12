@@ -72,6 +72,7 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
             params: {
               email: email,
               username: username,
+              isNewUser: 'true', // Flag to indicate this is a new signup
             },
           });
         }

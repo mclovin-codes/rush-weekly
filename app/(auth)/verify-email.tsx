@@ -9,8 +9,10 @@ export default function VerifyEmailScreen() {
   const params = useLocalSearchParams();
   const email = (params.email as string) || '';
   const username = (params.username as string) || '';
+  const isNewUser = (params.isNewUser as string) === 'true';
 
   const [isResending, setIsResending] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleResendVerification = async () => {
     if (!email) {
@@ -53,12 +55,59 @@ export default function VerifyEmailScreen() {
     }
   };
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await authClient.signOut();
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
   const handleBackToLogin = () => {
     router.replace('/(auth)/login');
   };
 
   const handleContinueToOnboarding = () => {
     router.replace('/(auth)/onboarding');
+  };
+
+  const handleCheckVerification = async () => {
+    try {
+      // Refresh session to check if email is now verified
+      const { data: session } = await authClient.getSession();
+
+      if (session?.user?.emailVerified) {
+        const destination = isNewUser ? '/(auth)/onboarding' : '/(app)/(tabs)';
+        const message = isNewUser
+          ? 'Your email has been verified. Let\'s complete your onboarding!'
+          : 'Your email has been verified. You can now access the app.';
+
+        Alert.alert(
+          'Success!',
+          message,
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.replace(destination),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Not Verified Yet',
+          'Please check your email and click the verification link. It may take a few minutes to arrive.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Check verification error:', error);
+      Alert.alert('Error', 'Failed to check verification status');
+    }
   };
 
   return (
@@ -86,16 +135,16 @@ export default function VerifyEmailScreen() {
 
           <TouchableOpacity
             style={styles.button}
-            onPress={handleContinueToOnboarding}
+            onPress={handleCheckVerification}
           >
-            <Text style={styles.buttonText}>CONTINUE TO APP</Text>
+            <Text style={styles.buttonText}>I'VE VERIFIED MY EMAIL</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.secondaryButton}
-            onPress={handleBackToLogin}
+            onPress={handleContinueToOnboarding}
           >
-            <Text style={styles.secondaryButtonText}>BACK TO LOGIN</Text>
+            <Text style={styles.secondaryButtonText}>SKIP FOR NOW</Text>
           </TouchableOpacity>
 
           <View style={styles.divider} />
@@ -107,6 +156,16 @@ export default function VerifyEmailScreen() {
           >
             <Text style={styles.linkText}>
               {isResending ? 'Sending...' : 'Resend verification email'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={handleSignOut}
+            disabled={isSigningOut}
+          >
+            <Text style={[styles.linkText, styles.signOutText]}>
+              {isSigningOut ? 'Signing out...' : 'Sign out'}
             </Text>
           </TouchableOpacity>
 
@@ -222,6 +281,9 @@ const styles = StyleSheet.create({
     ...Typography.body.medium,
     color: Colors.dark.tint,
     fontWeight: '600',
+  },
+  signOutText: {
+    color: Colors.dark.textSecondary,
   },
   helpText: {
     ...Typography.body.small,

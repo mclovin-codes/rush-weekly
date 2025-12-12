@@ -21,8 +21,23 @@ export default function WelcomeScreen() {
     );
   }
 
-  // If signed in, go to app
+  // If signed in, check email verification
   if (session) {
+    const user = session.user;
+    console.log('Session user:', user);
+    console.log('Email verified:', user?.emailVerified);
+
+    // Check if email is verified
+    if (user && user.emailVerified === false) {
+      console.log('Redirecting to verify-email from index');
+      return <Redirect href={{
+        pathname: "/(auth)/verify-email",
+        params: {
+          email: user.email || '',
+          username: user.name || '',
+        },
+      }} />;
+    }
     return <Redirect href="/(app)/(tabs)" />;
   }
 
