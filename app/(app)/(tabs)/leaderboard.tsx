@@ -1,18 +1,31 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import React from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useActivePool, useMyPool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 
 export default function LeaderboardScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+
   // Get current user from auth
   const { data: session } = authClient.useSession();
   const currentUserId = session?.user?.id;
 
   // Fetch active pool, user's pool membership, and leaderboard
-  const { data: activePool, isLoading: isLoadingPool } = useActivePool();
-  const { data: myPool, isLoading: isLoadingMyPool } = useMyPool();
-  const { data: leaderboardData, isLoading: isLoadingLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
+  const { data: activePool, isLoading: isLoadingPool, refetch: refetchPool } = useActivePool();
+  const { data: myPool, isLoading: isLoadingMyPool, refetch: refetchMyPool } = useMyPool();
+  const { data: leaderboardData, isLoading: isLoadingLeaderboard, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchPool(),
+      refetchMyPool(),
+      refetchLeaderboard(),
+    ]);
+    setRefreshing(false);
+  };
 
   const leaderboard = leaderboardData?.docs || [];
   const totalPlayers = leaderboard.length;
@@ -115,6 +128,14 @@ export default function LeaderboardScreen() {
       <ScrollView
         style={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.dark.tint}
+            colors={[Colors.dark.tint]}
+          />
+        }
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
