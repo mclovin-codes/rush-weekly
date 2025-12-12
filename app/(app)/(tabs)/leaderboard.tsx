@@ -1,37 +1,56 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React from 'react';
-
-import { mockLeaderboard } from '@/constants/mock-data';
 import { Colors, Fonts, Typography } from '@/constants/theme';
+import { useActivePool, useMyPool, useLeaderboard } from '@/hooks/usePools';
+import { authClient } from '@/lib/auth-client';
 
 export default function LeaderboardScreen() {
-  const currentUserRank = 23;
-  const currentUserId = 'user-123'; // This would come from auth context
-  const totalPlayers = mockLeaderboard.length;
+  // Get current user from auth
+  const { data: session } = authClient.useSession();
+  const currentUserId = session?.user?.id;
 
-  // Weekly pool info (from pools table)
-  const poolInfo = {
-    weekNumber: 14,
-    weekStart: '2025-11-25',
-    weekEnd: '2025-12-01',
-    poolSize: 100,
-    isActive: true,
-  };
+  // Fetch active pool, user's pool membership, and leaderboard
+  const { data: activePool, isLoading: isLoadingPool } = useActivePool();
+  const { data: myPool, isLoading: isLoadingMyPool } = useMyPool();
+  const { data: leaderboardData, isLoading: isLoadingLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
+
+  const leaderboard = leaderboardData?.docs || [];
+  const totalPlayers = leaderboard.length;
+
+  // Find current user's rank from leaderboard
+  const currentUserEntry = leaderboard.find((entry) => {
+    const user = typeof entry.user === 'object' ? entry.user : null;
+    return user?.id === currentUserId;
+  });
+  const currentUserRank = currentUserEntry?.rank || 0;
 
   const isTopTier = (rank: number) => rank <= 3;
   const isTop10 = (rank: number) => rank <= 10;
 
+  // Calculate week number from pool start date
+  const getWeekNumber = () => {
+    if (!activePool?.weekStart) return 0;
+    const start = new Date(activePool.weekStart);
+    const weekNumber = Math.ceil((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+    return weekNumber;
+  };
+
   // Calculate time remaining in the week
   const getTimeRemaining = () => {
+    if (!activePool?.weekEnd) return '0d 0h';
     const now = new Date();
-    const end = new Date(poolInfo.weekEnd);
+    const end = new Date(activePool.weekEnd);
     const diff = end.getTime() - now.getTime();
-    
+
+    if (diff <= 0) return '0d 0h';
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
+
     return `${days}d ${hours}h`;
   };
+
+  const isLoading = isLoadingPool || isLoadingMyPool || isLoadingLeaderboard;
 
   return (
     <View style={styles.container}>
@@ -43,12 +62,12 @@ export default function LeaderboardScreen() {
         <View style={styles.poolOverview}>
           <View style={styles.overviewItem}>
             <Text style={styles.overviewLabel}>Week</Text>
-            <Text style={styles.overviewValue}>{poolInfo.weekNumber}</Text>
+            <Text style={styles.overviewValue}>{getWeekNumber()}</Text>
           </View>
           <View style={styles.overviewDivider} />
           <View style={styles.overviewItem}>
             <Text style={styles.overviewLabel}>Pool Size</Text>
-            <Text style={styles.overviewValue}>{poolInfo.poolSize}</Text>
+            <Text style={styles.overviewValue}>{totalPlayers}</Text>
           </View>
           <View style={styles.overviewDivider} />
           <View style={styles.overviewItem}>
@@ -62,18 +81,22 @@ export default function LeaderboardScreen() {
           <View style={styles.positionLeft}>
             <Text style={styles.positionLabel}>YOUR POSITION</Text>
             <View style={styles.rankContainer}>
-              <Text style={styles.rankNumber}>#{currentUserRank}</Text>
+              <Text style={styles.rankNumber}>
+                {currentUserRank > 0 ? `#${currentUserRank}` : '--'}
+              </Text>
               <Text style={styles.statusText}>
-                {isTop10(currentUserRank) 
-                  ? 'Top 10%' 
-                  : `${Math.round((currentUserRank / totalPlayers) * 100)}th percentile`}
+                {currentUserRank > 0 && totalPlayers > 0
+                  ? isTop10(currentUserRank)
+                    ? 'Top 10'
+                    : `${Math.round((currentUserRank / totalPlayers) * 100)}th percentile`
+                  : 'Not ranked'}
               </Text>
             </View>
           </View>
           <View style={styles.positionRight}>
-            <Text style={styles.unitsLabel}>Your Units</Text>
+            <Text style={styles.unitsLabel}>Your Score</Text>
             <Text style={styles.unitsAmount}>
-              {mockLeaderboard.find(p => p.rank === currentUserRank)?.units || 980}
+              {myPool?.score?.toFixed(0) || currentUserEntry?.score?.toFixed(0) || '0'}
             </Text>
           </View>
         </View>
@@ -85,7 +108,7 @@ export default function LeaderboardScreen() {
       <View style={styles.tableHeader}>
         <Text style={[styles.headerText, styles.rankHeader]}>RANK</Text>
         <Text style={[styles.headerText, styles.playerHeader]}>PLAYER</Text>
-        <Text style={[styles.headerText, styles.unitsHeader]}>UNITS</Text>
+        <Text style={[styles.headerText, styles.unitsHeader]}>SCORE</Text>
       </View>
 
       {/* Leaderboard List */}
@@ -93,55 +116,74 @@ export default function LeaderboardScreen() {
         style={styles.listContainer}
         showsVerticalScrollIndicator={false}
       >
-        {mockLeaderboard.map((entry) => (
-          <TouchableOpacity 
-            key={entry.id} 
-            style={[
-              styles.row,
-              entry.rank === currentUserRank && styles.currentUserRow,
-              isTop10(entry.rank) && styles.top10Row
-            ]}
-          >
-            {/* Rank Column */}
-            <View style={[
-              styles.rankColumn, 
-              isTopTier(entry.rank) && styles.topTierRank
-            ]}>
-              <Text style={[
-                styles.rankText,
-                isTopTier(entry.rank) && styles.topTierRankText,
-                entry.rank === currentUserRank && styles.currentUserRankText
-              ]}>
-                #{entry.rank}
-              </Text>
-            </View>
-
-            {/* Player Column */}
-            <View style={styles.playerColumn}>
-              <Text style={[
-                styles.playerName,
-                entry.rank === currentUserRank && styles.currentUserText
-              ]}>
-                {entry.username}
-              </Text>
-              {isTopTier(entry.rank) && (
-                <Text style={styles.tierBadge}>
-                  {entry.rank === 1 ? 'CHAMPION' : 
-                   entry.rank === 2 ? 'RUNNER UP' : 
-                   'THIRD'}
-                </Text>
-              )}
-            </View>
-
-            {/* Units Column */}
-            <Text style={[
-              styles.unitsText,
-              entry.rank === currentUserRank && styles.currentUserText
-            ]}>
-              {entry.units.toLocaleString()}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.dark.tint} />
+            <Text style={styles.loadingText}>Loading leaderboard...</Text>
+          </View>
+        ) : leaderboard.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No rankings yet</Text>
+            <Text style={styles.emptySubtext}>
+              Be the first to place bets and climb the leaderboard
             </Text>
-          </TouchableOpacity>
-        ))}
+          </View>
+        ) : (
+          leaderboard.map((entry) => {
+            const user = typeof entry.user === 'object' ? entry.user : null;
+            const isCurrentUser = user?.id === currentUserId;
+
+            return (
+              <TouchableOpacity
+                key={user?.id || entry.rank}
+                style={[
+                  styles.row,
+                  isCurrentUser && styles.currentUserRow,
+                  isTop10(entry.rank) && styles.top10Row
+                ]}
+              >
+                {/* Rank Column */}
+                <View style={[
+                  styles.rankColumn,
+                  isTopTier(entry.rank) && styles.topTierRank
+                ]}>
+                  <Text style={[
+                    styles.rankText,
+                    isTopTier(entry.rank) && styles.topTierRankText,
+                    isCurrentUser && styles.currentUserRankText
+                  ]}>
+                    #{entry.rank}
+                  </Text>
+                </View>
+
+                {/* Player Column */}
+                <View style={styles.playerColumn}>
+                  <Text style={[
+                    styles.playerName,
+                    isCurrentUser && styles.currentUserText
+                  ]}>
+                    {user?.username || 'Unknown User'}
+                  </Text>
+                  {isTopTier(entry.rank) && (
+                    <Text style={styles.tierBadge}>
+                      {entry.rank === 1 ? 'CHAMPION' :
+                       entry.rank === 2 ? 'RUNNER UP' :
+                       'THIRD'}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Score Column */}
+                <Text style={[
+                  styles.unitsText,
+                  isCurrentUser && styles.currentUserText
+                ]}>
+                  {entry.score.toFixed(0)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -440,5 +482,35 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: 80,
+  },
+
+  // Loading State
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    marginTop: 16,
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    ...Typography.body.large,
+    color: Colors.dark.text,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });
