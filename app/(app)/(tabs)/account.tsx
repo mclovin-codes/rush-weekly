@@ -5,16 +5,19 @@ import { useRouter } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
+import { apiHelpers } from "@/config/api";
 
 export default function AccountScreen() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  
+
   const [notifications, setNotifications] = useState({
     newWeek: true,
     gameResults: true,
     rankChanges: false,
   });
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   const signOut = async () => {
     try {
@@ -35,6 +38,78 @@ export default function AccountScreen() {
         { text: 'Logout', style: 'destructive', onPress: signOut },
       ]
     );
+  };
+
+  const handleDeleteAccount = () => {
+    // First confirmation
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to delete your account? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: confirmDeletion,
+        },
+      ]
+    );
+  };
+
+  const confirmDeletion = () => {
+    // Second confirmation for safety
+    Alert.alert(
+      'Final Confirmation',
+      'This will permanently delete:\n\n• Your account\n• All your bets\n• Your pool memberships\n• All personal data\n\nThis cannot be undone. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Permanently',
+          style: 'destructive',
+          onPress: performDeletion,
+        },
+      ]
+    );
+  };
+
+  const performDeletion = async () => {
+    setIsDeletingAccount(true);
+
+    try {
+      // Step 1: Delete from Better Auth first
+      await (authClient as any).deleteUser({
+        callbackURL: '/(auth)/login', // Redirect after deletion
+      });
+
+      // Step 2: Call the backend delete-account endpoint
+      // This will cascade delete all related data (bets, pool memberships, etc.)
+      await apiHelpers.delete('/api/users/delete-account');
+
+      // Step 3: Show success message and redirect
+      Alert.alert(
+        'Account Deleted',
+        'Your account has been permanently deleted.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Redirect to login screen
+              router.replace('/(auth)/login');
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    } catch (error: any) {
+      console.error('Account deletion error:', error);
+      setIsDeletingAccount(false);
+
+      Alert.alert(
+        'Deletion Failed',
+        error?.message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   return (
@@ -182,9 +257,15 @@ export default function AccountScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteButton}>
+        <TouchableOpacity
+          style={[styles.deleteButton, isDeletingAccount && styles.deleteButtonDisabled]}
+          onPress={handleDeleteAccount}
+          disabled={isDeletingAccount}
+        >
           <Ionicons name="trash-outline" size={20} color={Colors.dark.danger} />
-          <Text style={styles.deleteText}>Delete Account</Text>
+          <Text style={styles.deleteText}>
+            {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -359,6 +440,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.danger,
     gap: 8,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
   },
   deleteText: {
     ...Typography.emphasis.medium,

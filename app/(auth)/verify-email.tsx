@@ -137,7 +137,7 @@ export default function VerifyEmailScreen() {
             style={styles.button}
             onPress={handleCheckVerification}
           >
-            <Text style={styles.buttonText}>I'VE VERIFIED MY EMAIL</Text>
+            <Text style={styles.buttonText}>I&apos;VE VERIFIED MY EMAIL</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
