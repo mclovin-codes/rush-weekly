@@ -45,7 +45,24 @@ export const betService = {
   },
 
   getMyBets: async (): Promise<PopulatedBet[]> => {
-    const response = await apiHelpers.get(`${API_ROUTES.CUSTOM.MY_BETS}?depth=3`);
-    return response.docs;
+    try {
+      const response = await apiHelpers.get(`${API_ROUTES.CUSTOM.MY_BETS}?depth=3`);
+
+      // Handle different response formats
+      if (Array.isArray(response)) {
+        return response;
+      }
+
+      if (response?.docs && Array.isArray(response.docs)) {
+        return response.docs;
+      }
+
+      // Return empty array if no data
+      console.warn('Unexpected response format from my-bets:', response);
+      return [];
+    } catch (error) {
+      console.error('Error fetching my bets:', error);
+      return [];
+    }
   },
 };

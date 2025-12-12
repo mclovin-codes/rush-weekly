@@ -1,133 +1,27 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList } from 'react-native';
-import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-
-// Types based on your schema
-type BetStatus = 'pending' | 'won' | 'lost' | 'push';
-type BetType = 'moneyline' | 'spread' | 'total';
-type Selection = 'home' | 'away' | 'over' | 'under';
-
-interface Bet {
-  id: string;
-  gameId: string;
-  betType: BetType;
-  selection: Selection;
-  stake: number;
-  oddsAtPlacement: number;
-  lineAtPlacement?: number;
-  status: BetStatus;
-  payout: number;
-  createdAt: string;
-  
-  // Game details (joined from games table)
-  homeTeam: string;
-  awayTeam: string;
-  homeTeamAbbr: string;
-  awayTeamAbbr: string;
-  startTime: string;
-  gameStatus: string;
-  homeScore?: number;
-  awayScore?: number;
-  league: string;
-}
-
-// Mock data based on schema
-const mockBets: Bet[] = [
-  {
-    id: '1',
-    gameId: 'game1',
-    betType: 'spread',
-    selection: 'home',
-    stake: 50,
-    oddsAtPlacement: -110,
-    lineAtPlacement: -3.5,
-    status: 'won',
-    payout: 95.45,
-    createdAt: '2025-12-03T19:06:00Z',
-    homeTeam: 'Dallas Cowboys',
-    awayTeam: 'Detroit Lions',
-    homeTeamAbbr: 'DAL',
-    awayTeamAbbr: 'DET',
-    startTime: '2025-12-03T20:15:00Z',
-    gameStatus: 'finalized',
-    homeScore: 24,
-    awayScore: 17,
-    league: 'NFL',
-  },
-  {
-    id: '2',
-    gameId: 'game2',
-    betType: 'total',
-    selection: 'over',
-    stake: 75,
-    oddsAtPlacement: -115,
-    lineAtPlacement: 47.5,
-    status: 'pending',
-    payout: 0,
-    createdAt: '2025-12-03T18:30:00Z',
-    homeTeam: 'New Orleans Saints',
-    awayTeam: 'Tampa Bay Buccaneers',
-    homeTeamAbbr: 'NO',
-    awayTeamAbbr: 'TB',
-    startTime: '2025-12-07T18:00:00Z',
-    gameStatus: 'scheduled',
-    league: 'NFL',
-  },
-  {
-    id: '3',
-    gameId: 'game3',
-    betType: 'moneyline',
-    selection: 'away',
-    stake: 100,
-    oddsAtPlacement: -170,
-    status: 'lost',
-    payout: 0,
-    createdAt: '2025-12-02T15:20:00Z',
-    homeTeam: 'Los Angeles Lakers',
-    awayTeam: 'Boston Celtics',
-    homeTeamAbbr: 'LAL',
-    awayTeamAbbr: 'BOS',
-    startTime: '2025-12-02T22:00:00Z',
-    gameStatus: 'finalized',
-    homeScore: 118,
-    awayScore: 114,
-    league: 'NBA',
-  },
-  {
-    id: '4',
-    gameId: 'game4',
-    betType: 'spread',
-    selection: 'away',
-    stake: 60,
-    oddsAtPlacement: -110,
-    lineAtPlacement: 2.5,
-    status: 'pending',
-    payout: 0,
-    createdAt: '2025-12-03T14:45:00Z',
-    homeTeam: 'Chicago Bulls',
-    awayTeam: 'Miami Heat',
-    homeTeamAbbr: 'CHI',
-    awayTeamAbbr: 'MIA',
-    startTime: '2025-12-04T00:30:00Z',
-    gameStatus: 'live',
-    homeScore: 52,
-    awayScore: 48,
-    league: 'NBA',
-  },
-];
+import { useMyBets } from '@/hooks/useBets';
+import { PopulatedBet, Bet } from '@/types';
 
 const filterOptions = ['All', 'Open', 'Won', 'Lost'];
 
 export default function MyBetsScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
 
-  const filteredBets = mockBets.filter((bet) => {
-    if (selectedFilter === 'All') return true;
-    if (selectedFilter === 'Open') return bet.status === 'pending';
-    if (selectedFilter === 'Won') return bet.status === 'won';
-    if (selectedFilter === 'Lost') return bet.status === 'lost';
-    return true;
-  });
+  // Fetch user's bets from API
+  const { data: bets = [], isLoading, error } = useMyBets();
+
+  // Filter bets based on selected filter
+  const filteredBets = useMemo(() => {
+    return bets.filter((bet) => {
+      if (selectedFilter === 'All') return true;
+      if (selectedFilter === 'Open') return bet.status === 'pending';
+      if (selectedFilter === 'Won') return bet.status === 'won';
+      if (selectedFilter === 'Lost') return bet.status === 'lost';
+      return true;
+    });
+  }, [bets, selectedFilter]);
 
   const formatOdds = (odds: number) => {
     return odds > 0 ? `+${odds}` : `${odds}`;
@@ -143,21 +37,29 @@ export default function MyBetsScreen() {
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   };
 
-  const getBetDescription = (bet: Bet) => {
+  const getBetDescription = (bet: PopulatedBet) => {
+    const game = bet.game;
+    const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
+    const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
+
     switch (bet.betType) {
       case 'spread':
-        const team = bet.selection === 'home' ? bet.homeTeamAbbr : bet.awayTeamAbbr;
-        return `${team} ${bet.lineAtPlacement! > 0 ? '+' : ''}${bet.lineAtPlacement}`;
+        const team = bet.selection === 'home'
+          ? homeTeam?.abbreviation || 'HOME'
+          : awayTeam?.abbreviation || 'AWAY';
+        return `${team} ${bet.lineAtPlacement !== undefined && bet.lineAtPlacement > 0 ? '+' : ''}${bet.lineAtPlacement || ''}`;
       case 'total':
-        return `${bet.selection === 'over' ? 'Over' : 'Under'} ${bet.lineAtPlacement}`;
+        return `${bet.selection === 'over' ? 'Over' : 'Under'} ${bet.lineAtPlacement || ''}`;
       case 'moneyline':
-        return bet.selection === 'home' ? bet.homeTeamAbbr : bet.awayTeamAbbr;
+        return bet.selection === 'home'
+          ? homeTeam?.abbreviation || 'HOME'
+          : awayTeam?.abbreviation || 'AWAY';
       default:
         return '';
     }
   };
 
-  const getStatusColor = (status: BetStatus) => {
+  const getStatusColor = (status: Bet['status']) => {
     switch (status) {
       case 'won':
         return Colors.dark.success;
@@ -170,9 +72,11 @@ export default function MyBetsScreen() {
     }
   };
 
-  const getStatusText = (bet: Bet) => {
+  const getStatusText = (bet: PopulatedBet) => {
+    const game = bet.game;
+
     if (bet.status === 'pending') {
-      if (bet.gameStatus === 'live') return 'Live';
+      if (game.status === 'live') return 'Live';
       return 'Open';
     }
     if (bet.status === 'won') return 'Won';
@@ -181,76 +85,82 @@ export default function MyBetsScreen() {
     return '';
   };
 
-  const renderBetCard = ({ item: bet }: { item: Bet }) => (
-    <TouchableOpacity style={styles.betCard}>
-      {/* Header */}
-      <View style={styles.betHeader}>
-        <View style={styles.betHeaderLeft}>
-          <View style={styles.betTypeTag}>
-            <Text style={styles.betTypeText}>{bet.betType.toUpperCase()}</Text>
+  const renderBetCard = ({ item: bet }: { item: PopulatedBet }) => {
+    const game = bet.game;
+    const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
+    const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
+
+    return (
+      <TouchableOpacity style={styles.betCard}>
+        {/* Header */}
+        <View style={styles.betHeader}>
+          <View style={styles.betHeaderLeft}>
+            <View style={styles.betTypeTag}>
+              <Text style={styles.betTypeText}>{bet.betType.toUpperCase()}</Text>
+            </View>
+            <Text style={styles.betDescription}>{getBetDescription(bet)}</Text>
+            <Text style={styles.betOdds}>{formatOdds(bet.oddsAtPlacement)}</Text>
           </View>
-          <Text style={styles.betDescription}>{getBetDescription(bet)}</Text>
-          <Text style={styles.betOdds}>{formatOdds(bet.oddsAtPlacement)}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
+              {getStatusText(bet)}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
-          <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
-            {getStatusText(bet)}
+
+        {/* Game Info */}
+        <View style={styles.gameInfo}>
+          <Text style={styles.gameDate}>
+            {formatDate(game.startTime)} • {formatTime(game.startTime)}
           </Text>
         </View>
-      </View>
 
-      {/* Game Info */}
-      <View style={styles.gameInfo}>
-        <Text style={styles.gameDate}>
-          {formatDate(bet.startTime)} • {formatTime(bet.startTime)}
-        </Text>
-      </View>
-
-      {/* Matchup */}
-      <View style={styles.matchup}>
-        <View style={styles.teamRow}>
-          <Text style={styles.teamAbbr}>{bet.awayTeamAbbr}</Text>
-          <Text style={styles.teamName}>{bet.awayTeam}</Text>
-          {bet.homeScore !== undefined && (
-            <Text style={styles.score}>{bet.awayScore}</Text>
-          )}
-        </View>
-        <View style={styles.teamRow}>
-          <Text style={styles.teamAbbr}>{bet.homeTeamAbbr}</Text>
-          <Text style={styles.teamName}>{bet.homeTeam}</Text>
-          {bet.homeScore !== undefined && (
-            <Text style={styles.score}>{bet.homeScore}</Text>
-          )}
-        </View>
-      </View>
-
-      {/* Wager Info */}
-      <View style={styles.wagerInfo}>
-        <View style={styles.wagerItem}>
-          <Text style={styles.wagerLabel}>Stake</Text>
-          <Text style={styles.wagerValue}>{bet.stake} units</Text>
-        </View>
-        {bet.status !== 'pending' && (
-          <View style={styles.wagerItem}>
-            <Text style={styles.wagerLabel}>
-              {bet.status === 'won' ? 'Won' : bet.status === 'lost' ? 'Lost' : 'Push'}
-            </Text>
-            <Text style={[
-              styles.wagerValue,
-              bet.status === 'won' ? styles.wonText : 
-              bet.status === 'lost' ? styles.lostText : styles.pushText
-            ]}>
-              {bet.status === 'won' ? `+${bet.payout}` : 
-               bet.status === 'lost' ? `-${bet.stake}` : '0'} units
-            </Text>
+        {/* Matchup */}
+        <View style={styles.matchup}>
+          <View style={styles.teamRow}>
+            <Text style={styles.teamAbbr}>{awayTeam?.abbreviation || 'TBD'}</Text>
+            <Text style={styles.teamName}>{awayTeam?.name || 'To Be Determined'}</Text>
+            {game.awayScore !== undefined && (
+              <Text style={styles.score}>{game.awayScore}</Text>
+            )}
           </View>
-        )}
-      </View>
+          <View style={styles.teamRow}>
+            <Text style={styles.teamAbbr}>{homeTeam?.abbreviation || 'TBD'}</Text>
+            <Text style={styles.teamName}>{homeTeam?.name || 'To Be Determined'}</Text>
+            {game.homeScore !== undefined && (
+              <Text style={styles.score}>{game.homeScore}</Text>
+            )}
+          </View>
+        </View>
 
-      {/* Bet ID */}
-      <Text style={styles.betId}>Bet ID: {bet.id}</Text>
-    </TouchableOpacity>
-  );
+        {/* Wager Info */}
+        <View style={styles.wagerInfo}>
+          <View style={styles.wagerItem}>
+            <Text style={styles.wagerLabel}>Stake</Text>
+            <Text style={styles.wagerValue}>{bet.stake} units</Text>
+          </View>
+          {bet.status !== 'pending' && (
+            <View style={styles.wagerItem}>
+              <Text style={styles.wagerLabel}>
+                {bet.status === 'won' ? 'Won' : bet.status === 'lost' ? 'Lost' : 'Push'}
+              </Text>
+              <Text style={[
+                styles.wagerValue,
+                bet.status === 'won' ? styles.wonText :
+                bet.status === 'lost' ? styles.lostText : styles.pushText
+              ]}>
+                {bet.status === 'won' ? `+${bet.payout.toFixed(2)}` :
+                 bet.status === 'lost' ? `-${bet.stake}` : '0'} units
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bet ID */}
+        <Text style={styles.betId}>Bet ID: {bet.id}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -294,11 +204,21 @@ export default function MyBetsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {filteredBets.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.dark.tint} />
+            <Text style={styles.loadingText}>Loading your bets...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Error loading bets</Text>
+            <Text style={styles.emptySubtext}>Please try again later</Text>
+          </View>
+        ) : filteredBets.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No bets found</Text>
             <Text style={styles.emptySubtext}>
-              {selectedFilter === 'All' 
+              {selectedFilter === 'All'
                 ? 'Start placing bets to see them here'
                 : `No ${selectedFilter.toLowerCase()} bets`}
             </Text>
@@ -530,6 +450,18 @@ const styles = StyleSheet.create({
   emptySubtext: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+  },
+
+  // Loading State
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    marginTop: 16,
   },
 
   bottomSpacing: {
