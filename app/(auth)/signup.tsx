@@ -66,7 +66,14 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
         if (onSignupComplete) {
           onSignupComplete();
         } else {
-          router.replace('/(auth)/onboarding');
+          // Navigate to email verification screen with user data
+          router.replace({
+            pathname: '/(auth)/verify-email',
+            params: {
+              email: email,
+              username: username,
+            },
+          });
         }
       }
     } catch (err) {
