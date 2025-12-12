@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
 import React, { useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
@@ -8,9 +8,17 @@ const filterOptions = ['All', 'Open', 'Won', 'Lost'];
 
 export default function MyBetsScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch user's bets from API
-  const { data: bets = [], isLoading, error } = useMyBets();
+  const { data: bets = [], isLoading, error, refetch } = useMyBets();
+
+  // Handle pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  };
 
   // Filter bets based on selected filter
   const filteredBets = useMemo(() => {
@@ -203,6 +211,14 @@ export default function MyBetsScreen() {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.dark.tint}
+            colors={[Colors.dark.tint]}
+          />
+        }
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
