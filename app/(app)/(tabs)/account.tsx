@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, Text, Switch, TouchableOpacity, Alert } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, Switch, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -6,10 +6,12 @@ import { useRouter } from 'expo-router';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
 import { apiHelpers } from "@/config/api";
+import { useCurrentUser } from '@/hooks/useUser';
 
 export default function AccountScreen() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
 
   const [notifications, setNotifications] = useState({
     newWeek: true,
@@ -18,6 +20,32 @@ export default function AccountScreen() {
   });
 
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Check if subscription is active
+  const isSubscriptionActive = currentUser?.is_paid_member &&
+    currentUser?.subscription_end_date &&
+    new Date(currentUser.subscription_end_date) > new Date();
+
+  // Format subscription renewal date
+  const getSubscriptionRenewalText = () => {
+    if (!currentUser?.subscription_end_date) return 'Not subscribed';
+
+    const endDate = new Date(currentUser.subscription_end_date);
+    const now = new Date();
+
+    if (endDate < now) {
+      return 'Expired';
+    }
+
+    // Calculate days remaining
+    const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysRemaining <= 7) {
+      return `Expires in ${daysRemaining} day${daysRemaining === 1 ? '' : 's'}`;
+    }
+
+    return `Renews ${endDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`;
+  };
 
   const signOut = async () => {
     try {
@@ -122,24 +150,69 @@ export default function AccountScreen() {
         <Text style={styles.screenTitle}>SETTINGS</Text>
       </View>
 
-      {/* Weekly Pass Card */}
-      <View style={styles.section}>
-        <View style={styles.passCard}>
-          <View style={styles.passHeader}>
-            <View>
-              <Text style={styles.passTitle}>Weekly Pass</Text>
-              <Text style={styles.passStatus}>ACTIVE</Text>
-            </View>
-            <Text style={styles.passPrice}>$25</Text>
-          </View>
-          
-          <Text style={styles.passRenewal}>Renews Monday, Nov 30</Text>
-          
-          <TouchableOpacity style={styles.manageButton}>
-            <Text style={styles.manageButtonText}>Manage Membership</Text>
-          </TouchableOpacity>
+      {isLoadingUser ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.dark.tint} />
+          <Text style={styles.loadingText}>Loading account...</Text>
         </View>
-      </View>
+      ) : (
+        <>
+          {/* User Info */}
+          <View style={styles.section}>
+            <View style={styles.userInfoCard}>
+              <View style={styles.userInfoRow}>
+                <Text style={styles.userInfoLabel}>Username</Text>
+                <Text style={styles.userInfoValue}>{currentUser?.username || session?.user?.name || 'User'}</Text>
+              </View>
+              <View style={styles.userInfoRow}>
+                <Text style={styles.userInfoLabel}>Email</Text>
+                <Text style={styles.userInfoValue}>{currentUser?.email || session?.user?.email}</Text>
+              </View>
+              <View style={[styles.userInfoRow, styles.userInfoRowLast]}>
+                <Text style={styles.userInfoLabel}>Credits Balance</Text>
+                <Text style={[styles.userInfoValue, styles.creditsValue]}>
+                  {currentUser?.current_credits || currentUser?.credits || 0}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Weekly Pass Card */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>SUBSCRIPTION</Text>
+            <View style={styles.passCard}>
+              <View style={styles.passHeader}>
+                <View>
+                  <Text style={styles.passTitle}>Weekly Pass</Text>
+                  <Text style={[
+                    styles.passStatus,
+                    !isSubscriptionActive && styles.passStatusInactive
+                  ]}>
+                    {isSubscriptionActive ? 'ACTIVE' : 'INACTIVE'}
+                  </Text>
+                </View>
+                {isSubscriptionActive && (
+                  <View style={styles.passIcon}>
+                    <Ionicons name="checkmark-circle" size={32} color={Colors.dark.success} />
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.passRenewal}>{getSubscriptionRenewalText()}</Text>
+
+              {!isSubscriptionActive ? (
+                <TouchableOpacity style={styles.activateButton}>
+                  <Text style={styles.activateButtonText}>Activate Membership</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.manageButton}>
+                  <Text style={styles.manageButtonText}>Manage Membership</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </>
+      )}
 
       {/* Account Info */}
       <View style={styles.section}>
@@ -294,6 +367,53 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.display,
   },
 
+  // Loading State
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    marginTop: 16,
+  },
+
+  // User Info Card
+  userInfoCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  userInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  userInfoRowLast: {
+    borderBottomWidth: 0,
+  },
+  userInfoLabel: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+  },
+  userInfoValue: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+  },
+  creditsValue: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+    fontSize: 18,
+  },
+
   // Weekly Pass Card
   passCard: {
     backgroundColor: Colors.dark.card,
@@ -320,6 +440,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
+  passStatusInactive: {
+    color: Colors.dark.textSecondary,
+  },
+  passIcon: {
+    marginLeft: 12,
+  },
   passPrice: {
     ...Typography.title.large,
     color: Colors.dark.text,
@@ -337,6 +463,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   manageButtonText: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.background,
+    letterSpacing: 0.5,
+  },
+  activateButton: {
+    backgroundColor: Colors.dark.success,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  activateButtonText: {
     ...Typography.emphasis.medium,
     color: Colors.dark.background,
     letterSpacing: 0.5,
