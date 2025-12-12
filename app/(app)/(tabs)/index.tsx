@@ -1,8 +1,10 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle } from "phosphor-react-native";
 import BetSlipBottomSheet from '@/app/modal';
+import { useLeagues } from '@/hooks/useLeagues';
+import { useGames } from '@/hooks/useGames';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -16,16 +18,15 @@ const getLeagueSymbol = (sportID: string) => {
   }
 };
 
-const leagues = [
-  { sportID: 'BASEBALL', leagueID: 'MLB', enabled: true, name: 'MLB', shortName: 'MLB' },
-  { sportID: 'SOCCER', leagueID: 'MLS', enabled: true, name: 'MLS', shortName: 'MLS' },
-  { sportID: 'BASKETBALL', leagueID: 'NBA', enabled: true, name: 'NBA', shortName: 'NBA' },
-  { sportID: 'BASKETBALL', leagueID: 'NCAAB', enabled: true, name: 'College Basketball', shortName: 'CBB' },
-  { sportID: 'FOOTBALL', leagueID: 'NCAAF', enabled: true, name: 'College Football', shortName: 'CFB' },
-  { sportID: 'FOOTBALL', leagueID: 'NFL', enabled: true, name: 'NFL', shortName: 'NFL' },
-  { sportID: 'HOCKEY', leagueID: 'NHL', enabled: true, name: 'NHL', shortName: 'NHL' },
-  { sportID: 'SOCCER', leagueID: 'UEFA_CHAMPIONS_LEAGUE', enabled: true, name: 'Champions League', shortName: 'UCL' },
-];
+// Sport ID mapping based on externalId
+const getSportIdFromExternalId = (externalId: string): string => {
+  if (externalId.toLowerCase().includes('nfl') || externalId.toLowerCase().includes('ncaaf')) return 'FOOTBALL';
+  if (externalId.toLowerCase().includes('nba') || externalId.toLowerCase().includes('ncaab')) return 'BASKETBALL';
+  if (externalId.toLowerCase().includes('mlb')) return 'BASEBALL';
+  if (externalId.toLowerCase().includes('nhl')) return 'HOCKEY';
+  if (externalId.toLowerCase().includes('mls') || externalId.toLowerCase().includes('uefa') || externalId.toLowerCase().includes('soccer')) return 'SOCCER';
+  return 'FOOTBALL';
+};
 
 // Mock data
 const mockUser = {
@@ -41,36 +42,6 @@ const mockLeaderboardPreview = [
   { rank: 3, username: 'ThirdPlace', units: 2310 },
 ];
 
-const mockGames = [
-  {
-    id: '1',
-    date: 'Tomorrow',
-    time: 'Thu 8:15pm',
-    awayTeam: 'DET Lions',
-    awayTeamAbbr: 'DET',
-    homeTeam: 'DAL Cowboys',
-    homeTeamAbbr: 'DAL',
-    spread: '+3',
-    total: '54.5',
-    favorite: 'away',
-    awayML: '-170',
-    homeML: '+142',
-  },
-  {
-    id: '2',
-    date: 'Sun 7 Dec',
-    time: 'Sun 1:00pm',
-    awayTeam: 'TB Buccaneers',
-    awayTeamAbbr: 'TB',
-    homeTeam: 'NO Saints',
-    homeTeamAbbr: 'NO',
-    spread: '-8.5',
-    total: '42.5',
-    favorite: 'away',
-    awayML: '-440',
-    homeML: '+340',
-  },
-];
 
 // Pulsing glow animation component
 function PulsingText({ children, style }: { children: React.ReactNode; style?: any }) {
@@ -139,12 +110,26 @@ function PulsingText({ children, style }: { children: React.ReactNode; style?: a
 }
 
 export default function HomeScreen() {
-  const [selectedLeague, setSelectedLeague] = useState('NFL');
+  // Use 'all' as default to show all games
+  const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [betSlipVisible, setBetSlipVisible] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
     game: any;
     team: 'home' | 'away';
   } | null>(null);
+
+  // Fetch leagues from API
+  const { data: leaguesData, isLoading: isLoadingLeagues } = useLeagues({
+    active: true,
+    depth: 1,
+  });
+
+  // Fetch games - show all by default, or filter by selected league
+  const { data: gamesData, isLoading: isLoadingGames } = useGames({
+    leagueId: selectedLeague === 'all' ? undefined : selectedLeague,
+    status: 'scheduled',
+    limit: 50, // Increased limit to show more games when showing all
+  });
 
   const handleCloseBetSlip = () => {
     setBetSlipVisible(false);
@@ -177,44 +162,89 @@ export default function HomeScreen() {
 
       {/* League Filter Pills */}
       <View style={styles.leagueFilterContainer}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={leagues}
-          keyExtractor={(item) => item.leagueID}
-          contentContainerStyle={styles.leagueFilterContent}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[
-                styles.leaguePill,
-                selectedLeague === item.leagueID && styles.leaguePillActive,
-              ]}
-              onPress={() => setSelectedLeague(item.leagueID)}
-            >
-              <View style={styles.leaguePillContent}>
-                <View style={[
-                  styles.leagueBadge,
-                  selectedLeague === item.leagueID && styles.leagueBadgeActive
-                ]}>
-                  <Text style={[
-                    styles.leagueSymbol,
-                    selectedLeague === item.leagueID && styles.leagueSymbolActive
-                  ]}>
-                    {getLeagueSymbol(item.sportID)}
-                  </Text>
-                </View>
-                <Text
+        {isLoadingLeagues ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={Colors.dark.tint} />
+          </View>
+        ) : (
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={[{ id: 'all', name: 'All', externalId: 'all' }, ...(leaguesData?.docs || [])]}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.leagueFilterContent}
+            renderItem={({ item }) => {
+              // Handle "All" pill specially
+              if (item.id === 'all') {
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.leaguePill,
+                      selectedLeague === 'all' && styles.leaguePillActive,
+                    ]}
+                    onPress={() => setSelectedLeague('all')}
+                  >
+                    <View style={styles.leaguePillContent}>
+                      <View style={[
+                        styles.leagueBadge,
+                        selectedLeague === 'all' && styles.leagueBadgeActive
+                      ]}>
+                        <Text style={[
+                          styles.leagueSymbol,
+                          selectedLeague === 'all' && styles.leagueSymbolActive
+                        ]}>
+                          ★
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.leaguePillText,
+                          selectedLeague === 'all' && styles.leaguePillTextActive,
+                        ]}
+                      >
+                        All Leagues
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }
+
+              // Regular league pills
+              const sportId = getSportIdFromExternalId(item.externalId);
+              return (
+                <TouchableOpacity
                   style={[
-                    styles.leaguePillText,
-                    selectedLeague === item.leagueID && styles.leaguePillTextActive,
+                    styles.leaguePill,
+                    selectedLeague === item.id && styles.leaguePillActive,
                   ]}
+                  onPress={() => setSelectedLeague(item.id)}
                 >
-                  {item.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
+                  <View style={styles.leaguePillContent}>
+                    <View style={[
+                      styles.leagueBadge,
+                      selectedLeague === item.id && styles.leagueBadgeActive
+                    ]}>
+                      <Text style={[
+                        styles.leagueSymbol,
+                        selectedLeague === item.id && styles.leagueSymbolActive
+                      ]}>
+                        {getLeagueSymbol(sportId)}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.leaguePillText,
+                        selectedLeague === item.id && styles.leaguePillTextActive,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        )}
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -243,94 +273,98 @@ export default function HomeScreen() {
 
         {/* Games Section */}
         <View style={styles.gamesSection}>
-          {mockGames.map((game) => (
-            <View key={game.id} style={styles.gameCard}>
-              {/* Compact Header with Matchup */}
-              <View style={styles.compactHeader}>
-                <View style={styles.matchupInfo}>
-                  <Text style={styles.teamAbbr}>{game.awayTeamAbbr}</Text>
-                  <Text style={styles.vsText}>@</Text>
-                  <Text style={styles.teamAbbr}>{game.homeTeamAbbr}</Text>
-                </View>
-                <View style={styles.gameTimeInfo}>
-                  <Text style={styles.gameTime}>{game.time}</Text>
-                </View>
-              </View>
-
-              {/* Grid Layout for Bets */}
-              <View style={styles.betsGrid}>
-                {/* First Row: Spread and Total */}
-                <View style={styles.betRow}>
-                  <TouchableOpacity style={styles.betCell}>
-                    <Text style={styles.betCellLabel}>SPREAD</Text>
-                    <Text style={styles.betCellValue}>{game.spread}</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity style={styles.betCell}>
-                    <Text style={styles.betCellLabel}>TOTAL</Text>
-                    <Text style={styles.betCellValue}>{game.total}</Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Second Row: Moneyline with Visual Cues */}
-                <View style={styles.betRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.betCell,
-                      game.favorite === 'away' ? styles.favoriteCell : styles.underdogCell
-                    ]}
-                    onPress={() => {
-                      setSelectedBet({ game, team: 'away' });
-                      setBetSlipVisible(true);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.betCellHeader}>
-                      <Text style={[
-                        styles.betCellLabel,
-                        game.favorite === 'away' ? styles.favoriteLabel : styles.underdogLabel
-                      ]}>
-                        {game.favorite === 'away' ? '★ FAV' : '◆ DOG'}
-                      </Text>
-                    </View>
-                    <Text style={[
-                      styles.betCellValue,
-                      game.favorite === 'away' ? styles.favoriteValue : styles.underdogValue
-                    ]}>
-                      {game.awayML}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.betCell,
-                      game.favorite === 'home' ? styles.favoriteCell : styles.underdogCell
-                    ]}
-                    onPress={() => {
-                      setSelectedBet({ game, team: 'home' });
-                      setBetSlipVisible(true);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.betCellHeader}>
-                      <Text style={[
-                        styles.betCellLabel,
-                        game.favorite === 'home' ? styles.favoriteLabel : styles.underdogLabel
-                      ]}>
-                        {game.favorite === 'home' ? '★ FAV' : '◆ DOG'}
-                      </Text>
-                    </View>
-                    <Text style={[
-                      styles.betCellValue,
-                      game.favorite === 'home' ? styles.favoriteValue : styles.underdogValue
-                    ]}>
-                      {game.homeML}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+          {isLoadingGames ? (
+            <View style={styles.loadingGamesContainer}>
+              <ActivityIndicator size="large" color={Colors.dark.tint} />
+              <Text style={styles.loadingText}>Loading games...</Text>
             </View>
-          ))}
+          ) : gamesData?.docs && gamesData.docs.length > 0 ? (
+            gamesData.docs.map((game) => {
+              const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
+              const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
+              const gameTime = new Date(game.startTime).toLocaleString('en-US', {
+                weekday: 'short',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true,
+              });
+
+              return (
+                <View key={game.id} style={styles.gameCard}>
+                  {/* Compact Header with Matchup */}
+                  <View style={styles.compactHeader}>
+                    <View style={styles.matchupInfo}>
+                      <Text style={styles.teamAbbr}>{awayTeam?.abbreviation || 'TBD'}</Text>
+                      <Text style={styles.vsText}>@</Text>
+                      <Text style={styles.teamAbbr}>{homeTeam?.abbreviation || 'TBD'}</Text>
+                    </View>
+                    <View style={styles.gameTimeInfo}>
+                      <Text style={styles.gameTime}>{gameTime}</Text>
+                    </View>
+                  </View>
+
+                  {/* Grid Layout for Bets */}
+                  <View style={styles.betsGrid}>
+                    {/* First Row: Spread and Total */}
+                    <View style={styles.betRow}>
+                      <TouchableOpacity style={styles.betCell}>
+                        <Text style={styles.betCellLabel}>SPREAD</Text>
+                        <Text style={styles.betCellValue}>Coming Soon</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.betCell}>
+                        <Text style={styles.betCellLabel}>TOTAL</Text>
+                        <Text style={styles.betCellValue}>Coming Soon</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Second Row: Moneyline with Visual Cues */}
+                    <View style={styles.betRow}>
+                      <TouchableOpacity
+                        style={[styles.betCell, styles.underdogCell]}
+                        onPress={() => {
+                          setSelectedBet({ game, team: 'away' });
+                          setBetSlipVisible(true);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.betCellHeader}>
+                          <Text style={[styles.betCellLabel, styles.underdogLabel]}>
+                            AWAY
+                          </Text>
+                        </View>
+                        <Text style={[styles.betCellValue, styles.underdogValue]}>
+                          {awayTeam?.name || 'TBD'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.betCell, styles.underdogCell]}
+                        onPress={() => {
+                          setSelectedBet({ game, team: 'home' });
+                          setBetSlipVisible(true);
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <View style={styles.betCellHeader}>
+                          <Text style={[styles.betCellLabel, styles.underdogLabel]}>
+                            HOME
+                          </Text>
+                        </View>
+                        <Text style={[styles.betCellValue, styles.underdogValue]}>
+                          {homeTeam?.name || 'TBD'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyGamesContainer}>
+              <Text style={styles.emptyGamesText}>No games available for this league</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.bottomSpacing} />
@@ -651,5 +685,31 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: 80,
+  },
+
+  // Loading States
+  loadingContainer: {
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingGamesContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    marginTop: 12,
+  },
+  emptyGamesContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyGamesText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
   },
 });
