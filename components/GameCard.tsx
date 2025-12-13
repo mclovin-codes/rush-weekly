@@ -15,12 +15,86 @@ export default function GameCard({ game, onSelectBet }: GameCardProps) {
   const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
   const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
 
-  const gameTime = new Date(game.startTime).toLocaleString('en-US', {
-    weekday: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+  // Format date and time with full context
+  const gameDate = new Date(game.startTime);
+  const now = new Date();
+
+  // Calculate hours until game
+  const hoursUntilGame = (gameDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const daysUntilGame = Math.floor(hoursUntilGame / 24);
+
+  // Determine time label and color
+  let timeLabel = '';
+  let timeColor = Colors.dark.textSecondary;
+  let showBadge = false;
+  let badgeText = '';
+  let badgeColor = Colors.dark.textSecondary;
+
+  if (hoursUntilGame < 0) {
+    // Game has started or finished
+    timeLabel = gameDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.textSecondary;
+  } else if (hoursUntilGame < 2) {
+    // Starting very soon (less than 2 hours)
+    showBadge = true;
+    badgeText = 'STARTING SOON';
+    badgeColor = Colors.dark.danger;
+    timeLabel = gameDate.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.danger;
+  } else if (daysUntilGame === 0) {
+    // Today
+    showBadge = true;
+    badgeText = 'TODAY';
+    badgeColor = Colors.dark.success;
+    timeLabel = gameDate.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.success;
+  } else if (daysUntilGame === 1) {
+    // Tomorrow
+    showBadge = true;
+    badgeText = 'TOMORROW';
+    badgeColor = Colors.dark.tint;
+    timeLabel = gameDate.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.tint;
+  } else if (daysUntilGame <= 7) {
+    // This week
+    timeLabel = gameDate.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.text;
+  } else {
+    // More than a week away
+    timeLabel = gameDate.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+    timeColor = Colors.dark.textSecondary;
+  }
 
   const formatOdds = (oddsValue: number | undefined) => {
     if (!oddsValue) return '--';
@@ -40,7 +114,12 @@ export default function GameCard({ game, onSelectBet }: GameCardProps) {
           <Text style={styles.teamAbbr}>{homeTeam?.abbreviation || 'TBD'}</Text>
         </View>
         <View style={styles.gameTimeInfo}>
-          <Text style={styles.gameTime}>{gameTime}</Text>
+          {showBadge && (
+            <View style={[styles.timeBadge, { backgroundColor: badgeColor + '20', borderColor: badgeColor }]}>
+              <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
+            </View>
+          )}
+          <Text style={[styles.gameTime, { color: timeColor }]}>{timeLabel}</Text>
         </View>
       </View>
 
@@ -135,10 +214,23 @@ const styles = StyleSheet.create({
   gameTimeInfo: {
     alignItems: 'flex-end',
   },
+  timeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  badgeText: {
+    ...Typography.meta.small,
+    fontFamily: Fonts.medium,
+    fontSize: 8,
+    letterSpacing: 0.5,
+  },
   gameTime: {
     ...Typography.meta.small,
-    color: Colors.dark.textSecondary,
     fontSize: 10,
+    fontFamily: Fonts.medium,
   },
   betsGrid: {
     gap: 6,
