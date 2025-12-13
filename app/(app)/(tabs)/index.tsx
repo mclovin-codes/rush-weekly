@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle } from "phosphor-react-native";
+import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise } from "phosphor-react-native";
 import BetSlipBottomSheet from '@/app/modal';
 import { useLeagues } from '@/hooks/useLeagues';
 import { useGames } from '@/hooks/useGames';
@@ -99,6 +99,40 @@ function PulsingText({ children, style }: { children: React.ReactNode; style?: a
   );
 }
 
+// Pulsing skeleton component
+function PulsingSkeleton({ style }: { style?: any }) {
+  const opacityAnim = useRef(new Animated.Value(0.3)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacityAnim, {
+          toValue: 0.7,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0.3,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        {
+          backgroundColor: Colors.dark.border,
+          opacity: opacityAnim,
+        },
+        style,
+      ]}
+    />
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
 
@@ -109,22 +143,24 @@ export default function HomeScreen() {
     game: any;
     team: 'home' | 'away';
   } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch user and pool data
   const { data: session } = authClient.useSession();
-  const { data: currentUser } = useCurrentUser();
-  const { data: activePool } = useActivePool();
-  const { data: myPool } = useMyPool();
-  const { data: leaderboardData } = useLeaderboard(activePool?.id, { limit: 100 });
+  const { data: currentUser, refetch: refetchUser } = useCurrentUser();
+  const { data: activePool, refetch: refetchPool } = useActivePool();
+  const { data: myPool, refetch: refetchMyPool } = useMyPool();
+  const { data: leaderboardData, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
 
   // Fetch leagues from API
-  const { data: leaguesData, isLoading: isLoadingLeagues } = useLeagues({
+  const { data: leaguesData, isLoading: isLoadingLeagues, refetch: refetchLeagues } = useLeagues({
     active: true,
     depth: 1,
   });
 
   // Fetch games - show all by default, or filter by selected league
-  const { data: gamesData, isLoading: isLoadingGames } = useGames({
+  const { data: gamesData, isLoading: isLoadingGames, refetch: refetchGames } = useGames({
     leagueId: selectedLeague === 'all' ? undefined : selectedLeague,
     status: 'scheduled',
     limit: 50, // Increased limit to show more games when showing all
@@ -173,6 +209,45 @@ export default function HomeScreen() {
     setSelectedBet(null);
   };
 
+  // Spin animation for refresh button
+  useEffect(() => {
+    if (refreshing) {
+      spinAnim.setValue(0);
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      ).start();
+    }
+  }, [refreshing]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Handle refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchUser(),
+        refetchPool(),
+        refetchMyPool(),
+        refetchLeaderboard(),
+        refetchLeagues(),
+        refetchGames(),
+        new Promise(resolve => setTimeout(resolve, 1000)), // Minimum delay for UX
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Header with User Info */}
@@ -180,6 +255,22 @@ export default function HomeScreen() {
         <View style={styles.headerLeft}>
           <Text style={styles.logo}>RUSH</Text>
         </View>
+
+        {/* Refresh Button */}
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={onRefresh}
+          disabled={refreshing}
+          activeOpacity={0.7}
+        >
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <ArrowsClockwise
+              size={22}
+              weight="bold"
+              color={refreshing ? Colors.dark.tint : Colors.dark.textSecondary}
+            />
+          </Animated.View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.userInfo}
@@ -295,7 +386,10 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Week Countdown - Pulsing */}
         {activePool && (
           <View style={styles.countdownSection}>
@@ -315,7 +409,18 @@ export default function HomeScreen() {
             <Text style={styles.viewAllText}>View All</Text>
           </View>
 
-          {leaderboardPreview.length > 0 ? (
+          {refreshing ? (
+            // Skeleton loader for leaderboard
+            <>
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={styles.previewRow}>
+                  <PulsingSkeleton style={[styles.skeleton, styles.skeletonRank]} />
+                  <PulsingSkeleton style={[styles.skeleton, styles.skeletonUsername]} />
+                  <PulsingSkeleton style={[styles.skeleton, styles.skeletonScore]} />
+                </View>
+              ))}
+            </>
+          ) : leaderboardPreview.length > 0 ? (
             leaderboardPreview.map((entry) => {
               const user = typeof entry.user === 'object' ? entry.user : null;
               return (
@@ -337,11 +442,35 @@ export default function HomeScreen() {
 
         {/* Games Section */}
         <View style={styles.gamesSection}>
-          {isLoadingGames ? (
-            <View style={styles.loadingGamesContainer}>
-              <ActivityIndicator size="large" color={Colors.dark.tint} />
-              <Text style={styles.loadingText}>Loading games...</Text>
-            </View>
+          {refreshing || isLoadingGames ? (
+            refreshing ? (
+              // Skeleton loader for games
+              <>
+                {[1, 2, 3].map((i) => (
+                  <View key={i} style={styles.gameCardSkeleton}>
+                    <View style={styles.skeletonHeader}>
+                      <PulsingSkeleton style={[styles.skeleton, styles.skeletonMatchup]} />
+                      <PulsingSkeleton style={[styles.skeleton, styles.skeletonTime]} />
+                    </View>
+                    <View style={styles.skeletonBetsGrid}>
+                      <View style={styles.skeletonBetRow}>
+                        <PulsingSkeleton style={[styles.skeleton, styles.skeletonBet]} />
+                        <PulsingSkeleton style={[styles.skeleton, styles.skeletonBet]} />
+                      </View>
+                      <View style={styles.skeletonBetRow}>
+                        <PulsingSkeleton style={[styles.skeleton, styles.skeletonBet]} />
+                        <PulsingSkeleton style={[styles.skeleton, styles.skeletonBet]} />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <View style={styles.loadingGamesContainer}>
+                <ActivityIndicator size="large" color={Colors.dark.tint} />
+                <Text style={styles.loadingText}>Loading games...</Text>
+              </View>
+            )
           ) : gamesData?.docs && gamesData.docs.length > 0 ? (
             gamesData.docs.map((game) => (
               <GameCard
@@ -402,6 +531,18 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontFamily: Fonts.display,
     letterSpacing: 2,
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.dark.cardElevated,
+    borderWidth: 1.5,
+    borderColor: Colors.dark.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 'auto',
+    marginRight: 12,
   },
   userInfo: {
     alignItems: 'flex-end',
@@ -714,5 +855,61 @@ const styles = StyleSheet.create({
   emptyGamesText: {
     ...Typography.body.medium,
     color: Colors.dark.textSecondary,
+  },
+
+  // Skeleton Loaders
+  skeleton: {
+    backgroundColor: Colors.dark.border,
+    borderRadius: 4,
+  },
+  skeletonRank: {
+    width: 28,
+    height: 12,
+  },
+  skeletonUsername: {
+    flex: 1,
+    height: 12,
+    marginHorizontal: 8,
+  },
+  skeletonScore: {
+    width: 40,
+    height: 12,
+  },
+  gameCardSkeleton: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  skeletonMatchup: {
+    width: 120,
+    height: 14,
+  },
+  skeletonTime: {
+    width: 80,
+    height: 12,
+  },
+  skeletonBetsGrid: {
+    gap: 6,
+  },
+  skeletonBetRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  skeletonBet: {
+    flex: 1,
+    height: 50,
+    borderRadius: 6,
   },
 });
