@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 
 export const authClient = createAuthClient({
 
-  baseURL: 'https://fantasy-pool.netlify.app',
+  baseURL: 'https://rush-platform.vercel.app',
   plugins: [
     expoClient({
       scheme: "rush",

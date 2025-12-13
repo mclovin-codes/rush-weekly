@@ -72,42 +72,9 @@ export default function VerifyEmailScreen() {
     router.replace('/(auth)/login');
   };
 
-  const handleContinueToOnboarding = () => {
-    router.replace('/(auth)/onboarding');
-  };
-
   const handleCheckVerification = async () => {
-    try {
-      // Refresh session to check if email is now verified
-      const { data: session } = await authClient.getSession();
-
-      if (session?.user?.emailVerified) {
-        const destination = isNewUser ? '/(auth)/onboarding' : '/(app)/(tabs)';
-        const message = isNewUser
-          ? 'Your email has been verified. Let\'s complete your onboarding!'
-          : 'Your email has been verified. You can now access the app.';
-
-        Alert.alert(
-          'Success!',
-          message,
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.replace(destination),
-            },
-          ]
-        );
-      } else {
-        Alert.alert(
-          'Not Verified Yet',
-          'Please check your email and click the verification link. It may take a few minutes to arrive.',
-          [{ text: 'OK' }]
-        );
-      }
-    } catch (error) {
-      console.error('Check verification error:', error);
-      Alert.alert('Error', 'Failed to check verification status');
-    }
+    await authClient.signOut();
+    router.replace('/(auth)/login');
   };
 
   return (
@@ -140,13 +107,6 @@ export default function VerifyEmailScreen() {
             <Text style={styles.buttonText}>I&apos;VE VERIFIED MY EMAIL</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={handleContinueToOnboarding}
-          >
-            <Text style={styles.secondaryButtonText}>SKIP FOR NOW</Text>
-          </TouchableOpacity>
-
           <View style={styles.divider} />
 
           <TouchableOpacity
@@ -171,7 +131,7 @@ export default function VerifyEmailScreen() {
 
           <Text style={styles.helpText}>
             Having trouble? Contact support at{' '}
-            <Text style={styles.emailLink}>support@rush.com</Text>
+            <Text style={styles.emailLink}>send@rush.com</Text>
           </Text>
         </View>
       </ScrollView>
