@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
+import { onboardingStorage } from '@/lib/onboarding-storage';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -49,7 +50,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     }).start();
   }, [currentStep]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < onboardingSteps.length - 1) {
       // Fade out
       Animated.timing(fadeAnimation, {
@@ -61,14 +62,18 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         // Fade in will be triggered by useEffect
       });
     } else {
-      // Complete onboarding
-   
+      // Complete onboarding - mark as complete in storage
+      await onboardingStorage.markOnboardingComplete();
+
       // Redirect to tabs index page
       router.replace('/(app)/(tabs)');
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    // Mark onboarding as complete even if skipped
+    await onboardingStorage.markOnboardingComplete();
+
     // Redirect to tabs index page
     router.replace('/(app)/(tabs)');
   };

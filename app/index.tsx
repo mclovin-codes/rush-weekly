@@ -4,16 +4,29 @@ import { ActivityIndicator, Text, View, TouchableOpacity, StyleSheet } from "rea
 import { useThemeColor } from "@/hooks/use-theme-color";
 import { Typography, Spacing, BorderRadius, Shadows } from "@/constants/theme";
 import HomeScreenSkeleton from "@/components/homeskeleton";
+import { onboardingStorage } from "@/lib/onboarding-storage";
+import { useEffect, useState } from "react";
 
 export default function WelcomeScreen() {
   const { data: session, isPending } = authClient.useSession();
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
+
+  // Check onboarding status when component mounts
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      const completed = await onboardingStorage.hasCompletedOnboarding();
+      setHasCompletedOnboarding(completed);
+    };
+    checkOnboarding();
+  }, []);
 
   // Theme colors - using direct colors for better type safety
   const backgroundColor = useThemeColor({}, 'background');
   const textColor = useThemeColor({}, 'text');
   const tint = useThemeColor({}, 'tint');
 
-  if (isPending) {
+  // Show loading while checking session or onboarding status
+  if (isPending || hasCompletedOnboarding === null) {
     return (
       <View style={[styles.container]}>
         <HomeScreenSkeleton/>
@@ -21,7 +34,7 @@ export default function WelcomeScreen() {
     );
   }
 
-  // If signed in, check email verification
+  // If signed in, check email verification and onboarding
   if (session) {
     const user = session.user;
     console.log('Session user:', user);
@@ -38,6 +51,14 @@ export default function WelcomeScreen() {
         },
       }} />;
     }
+
+    // If email is verified, check onboarding status
+    if (!hasCompletedOnboarding) {
+      console.log('Redirecting to onboarding - user has not completed onboarding');
+      return <Redirect href="/(auth)/onboarding" />;
+    }
+
+    // All checks passed, redirect to main app
     return <Redirect href="/(app)/(tabs)" />;
   }
 

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 
 import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
+import { onboardingStorage } from '@/lib/onboarding-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -79,9 +80,18 @@ export default function LoginScreen() {
           return;
         }
 
-        // Navigate to main app or home screen
+        // Check if user has completed onboarding
+        const hasCompletedOnboarding = await onboardingStorage.hasCompletedOnboarding();
+
+        // Navigate to onboarding or main app
         setTimeout(() => {
-          router.replace('/(app)/(tabs)');
+          if (!hasCompletedOnboarding) {
+            console.log('User has not completed onboarding, redirecting to onboarding');
+            router.replace('/(auth)/onboarding');
+          } else {
+            console.log('User has completed onboarding, redirecting to main app');
+            router.replace('/(app)/(tabs)');
+          }
         }, 100);
       }
     } catch (err) {
