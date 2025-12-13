@@ -29,29 +29,18 @@ export default function ForgotPasswordScreen() {
     try {
       console.log('Password reset requested for:', email.trim());
 
-      const { data, error } = await (authClient as any).requestPasswordReset({
-        email: email.trim()
+      await authClient.forgetPassword({
+        email: email.trim().toLowerCase(),
+        redirectTo: '/reset-password',
       });
 
-      if (error) {
-        console.error('Forgot password error:', error);
-        Alert.alert(
-          'Error',
-          error.message || 'Failed to send reset link. Please try again.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      if (data) {
-        console.log('Reset link sent successfully:', data);
-        setEmailSent(true);
-      }
-    } catch (err) {
-      console.error('Unexpected forgot password error:', err);
+      console.log('Reset link sent successfully');
+      setEmailSent(true);
+    } catch (err: any) {
+      console.error('Forgot password error:', err);
       Alert.alert(
         'Error',
-        'An unexpected error occurred. Please try again later.',
+        err?.message || 'Failed to send reset link. Please try again.',
         [{ text: 'OK' }]
       );
     } finally {

@@ -350,7 +350,10 @@ export default function AccountScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.dark.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/(auth)/forgot-password')}
+        >
           <View style={styles.menuIcon}>
             <Ionicons name="lock-closed-outline" size={20} color={Colors.dark.tint} />
           </View>
