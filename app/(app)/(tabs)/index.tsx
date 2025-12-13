@@ -480,6 +480,11 @@ export default function HomeScreen() {
                   setSelectedBet({ game: selectedGame, team });
                   setBetSlipVisible(true);
                 }}
+                onPress={(gameId) => {
+                  // Use externalId for the API call
+                  const externalId = game.externalId || gameId;
+                  router.push(`/(app)/game/${externalId}`);
+                }}
               />
             ))
           ) : (

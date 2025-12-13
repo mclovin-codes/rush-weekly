@@ -7,9 +7,10 @@ import { PopulatedGame } from '@/types';
 interface GameCardProps {
   game: PopulatedGame;
   onSelectBet: (game: PopulatedGame, team: 'home' | 'away') => void;
+  onPress?: (gameId: string) => void;
 }
 
-export default function GameCard({ game, onSelectBet }: GameCardProps) {
+export default function GameCard({ game, onSelectBet, onPress }: GameCardProps) {
   const { data: odds } = useGameOdds(game.id);
 
   const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
@@ -105,7 +106,11 @@ export default function GameCard({ game, onSelectBet }: GameCardProps) {
   const awayOdds = odds?.moneyline?.away;
 
   return (
-    <View style={styles.gameCard}>
+    <TouchableOpacity
+      style={styles.gameCard}
+      onPress={() => onPress?.(game.id)}
+      activeOpacity={0.9}
+    >
       {/* Compact Header with Matchup */}
       <View style={styles.compactHeader}>
         <View style={styles.matchupInfo}>
@@ -173,7 +178,7 @@ export default function GameCard({ game, onSelectBet }: GameCardProps) {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
