@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useGameOdds } from '@/hooks/useGameOdds';
 import { PopulatedGame } from '@/types';
+import { CaretRight } from 'phosphor-react-native';
 
 interface GameCardProps {
   game: PopulatedGame;
@@ -104,6 +105,15 @@ export default function GameCard({ game, onSelectBet, onPress }: GameCardProps) 
 
   const homeOdds = odds?.moneyline?.home;
   const awayOdds = odds?.moneyline?.away;
+  const spreadPoint = odds?.spread?.point;
+  const spreadHomeOdds = odds?.spread?.home;
+  const spreadAwayOdds = odds?.spread?.away;
+  const totalPoint = odds?.total?.point;
+  const overOdds = odds?.total?.overPayout;
+  const underOdds = odds?.total?.underPayout;
+
+  const hasSpread = spreadPoint !== undefined && (spreadHomeOdds || spreadAwayOdds);
+  const hasTotal = totalPoint !== undefined && (overOdds || underOdds);
 
   return (
     <TouchableOpacity
@@ -134,12 +144,32 @@ export default function GameCard({ game, onSelectBet, onPress }: GameCardProps) 
         <View style={styles.betRow}>
           <TouchableOpacity style={styles.betCell}>
             <Text style={styles.betCellLabel}>SPREAD</Text>
-            <Text style={styles.betCellValue}>Coming Soon</Text>
+            {hasSpread ? (
+              <>
+                <Text style={styles.betCellValue}>
+                  {spreadPoint && spreadPoint > 0 ? `+${spreadPoint}` : spreadPoint}
+                </Text>
+                <Text style={styles.betCellSubtext}>
+                  {formatOdds(spreadHomeOdds || spreadAwayOdds)}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.betCellValue}>--</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.betCell}>
             <Text style={styles.betCellLabel}>TOTAL</Text>
-            <Text style={styles.betCellValue}>Coming Soon</Text>
+            {hasTotal ? (
+              <>
+                <Text style={styles.betCellValue}>O/U {totalPoint}</Text>
+                <Text style={styles.betCellSubtext}>
+                  {formatOdds(overOdds || underOdds)}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.betCellValue}>--</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -176,6 +206,15 @@ export default function GameCard({ game, onSelectBet, onPress }: GameCardProps) 
               <Text style={styles.oddsText}>{formatOdds(homeOdds)}</Text>
             )}
           </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* View Details Indicator */}
+      <View style={styles.viewDetailsContainer}>
+        <View style={styles.viewDetailsDivider} />
+        <View style={styles.viewDetailsChip}>
+          <Text style={styles.viewDetailsText}>Tap for full game details</Text>
+          <CaretRight size={14} color={Colors.dark.tint} weight="bold" />
         </View>
       </View>
     </TouchableOpacity>
@@ -272,6 +311,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontSize: 13,
   },
+  betCellSubtext: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    marginTop: 2,
+  },
   underdogCell: {
     backgroundColor: Colors.dark.cardElevated,
     borderColor: Colors.dark.border,
@@ -288,5 +333,34 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.display,
     fontSize: 14,
     marginTop: 4,
+  },
+  viewDetailsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    alignItems: 'center',
+  },
+  viewDetailsDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: Colors.dark.border,
+    marginBottom: 8,
+  },
+  viewDetailsChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: Colors.dark.tint + '15',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+  },
+  viewDetailsText: {
+    ...Typography.meta.small,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
 });

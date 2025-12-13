@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { CaretLeft, TrendUp, TrendDown } from 'phosphor-react-native';
+import { CaretLeft, TrendUp } from 'phosphor-react-native';
 import { API_BASE_URL } from '@/constants/api';
 
 const { width } = Dimensions.get('window');
@@ -113,6 +113,7 @@ export default function GameDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -134,6 +135,7 @@ export default function GameDetailsScreen() {
   if (error || !gameData) {
     return (
       <View style={styles.container}>
+        <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -162,6 +164,7 @@ export default function GameDetailsScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
