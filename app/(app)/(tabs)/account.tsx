@@ -416,7 +416,10 @@ export default function AccountScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>ABOUT</Text>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/(app)/terms-of-service')}
+        >
           <View style={styles.menuIcon}>
             <Ionicons name="document-text-outline" size={20} color={Colors.dark.tint} />
           </View>
@@ -426,7 +429,10 @@ export default function AccountScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.dark.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/(app)/privacy-policy')}
+        >
           <View style={styles.menuIcon}>
             <Ionicons name="shield-checkmark-outline" size={20} color={Colors.dark.tint} />
           </View>
@@ -436,7 +442,10 @@ export default function AccountScreen() {
           <Ionicons name="chevron-forward" size={20} color={Colors.dark.textSecondary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push('/(app)/help-support')}
+        >
           <View style={styles.menuIcon}>
             <Ionicons name="help-circle-outline" size={20} color={Colors.dark.tint} />
           </View>
