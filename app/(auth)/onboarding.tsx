@@ -18,26 +18,50 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     {
       icon: 'people',
       title: 'Welcome to RUSH',
-      description: 'A fantasy sports betting experience where you compete in weekly pools—no real money wagered.',
-      details: ['100 virtual credits to start', 'Weekly pool competitions', 'Bet on spreads, moneylines & totals', 'No financial risk'],
+      description:
+        'A fantasy sports game where you compete with others using virtual credits — just for fun.',
+      details: [
+        'Start with 1,000 virtual credits',
+        'Weekly fantasy competitions',
+        'Make game predictions using credits',
+        'No real money involved',
+      ],
     },
     {
       icon: 'shuffle',
-      title: 'Weekly Pool System',
-      description: 'Every week, you\'re placed into a new randomized pool of ~100 players.',
-      details: ['Fresh competition each week', 'Equal starting credits for all', 'Climb the leaderboard', 'Top performers earn rewards'],
+      title: 'Weekly Fantasy Pools',
+      description:
+        'Each week, you’re matched with a new group of players for a fresh challenge.',
+      details: [
+        'New pool every week',
+        'Everyone starts equally',
+        'Friendly competition',
+        'Climb the weekly rankings',
+      ],
     },
     {
       icon: 'podium',
-      title: 'Compete & Rank Up',
-      description: 'Make smart bets to grow your credits and outperform others in your pool.',
-      details: ['Real-time odds from sports API', 'Track your pool ranking', 'Weekly leaderboards', 'Strategic betting wins'],
+      title: 'Play & Climb the Leaderboard',
+      description:
+        'Use your sports knowledge to make smart picks and grow your credit balance.',
+      details: [
+        'Live game data and stats',
+        'Track your performance',
+        'Weekly leaderboards',
+        'Improve your strategy over time',
+      ],
     },
     {
       icon: 'shield-checkmark',
-      title: 'Safe & Social',
-      description: 'Pure fantasy gaming with all the excitement of sports betting, zero financial risk.',
-      details: ['No real money wagered', 'Virtual credits only', 'Social competition', 'Legal & responsible'],
+      title: 'Safe, Fair & Fun',
+      description:
+        'RUSH is a fantasy sports experience designed for entertainment only.',
+      details: [
+        'Virtual credits only',
+        'No cash prizes or payouts',
+        'Skill-based competition',
+        'Built for responsible play',
+      ],
     },
   ];
 

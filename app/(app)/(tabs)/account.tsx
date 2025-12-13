@@ -1,17 +1,26 @@
 import { ScrollView, StyleSheet, View, Text, Switch, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
 import { apiHelpers } from "@/config/api";
 import { useCurrentUser } from '@/hooks/useUser';
+import MembershipBottomSheet, { MembershipBottomSheetRef } from '@/components/MembershipBottomSheet';
+import BuyBackCreditsBottomSheet, { BuyBackCreditsBottomSheetRef } from '@/components/BuyBackCreditsBottomSheet';
 
 export default function AccountScreen() {
+  console.log('[AccountScreen] Component rendering');
+
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
+  const { data: currentUser, isLoading: isLoadingUser, refetch: refetchUser } = useCurrentUser();
+  const membershipBottomSheetRef = useRef<MembershipBottomSheetRef>(null);
+  const buyBackCreditsBottomSheetRef = useRef<BuyBackCreditsBottomSheetRef>(null);
+
+  console.log('[AccountScreen] Membership ref current:', !!membershipBottomSheetRef.current);
+  console.log('[AccountScreen] BuyBack ref current:', !!buyBackCreditsBottomSheetRef.current);
 
   const [notifications, setNotifications] = useState({
     newWeek: true,
@@ -20,6 +29,8 @@ export default function AccountScreen() {
   });
 
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isActivatingMembership, setIsActivatingMembership] = useState(false);
+  const [isPurchasingCredits, setIsPurchasingCredits] = useState(false);
 
   // Check if subscription is active
   const isSubscriptionActive = currentUser?.is_paid_member &&
@@ -140,11 +151,109 @@ export default function AccountScreen() {
     }
   };
 
+  const handleActivateMembership = async (duration: 'week' | 'month' | 'year') => {
+    if (!currentUser?.id) {
+      Alert.alert('Error', 'User ID not found');
+      return;
+    }
+
+    setIsActivatingMembership(true);
+
+    try {
+      // Calculate subscription end date based on duration
+      const now = new Date();
+      const endDate = new Date(now);
+
+      switch (duration) {
+        case 'week':
+          endDate.setDate(endDate.getDate() + 7);
+          break;
+        case 'month':
+          endDate.setMonth(endDate.getMonth() + 1);
+          break;
+        case 'year':
+          endDate.setFullYear(endDate.getFullYear() + 1);
+          break;
+      }
+
+      // Call API to activate membership
+      await apiHelpers.patch(`/api/users/${currentUser.id}`, {
+        is_paid_member: true,
+        subscription_end_date: endDate.toISOString(),
+        current_credits: currentUser.current_credits || 1000,
+      });
+
+      // Close bottom sheet
+      membershipBottomSheetRef.current?.close();
+
+      // Refresh user data
+      await refetchUser();
+
+      // Show success message
+      Alert.alert(
+        'Membership Activated!',
+        `Your ${duration}ly membership has been activated. Welcome to RUSH!`,
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Membership activation error:', error);
+      Alert.alert(
+        'Activation Failed',
+        error?.message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsActivatingMembership(false);
+    }
+  };
+
+  const handlePurchaseCredits = async (amount: number) => {
+    if (!currentUser?.id) {
+      Alert.alert('Error', 'User ID not found');
+      return;
+    }
+
+    setIsPurchasingCredits(true);
+
+    try {
+      // Calculate new credit balance
+      const newCredits = (currentUser.current_credits || 0) + amount;
+
+      // Call API to add credits
+      await apiHelpers.patch(`/api/users/${currentUser.id}`, {
+        current_credits: newCredits,
+      });
+
+      // Close bottom sheet
+      buyBackCreditsBottomSheetRef.current?.close();
+
+      // Refresh user data
+      await refetchUser();
+
+      // Show success message
+      Alert.alert(
+        'Credits Added!',
+        `Successfully added ${amount.toLocaleString()} credits to your account.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Credits purchase error:', error);
+      Alert.alert(
+        'Purchase Failed',
+        error?.message || 'Something went wrong. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsPurchasingCredits(false);
+    }
+  };
+
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
+    <>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.screenTitle}>SETTINGS</Text>
@@ -201,7 +310,13 @@ export default function AccountScreen() {
               <Text style={styles.passRenewal}>{getSubscriptionRenewalText()}</Text>
 
               {!isSubscriptionActive ? (
-                <TouchableOpacity style={styles.activateButton}>
+                <TouchableOpacity
+                  style={styles.activateButton}
+                  onPress={() => {
+                    console.log('Activate button pressed');
+                    membershipBottomSheetRef.current?.open();
+                  }}
+                >
                   <Text style={styles.activateButtonText}>Activate Membership</Text>
                 </TouchableOpacity>
               ) : (
@@ -218,7 +333,13 @@ export default function AccountScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>ACCOUNT</Text>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            console.log('Buy-Back Credits pressed');
+            buyBackCreditsBottomSheetRef.current?.open();
+          }}
+        >
           <View style={styles.menuIcon}>
             <Ionicons name="wallet-outline" size={20} color={Colors.dark.tint} />
           </View>
@@ -342,8 +463,24 @@ export default function AccountScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomPadding} />
-    </ScrollView>
+        <View style={styles.bottomPadding} />
+      </ScrollView>
+
+      {/* Membership Activation Bottom Sheet */}
+      <MembershipBottomSheet
+        ref={membershipBottomSheetRef}
+        onActivate={handleActivateMembership}
+        isLoading={isActivatingMembership}
+      />
+
+      {/* Buy-Back Credits Bottom Sheet */}
+      <BuyBackCreditsBottomSheet
+        ref={buyBackCreditsBottomSheetRef}
+        onPurchase={handlePurchaseCredits}
+        isLoading={isPurchasingCredits}
+        currentCredits={currentUser?.current_credits || 0}
+      />
+    </>
   );
 }
 

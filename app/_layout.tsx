@@ -6,6 +6,8 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
 import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
 import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import {
   BebasNeue_400Regular,
@@ -53,16 +55,20 @@ export default function RootLayout() {
 
   // Force dark theme as specified in README
   return (
-    <QueryProvider>
-    <ThemeProvider value={DarkTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal'}}  />
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="light" />
-    </ThemeProvider>
-    </QueryProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <BottomSheetModalProvider>
+        <QueryProvider>
+          <ThemeProvider value={DarkTheme}>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal'}}  />
+              <Stack.Screen name="(app)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="light" />
+          </ThemeProvider>
+        </QueryProvider>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }
