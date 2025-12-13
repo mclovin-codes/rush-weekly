@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/hooks/useUser';
 import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'expo-router';
+import GameCard from '@/components/GameCard';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -342,87 +343,16 @@ export default function HomeScreen() {
               <Text style={styles.loadingText}>Loading games...</Text>
             </View>
           ) : gamesData?.docs && gamesData.docs.length > 0 ? (
-            gamesData.docs.map((game) => {
-              const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
-              const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
-              const gameTime = new Date(game.startTime).toLocaleString('en-US', {
-                weekday: 'short',
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              });
-
-              return (
-                <View key={game.id} style={styles.gameCard}>
-                  {/* Compact Header with Matchup */}
-                  <View style={styles.compactHeader}>
-                    <View style={styles.matchupInfo}>
-                      <Text style={styles.teamAbbr}>{awayTeam?.abbreviation || 'TBD'}</Text>
-                      <Text style={styles.vsText}>@</Text>
-                      <Text style={styles.teamAbbr}>{homeTeam?.abbreviation || 'TBD'}</Text>
-                    </View>
-                    <View style={styles.gameTimeInfo}>
-                      <Text style={styles.gameTime}>{gameTime}</Text>
-                    </View>
-                  </View>
-
-                  {/* Grid Layout for Bets */}
-                  <View style={styles.betsGrid}>
-                    {/* First Row: Spread and Total */}
-                    <View style={styles.betRow}>
-                      <TouchableOpacity style={styles.betCell}>
-                        <Text style={styles.betCellLabel}>SPREAD</Text>
-                        <Text style={styles.betCellValue}>Coming Soon</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity style={styles.betCell}>
-                        <Text style={styles.betCellLabel}>TOTAL</Text>
-                        <Text style={styles.betCellValue}>Coming Soon</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Second Row: Moneyline with Visual Cues */}
-                    <View style={styles.betRow}>
-                      <TouchableOpacity
-                        style={[styles.betCell, styles.underdogCell]}
-                        onPress={() => {
-                          setSelectedBet({ game, team: 'away' });
-                          setBetSlipVisible(true);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.betCellHeader}>
-                          <Text style={[styles.betCellLabel, styles.underdogLabel]}>
-                            AWAY
-                          </Text>
-                        </View>
-                        <Text style={[styles.betCellValue, styles.underdogValue]}>
-                          {awayTeam?.name || 'TBD'}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.betCell, styles.underdogCell]}
-                        onPress={() => {
-                          setSelectedBet({ game, team: 'home' });
-                          setBetSlipVisible(true);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={styles.betCellHeader}>
-                          <Text style={[styles.betCellLabel, styles.underdogLabel]}>
-                            HOME
-                          </Text>
-                        </View>
-                        <Text style={[styles.betCellValue, styles.underdogValue]}>
-                          {homeTeam?.name || 'TBD'}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              );
-            })
+            gamesData.docs.map((game) => (
+              <GameCard
+                key={game.id}
+                game={game}
+                onSelectBet={(selectedGame, team) => {
+                  setSelectedBet({ game: selectedGame, team });
+                  setBetSlipVisible(true);
+                }}
+              />
+            ))
           ) : (
             <View style={styles.emptyGamesContainer}>
               <Text style={styles.emptyGamesText}>No games available for this league</Text>
