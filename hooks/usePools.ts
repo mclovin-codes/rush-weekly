@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { poolService } from '@/services/pools';
 import { Pool, PoolMembership, LeaderboardEntry, PaginatedResponse } from '@/types';
+import { authClient } from '@/lib/auth-client';
 
 /**
  * Hook to fetch the active pool
@@ -17,9 +18,18 @@ export const useActivePool = () => {
  * Hook to fetch current user's pool membership
  */
 export const useMyPool = () => {
+  const { data: session } = authClient.useSession();
+  const userId = session?.user?.id;
+
   return useQuery<PoolMembership | null>({
-    queryKey: ['my-pool'],
-    queryFn: () => poolService.getMyPool(),
+    queryKey: ['my-pool', userId],
+    queryFn: () => {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      return poolService.getMyPool(userId);
+    },
+    enabled: !!userId, // Only fetch when we have a user ID
     staleTime: 1000 * 60, // 1 minute - membership info changes when bets are placed
     retry: 1, // Only retry once if it fails
   });

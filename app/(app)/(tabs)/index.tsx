@@ -1,8 +1,9 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise } from "phosphor-react-native";
+import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench } from "phosphor-react-native";
 import BetSlipBottomSheet from '@/app/modal';
+import DevToolsModal from '@/components/DevToolsModal';
 import { useLeagues } from '@/hooks/useLeagues';
 import { useGames } from '@/hooks/useGames';
 import { useCurrentUser } from '@/hooks/useUser';
@@ -139,6 +140,7 @@ export default function HomeScreen() {
   // Use 'all' as default to show all games
   const [selectedLeague, setSelectedLeague] = useState<string>('all');
   const [betSlipVisible, setBetSlipVisible] = useState(false);
+  const [devToolsVisible, setDevToolsVisible] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
     game: any;
     team: 'home' | 'away';
@@ -153,6 +155,7 @@ export default function HomeScreen() {
   const { data: myPool, refetch: refetchMyPool } = useMyPool();
   const { data: leaderboardData, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
 
+  console.log('xxxx-xx', myPool)
   // Fetch leagues from API
   const { data: leaguesData, isLoading: isLoadingLeagues, refetch: refetchLeagues } = useLeagues({
     active: true,
@@ -209,6 +212,15 @@ export default function HomeScreen() {
     setSelectedBet(null);
   };
 
+  const handlePoolCreated = async () => {
+    // Refresh all pool-related data
+    await Promise.all([
+      refetchPool(),
+      refetchMyPool(),
+      refetchLeaderboard(),
+    ]);
+  };
+
   // Spin animation for refresh button
   useEffect(() => {
     if (refreshing) {
@@ -254,6 +266,15 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.logo}>RUSH</Text>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devToolsButton}
+              onPress={() => setDevToolsVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Wrench size={18} weight="bold" color={Colors.dark.tint} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Refresh Button */}
@@ -504,6 +525,16 @@ export default function HomeScreen() {
         game={selectedBet?.game}
         selectedTeam={selectedBet?.team || 'home'}
         userUnits={currentUser?.current_credits || currentUser?.credits || 0}
+        userId={session?.user?.id}
+        poolId={typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool}
+      />
+
+      {/* Dev Tools Modal */}
+      <DevToolsModal
+        visible={devToolsVisible}
+        onClose={() => setDevToolsVisible(false)}
+        userId={session?.user?.id}
+        onPoolCreated={handlePoolCreated}
       />
     </View>
   );
@@ -536,6 +567,17 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontFamily: Fonts.display,
     letterSpacing: 2,
+  },
+  devToolsButton: {
+    marginLeft: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.dark.tint + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint,
   },
   refreshButton: {
     width: 40,

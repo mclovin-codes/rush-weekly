@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Colors, Fonts } from '@/constants/theme';
-import { PopulatedGame, GameOdds, Bet } from '@/types';
+import { PopulatedGame, GameOdds, Bet, PlaceBetRequest } from '@/types';
 import { gameOddsService } from '@/services/game-odds';
 import { betService } from '@/services/bets';
 
@@ -28,6 +28,8 @@ interface BetSlipBottomSheetProps {
   game: PopulatedGame | null;
   selectedTeam: 'home' | 'away';
   userUnits: number;
+  userId?: string;
+  poolId?: string;
 }
 
 // Helper function to calculate payout from American odds
@@ -47,6 +49,8 @@ export default function BetSlipBottomSheet({
   game,
   selectedTeam,
   userUnits,
+  userId,
+  poolId,
 }: BetSlipBottomSheetProps) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [betAmount, setBetAmount] = useState('');
@@ -156,16 +160,32 @@ export default function BetSlipBottomSheet({
       return;
     }
 
+    if (!userId) {
+      Alert.alert('Error', 'User ID not found. Please try logging in again.');
+      return;
+    }
+
+    if (!poolId) {
+      Alert.alert('Error', 'No active pool found. Please join a pool first.');
+      return;
+    }
+
     setIsPlacingBet(true);
     try {
-      const betData = {
-        gameId: game.id,
+      // Construct bet data according to API specification
+      const betData: PlaceBetRequest = {
+        user: userId,
+        pool: poolId,
+        game: game.id,
         betType: 'moneyline' as Bet['betType'],
         selection: selectedTeam,
         stake: betAmountNum,
+        oddsAtPlacement: selectedOdds,
+        status: 'pending' as const,
+        payout: 0,
       };
 
-      const response = await betService.placeBet(betData);
+      await betService.placeBet(betData);
 
       Alert.alert(
         'Bet Placed!',

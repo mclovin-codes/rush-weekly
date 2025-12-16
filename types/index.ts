@@ -86,6 +86,7 @@ export interface PoolMembership extends BaseDocument {
   pool: string | Pool;
   user: string | User;
   score: number;
+  initial_credits_at_start: number;
 }
 
 export interface Bet extends BaseDocument {
@@ -167,10 +168,16 @@ export interface LeaderboardFilters {
 // ==================== REQUEST/RESPONSE TYPES ====================
 
 export interface PlaceBetRequest {
-  gameId: string;
+  user: string;
+  pool: string;
+  game: string;
   betType: Bet['betType'];
   selection: Bet['selection'];
   stake: number;
+  oddsAtPlacement: number;
+  lineAtPlacement?: number;
+  status: 'pending' | 'won' | 'lost' | 'push';
+  payout: number;
 }
 
 export interface PlaceBetResponse {

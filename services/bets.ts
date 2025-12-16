@@ -1,6 +1,6 @@
 import { apiHelpers } from '@/config/api';
 import { API_ROUTES } from '@/constants/api-routes';
-import { PaginatedResponse, Bet, BetFilters, PopulatedBet, PlaceBetRequest, PlaceBetResponse } from '@/types';
+import { PaginatedResponse, Bet, BetFilters, PopulatedBet, PlaceBetRequest } from '@/types';
 import * as qs from 'qs-esm';
 
 export const betService = {
@@ -40,8 +40,8 @@ export const betService = {
     return apiHelpers.get(`${API_ROUTES.BETS.GET}?${queryString}`);
   },
 
-  placeBet: async (data: PlaceBetRequest): Promise<PlaceBetResponse> => {
-    return apiHelpers.post(API_ROUTES.CUSTOM.PLACE_BET, data);
+  placeBet: async (data: PlaceBetRequest): Promise<Bet> => {
+    return apiHelpers.post(API_ROUTES.BETS.CREATE, data);
   },
 
   getMyBets: async (): Promise<PopulatedBet[]> => {

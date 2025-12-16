@@ -1,6 +1,7 @@
 import { apiHelpers } from '@/config/api';
 import { API_ROUTES } from '@/constants/api-routes';
 import { Pool, PoolMembership, LeaderboardEntry, LeaderboardFilters, PaginatedResponse } from '@/types';
+import * as qs from 'qs-esm';
 
 export const poolService = {
   getActivePool: async (): Promise<Pool | null> => {
@@ -8,16 +9,35 @@ export const poolService = {
     return response.docs[0] || null;
   },
 
-  getMyPool: async (): Promise<PoolMembership | null> => {
-    return apiHelpers.get(API_ROUTES.CUSTOM.MY_POOL);
+  getMyPool: async (userId: string): Promise<PoolMembership | null> => {
+    // Build query to get user's membership in the active pool
+    const queryParams = {
+      where: {
+        user: { equals: userId },
+        'pool.isActive': { equals: true },
+      },
+      depth: 1,
+    };
+
+    const queryString = qs.stringify(queryParams, { encode: false });
+    const response = await apiHelpers.get(`${API_ROUTES.POOL_MEMBERSHIPS.GET}?${queryString}`);
+
+    return response.docs?.[0] || null;
   },
 
   getLeaderboard: async (filters: LeaderboardFilters): Promise<PaginatedResponse<LeaderboardEntry>> => {
-    const queryParams = new URLSearchParams({
-      page: String(filters.page || 1),
-      limit: String(filters.limit || 100),
-    });
+    // Build query to get all memberships for a pool, sorted by score
+    const queryParams = {
+      where: {
+        pool: { equals: filters.poolId },
+      },
+      sort: '-score',
+      depth: 1,
+      page: filters.page || 1,
+      limit: filters.limit || 100,
+    };
 
-    return apiHelpers.get(`${API_ROUTES.CUSTOM.LEADERBOARD(filters.poolId)}?${queryParams}`);
+    const queryString = qs.stringify(queryParams, { encode: false });
+    return apiHelpers.get(`${API_ROUTES.POOL_MEMBERSHIPS.GET}?${queryString}`);
   },
 };
