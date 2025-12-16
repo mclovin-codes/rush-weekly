@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -187,14 +187,19 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
 
           {/* Signup Button */}
           <TouchableOpacity
-            style={[styles.signupButton, isLoading && styles.signupButtonDisabled]}
+            style={[styles.signupButton, isLoading && styles.signupButtonLoading]}
             onPress={handleSignup}
             disabled={isLoading}
             activeOpacity={0.8}
           >
-            <Text style={styles.signupButtonText}>
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </Text>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color={Colors.dark.background} size="small" />
+                <Text style={[styles.signupButtonText, { marginLeft: 12 }]}>Creating Account...</Text>
+              </View>
+            ) : (
+              <Text style={styles.signupButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
 
           {/* Login Link */}
@@ -330,9 +335,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     ...Shadows.pillGlow,
   },
-  signupButtonDisabled: {
-    backgroundColor: Colors.dark.textSecondary,
-    opacity: 0.6,
+  signupButtonLoading: {
+    backgroundColor: Colors.dark.tint,
+    shadowColor: Colors.dark.tint,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   signupButtonText: {
     ...Typography.emphasis.medium,

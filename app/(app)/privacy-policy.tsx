@@ -123,7 +123,7 @@ export default function PrivacyPolicyScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>7. Children's Privacy</Text>
+          <Text style={styles.sectionTitle}>7. Children&apos;s Privacy</Text>
           <Text style={styles.paragraph}>
             RUSH is not intended for users under 18 years of age. We do not knowingly collect information from children
             under 18.
@@ -134,7 +134,7 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.sectionTitle}>8. Changes to Privacy Policy</Text>
           <Text style={styles.paragraph}>
             We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new
-            Privacy Policy on this page and updating the "Last Updated" date.
+            Privacy Policy on this page and updating the &quot;Last Updated&quot; date.
           </Text>
         </View>
 
@@ -152,7 +152,7 @@ export default function PrivacyPolicyScreen() {
   );
 }
 
-const styles = StyleSheet.Create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.dark.background,

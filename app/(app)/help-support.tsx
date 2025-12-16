@@ -21,7 +21,7 @@ export default function HelpSupportScreen() {
             </View>
             <Text style={styles.contactTitle}>Get in Touch</Text>
             <Text style={styles.contactSubtitle}>
-              Have questions? We're here to help!
+              Have questions? We&apos;re here to help!
             </Text>
             <TouchableOpacity style={styles.emailButton} onPress={handleEmailSupport}>
               <Ionicons name="send" size={20} color={Colors.dark.background} />
@@ -62,7 +62,7 @@ export default function HelpSupportScreen() {
               <Text style={styles.faqQuestion}>How do weekly pools work?</Text>
             </View>
             <Text style={styles.faqAnswer}>
-              Each week you're matched with ~100 players. Everyone starts with 1,000 credits. Use your sports
+              Each week you&apos;re matched with ~100 players. Everyone starts with 1,000 credits. Use your sports
               knowledge to make smart picks and climb the leaderboard before the week ends!
             </Text>
           </View>
@@ -95,7 +95,7 @@ export default function HelpSupportScreen() {
               <Text style={styles.faqQuestion}>I forgot my password</Text>
             </View>
             <Text style={styles.faqAnswer}>
-              Use the "Forgot password?" link on the login screen to reset your password. We'll send a
+              Use the &quot;Forgot password?&quot; link on the login screen to reset your password. We&apos;ll send a
               reset link to your registered email address.
             </Text>
           </View>
