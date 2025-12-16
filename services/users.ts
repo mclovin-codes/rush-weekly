@@ -4,7 +4,9 @@ import { User } from '@/types';
 
 export const userService = {
   getMe: async (): Promise<User> => {
-    return apiHelpers.get(API_ROUTES.USERS.GET_ME);
+    const response = await apiHelpers.get(API_ROUTES.USERS.GET_ME);
+    // Extract user from the wrapped response
+    return response.user || response;
   },
 
   getById: async (id: string): Promise<User> => {

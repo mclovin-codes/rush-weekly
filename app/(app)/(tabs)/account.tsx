@@ -19,9 +19,7 @@ export default function AccountScreen() {
   const membershipBottomSheetRef = useRef<MembershipBottomSheetRef>(null);
   const buyBackCreditsBottomSheetRef = useRef<BuyBackCreditsBottomSheetRef>(null);
 
-  console.log('[AccountScreen] Membership ref current:', !!membershipBottomSheetRef.current);
-  console.log('[AccountScreen] BuyBack ref current:', !!buyBackCreditsBottomSheetRef.current);
-
+ 
   const [notifications, setNotifications] = useState({
     newWeek: true,
     gameResults: true,
