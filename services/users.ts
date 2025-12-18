@@ -5,8 +5,21 @@ import { User } from '@/types';
 export const userService = {
   getMe: async (): Promise<User> => {
     const response = await apiHelpers.get(API_ROUTES.USERS.GET_ME);
+
+    console.log('[UserService] getMe response:', JSON.stringify(response, null, 2));
+
     // Extract user from the wrapped response
-    return response.user || response;
+    // If response has a 'user' property, use it (even if null)
+    // Otherwise assume response is already the user object
+    if ('user' in response) {
+      if (response.user === null) {
+        console.error('[UserService] Backend returned null user - user not found in database');
+        throw new Error('User not found in database. Please check backend /api/users/me endpoint.');
+      }
+      return response.user;
+    }
+
+    return response;
   },
 
   getById: async (id: string): Promise<User> => {

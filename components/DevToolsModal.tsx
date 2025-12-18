@@ -27,7 +27,6 @@ export default function DevToolsModal({
   onPoolCreated,
 }: DevToolsModalProps) {
   const [isCreatingPool, setIsCreatingPool] = useState(false);
-  const [isJoiningPool, setIsJoiningPool] = useState(false);
   const [isSettingCredits, setIsSettingCredits] = useState(false);
 
   const createWeeklyPool = async () => {
@@ -46,6 +45,7 @@ export default function DevToolsModal({
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 7);
 
+      console.log('[DevTools] Creating pool...');
       // Create pool
       const poolData = {
         name: `Dev Pool - Week ${weekStart.toLocaleDateString()}`,
@@ -57,44 +57,49 @@ export default function DevToolsModal({
       };
 
       const newPool = await apiHelpers.post(API_ROUTES.POOLS.CREATE, poolData);
+      console.log('[DevTools] Pool creation response:', JSON.stringify(newPool, null, 2));
+      console.log('[DevTools] Pool ID from response:', newPool.id);
+      console.log('[DevTools] Pool doc ID:', newPool.doc?.id);
 
       // Set user's current credits to 1000
-      await apiHelpers.patch(API_ROUTES.USERS.UPDATE(userId), {
+      console.log('[DevTools] Setting user credits...');
+      console.log('[DevTools] Update URL:', API_ROUTES.USERS.UPDATE(userId));
+      console.log('[DevTools] Update data:', { current_credits: 1000 });
+
+      const updateResponse = await apiHelpers.patch(API_ROUTES.USERS.UPDATE(userId), {
         current_credits: 1000,
       });
 
-      Alert.alert('Success', 'Pool created and credits added!');
+      console.log('[DevTools] Credits update response:', JSON.stringify(updateResponse, null, 2));
+      console.log('[DevTools] Updated credits value:', updateResponse.current_credits);
 
-      // Auto-join the pool
-      await joinPool(newPool.id);
-    } catch (error: any) {
-      console.error('Error creating pool:', error);
-      Alert.alert('Error', error?.message || 'Failed to create pool');
-    } finally {
-      setIsCreatingPool(false);
-    }
-  };
+      // Create pool membership to join the pool
+      console.log('[DevTools] Creating pool membership...');
 
-  const joinPool = async (poolId: string) => {
-    if (!userId) {
-      Alert.alert('Error', 'User ID not found');
-      return;
-    }
+      // Extract pool ID - might be in different places depending on API response
+      const poolId = newPool.id || newPool.doc?.id;
+      console.log('[DevTools] Extracted Pool ID:', poolId);
+      console.log('[DevTools] User ID:', userId);
 
-    setIsJoiningPool(true);
-    try {
+      if (!poolId) {
+        throw new Error('Pool ID not found in response. Check pool creation response above.');
+      }
+
       const membershipData = {
         pool: poolId,
         user: userId,
         score: 0,
         initial_credits_at_start: 1000,
       };
+      console.log('[DevTools] Membership data:', JSON.stringify(membershipData, null, 2));
 
-      await apiHelpers.post(API_ROUTES.POOL_MEMBERSHIPS.CREATE, membershipData);
+      const membership = await apiHelpers.post(API_ROUTES.POOL_MEMBERSHIPS.CREATE, membershipData);
+      console.log('[DevTools] Pool membership created successfully!');
+      console.log('[DevTools] Membership response:', JSON.stringify(membership, null, 2));
 
       Alert.alert(
-        'Success',
-        'Pool created and joined successfully! You can now place bets.',
+        'Success!',
+        `Pool created and joined!\n\nPool ID: ${poolId}\nCredits: 1000\n\nYou can now place bets.`,
         [
           {
             text: 'OK',
@@ -106,10 +111,14 @@ export default function DevToolsModal({
         ]
       );
     } catch (error: any) {
-      console.error('Error joining pool:', error);
-      Alert.alert('Error', error?.message || 'Failed to join pool');
+      console.error('[DevTools] Error:', error);
+      console.error('[DevTools] Error details:', JSON.stringify(error, null, 2));
+      Alert.alert(
+        'Error',
+        `Failed to create pool:\n\n${error?.message || error?.toString() || 'Unknown error'}\n\nCheck console for details.`
+      );
     } finally {
-      setIsJoiningPool(false);
+      setIsCreatingPool(false);
     }
   };
 
@@ -146,7 +155,7 @@ export default function DevToolsModal({
     }
   };
 
-  const isLoading = isCreatingPool || isJoiningPool || isSettingCredits;
+  const isLoading = isCreatingPool || isSettingCredits;
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -170,12 +179,10 @@ export default function DevToolsModal({
               onPress={createWeeklyPool}
               disabled={isLoading}
             >
-              {isCreatingPool || isJoiningPool ? (
+              {isCreatingPool ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color={Colors.dark.background} />
-                  <Text style={styles.buttonText}>
-                    {isCreatingPool ? 'Creating Pool...' : 'Joining Pool...'}
-                  </Text>
+                  <Text style={styles.buttonText}>Creating Pool...</Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>Create & Join Weekly Pool</Text>

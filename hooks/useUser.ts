@@ -13,7 +13,14 @@ export const useCurrentUser = () => {
 
   return useQuery<User>({
     queryKey: ['current-user', userId],
-    queryFn: () => userService.getMe(),
+    queryFn: () => {
+      if (!userId) {
+        throw new Error('No user ID in session');
+      }
+      // Use GET by ID instead of GET ME since /api/users/me is broken
+      console.log('[useCurrentUser] Fetching user by ID:', userId);
+      return userService.getById(userId);
+    },
     enabled: !!userId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

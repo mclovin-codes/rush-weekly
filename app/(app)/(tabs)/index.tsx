@@ -213,8 +213,9 @@ export default function HomeScreen() {
   };
 
   const handlePoolCreated = async () => {
-    // Refresh all pool-related data
+    // Refresh all data including user credits
     await Promise.all([
+      refetchUser(),
       refetchPool(),
       refetchMyPool(),
       refetchLeaderboard(),
@@ -259,6 +260,8 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   };
+
+  console.log('xxx-xxx-iiii', currentUser)
 
   return (
     <View style={styles.container}>
