@@ -172,7 +172,6 @@ export default function BetSlipBottomSheet({
 
     setIsPlacingBet(true);
     try {
-      // Construct bet data according to API specification
       const betData: PlaceBetRequest = {
         user: userId,
         pool: poolId,
@@ -181,15 +180,19 @@ export default function BetSlipBottomSheet({
         selection: selectedTeam,
         stake: betAmountNum,
         oddsAtPlacement: selectedOdds,
-        status: 'pending' as const,
-        payout: 0,
       };
 
-      await betService.placeBet(betData);
+      const response = await betService.placeBet(betData);
+
+      if (!response.success) {
+        // Show the specific error message from the API
+        Alert.alert('Bet Failed', response.error || 'An error occurred, try again');
+        return;
+      }
 
       Alert.alert(
         'Bet Placed!',
-        `Your bet of ${betAmountNum} units on ${selectedTeamName} has been placed successfully.`,
+        `${betAmountNum} units on ${selectedTeamName}`,
         [
           {
             text: 'OK',
@@ -200,12 +203,9 @@ export default function BetSlipBottomSheet({
         ]
       );
     } catch (error: any) {
-      console.error('Error placing bet:', error);
-      Alert.alert(
-        'Bet Failed',
-        error?.message || 'Failed to place bet. Please try again.',
-        [{ text: 'OK' }]
-      );
+      // Handle network errors or unexpected errors
+      const errorMsg = error?.response?.data?.error || error?.message || 'An error occurred, try again';
+      Alert.alert('Bet Failed', errorMsg);
     } finally {
       setIsPlacingBet(false);
     }

@@ -176,13 +176,12 @@ export interface PlaceBetRequest {
   stake: number;
   oddsAtPlacement: number;
   lineAtPlacement?: number;
-  status: 'pending' | 'won' | 'lost' | 'push';
-  payout: number;
 }
 
 export interface PlaceBetResponse {
-  bet: Bet;
-  remainingCredits: number;
+  success: boolean;
+  bet?: Bet;
+  error?: string;
 }
 
 export interface LeaderboardEntry {

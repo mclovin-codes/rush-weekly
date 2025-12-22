@@ -1,7 +1,8 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench } from "phosphor-react-native";
+import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon } from "phosphor-react-native";
+
 import BetSlipBottomSheet from '@/app/modal';
 import DevToolsModal from '@/components/DevToolsModal';
 import { useLeagues } from '@/hooks/useLeagues';
@@ -261,7 +262,7 @@ export default function HomeScreen() {
     }
   };
 
-  console.log('xxx-xxx-iiii', currentUser)
+
 
   return (
     <View style={styles.container}>
@@ -275,7 +276,7 @@ export default function HomeScreen() {
               onPress={() => setDevToolsVisible(true)}
               activeOpacity={0.7}
             >
-              <Wrench size={18} weight="bold" color={Colors.dark.tint} />
+              <PlusIcon size={18} weight="bold" color={Colors.dark.tint} />
             </TouchableOpacity>
           )}
         </View>
