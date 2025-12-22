@@ -30,6 +30,7 @@ interface BetSlipBottomSheetProps {
   userUnits: number;
   userId?: string;
   poolId?: string;
+  onBetPlaced?: () => void | Promise<void>;
 }
 
 // Helper function to calculate payout from American odds
@@ -51,6 +52,7 @@ export default function BetSlipBottomSheet({
   userUnits,
   userId,
   poolId,
+  onBetPlaced,
 }: BetSlipBottomSheetProps) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [betAmount, setBetAmount] = useState('');
@@ -188,6 +190,11 @@ export default function BetSlipBottomSheet({
         // Show the specific error message from the API
         Alert.alert('Bet Failed', response.error || 'An error occurred, try again');
         return;
+      }
+
+      // Call the callback to refresh data
+      if (onBetPlaced) {
+        await onBetPlaced();
       }
 
       Alert.alert(

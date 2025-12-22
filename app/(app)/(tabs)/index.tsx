@@ -223,6 +223,15 @@ export default function HomeScreen() {
     ]);
   };
 
+  const handleBetPlaced = async () => {
+    // Refresh user credits and games data after bet placement
+    await Promise.all([
+      refetchUser(),
+      refetchGames(),
+      refetchLeaderboard(),
+    ]);
+  };
+
   // Spin animation for refresh button
   useEffect(() => {
     if (refreshing) {
@@ -531,6 +540,7 @@ export default function HomeScreen() {
         userUnits={currentUser?.current_credits || currentUser?.credits || 0}
         userId={session?.user?.id}
         poolId={typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool}
+        onBetPlaced={handleBetPlaced}
       />
 
       {/* Dev Tools Modal */}
