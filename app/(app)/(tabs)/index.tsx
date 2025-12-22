@@ -257,17 +257,30 @@ export default function HomeScreen() {
 
   // Spin animation for refresh button
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
     if (refreshing) {
       spinAnim.setValue(0);
-      Animated.loop(
+      animation = Animated.loop(
         Animated.timing(spinAnim, {
           toValue: 1,
           duration: 1000,
           useNativeDriver: true,
         })
-      ).start();
+      );
+      animation.start();
+    } else {
+      // Stop the animation and reset
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
     }
-  }, [refreshing]);
+
+    return () => {
+      if (animation) {
+        animation.stop();
+      }
+    };
+  }, [refreshing, spinAnim]);
 
   const spin = spinAnim.interpolate({
     inputRange: [0, 1],
