@@ -156,7 +156,7 @@ export default function HomeScreen() {
   const { data: myPool, refetch: refetchMyPool } = useMyPool();
   const { data: leaderboardData, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
 
-  console.log('xxxx-xx', myPool)
+
   // Fetch leagues from API
   const { data: leaguesData, isLoading: isLoadingLeagues, refetch: refetchLeagues } = useLeagues({
     active: true,
@@ -186,26 +186,49 @@ export default function HomeScreen() {
 
   // Calculate time remaining in the week
   const getTimeRemaining = () => {
-    if (!activePool?.weekEnd) return 'No active pool';
+    if (!activePool?.weekEnd) return null;
     const now = new Date();
     const end = new Date(activePool.weekEnd);
     const diff = end.getTime() - now.getTime();
 
-    if (diff <= 0) return 'Pool ended';
+    if (diff <= 0) return null;
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    return `Week ends in ${days}d ${hours}h ${minutes}m`;
+    return { days, hours, minutes };
   };
 
   // Get week number from pool
   const getWeekNumber = () => {
     if (!activePool?.weekStart) return 0;
+    // Calculate week number from the start of the year
     const start = new Date(activePool.weekStart);
-    const weekNumber = Math.ceil((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
+    const yearStart = new Date(start.getFullYear(), 0, 1);
+    const weekNumber = Math.ceil((start.getTime() - yearStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
     return weekNumber;
+  };
+
+  // Get member count from leaderboard
+  const getMemberCount = () => {
+    return leaderboard.length || 0;
+  };
+
+  // Check if week is in progress (more than 1 day has passed)
+  const isWeekInProgress = () => {
+    if (!activePool?.weekStart) return false;
+    const now = new Date();
+    const start = new Date(activePool.weekStart);
+    const daysPassed = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return daysPassed >= 1;
+  };
+
+  // Calculate days remaining in the week
+  const getDaysRemaining = () => {
+    const time = getTimeRemaining();
+    if (!time) return 0;
+    return time.days;
   };
 
   const handleCloseBetSlip = () => {
@@ -279,15 +302,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <Text style={styles.logo}>RUSH</Text>
-          {__DEV__ && (
-            <TouchableOpacity
-              style={styles.devToolsButton}
-              onPress={() => setDevToolsVisible(true)}
-              activeOpacity={0.7}
-            >
-              <PlusIcon size={18} weight="bold" color={Colors.dark.tint} />
-            </TouchableOpacity>
-          )}
+          
         </View>
 
         {/* Refresh Button */}
@@ -424,14 +439,58 @@ export default function HomeScreen() {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Week Countdown - Pulsing */}
-        {activePool && (
-          <View style={styles.countdownSection}>
-            <PulsingText style={styles.countdownText}>
-              {getTimeRemaining()}
-            </PulsingText>
-          </View>
-        )}
+        {/* Week Countdown - Redesigned */}
+        <View style={styles.countdownSection}>
+          {activePool ? (
+            // Active Pool State
+            <>
+              <View style={styles.countdownRow}>
+                <PulsingText style={styles.countdownMainText}>
+                  WEEK {getWeekNumber()} ENDS IN{' '}
+                  {(() => {
+                    const time = getTimeRemaining();
+                    if (!time) return 'SOON';
+                    return `${time.days}D ${time.hours}H ${time.minutes}M`;
+                  })()}
+                </PulsingText>
+                {isWeekInProgress() && getDaysRemaining() < 6 && (
+                  <View style={styles.inProgressBadge}>
+                    <Text style={styles.inProgressText}>IN PROGRESS</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.poolInfoRow}>
+                <Text style={styles.poolInfoText}>
+                  Pool #{activePool.id?.slice(-4) || 'N/A'}
+                </Text>
+                <Text style={styles.poolInfoDot}>•</Text>
+                <Text style={styles.poolInfoText}>
+                  {getMemberCount()} {getMemberCount() === 1 ? 'Member' : 'Members'}
+                </Text>
+              </View>
+            </>
+          ) : (
+            // No Active Pool State
+            <>
+              <View style={styles.noPoolHeader}>
+                <Text style={styles.noPoolIcon}>⚠️</Text>
+                <Text style={styles.noPoolTitle}>NO ACTIVE POOL</Text>
+              </View>
+              <Text style={styles.nextPoolText}>
+                Create or join a pool to start betting
+              </Text>
+              <TouchableOpacity
+                style={styles.joinPoolButton}
+                onPress={() => setDevToolsVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.joinPoolButtonText}>
+                  Create Pool →
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
         {/* Leaderboard Preview - Simplified */}
         <TouchableOpacity
@@ -702,17 +761,100 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Week Countdown
+  // Week Countdown - Redesigned
   countdownSection: {
-    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
+    backgroundColor: Colors.dark.card,
+    borderRadius: 12,
     paddingVertical: 14,
-    backgroundColor: Colors.dark.background,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    alignItems: 'center',
   },
-  countdownText: {
+  countdownRow: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  countdownMainText: {
     ...Typography.body.medium,
     color: Colors.dark.tint,
     fontFamily: Fonts.display,
+    fontSize: 15,
+    letterSpacing: 1,
+    textAlign: 'center',
+  },
+  inProgressBadge: {
+    backgroundColor: Colors.dark.tint + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginTop: 6,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+  },
+  inProgressText: {
+    ...Typography.meta.small,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.bold,
+    fontSize: 9,
+    letterSpacing: 0.8,
+  },
+  poolInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  poolInfoText: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+  },
+  poolInfoDot: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 11,
+  },
+  // No Active Pool State
+  noPoolHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  noPoolIcon: {
+    fontSize: 18,
+  },
+  noPoolTitle: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.display,
     fontSize: 14,
+    letterSpacing: 1,
+  },
+  nextPoolText: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  joinPoolButton: {
+    backgroundColor: Colors.dark.tint,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  joinPoolButtonText: {
+    ...Typography.body.small,
+    color: Colors.dark.background,
+    fontFamily: Fonts.bold,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
 

@@ -98,11 +98,11 @@ export default function DevToolsModal({
       console.log('[DevTools] Membership response:', JSON.stringify(membership, null, 2));
 
       Alert.alert(
-        'Success!',
-        `Pool created and joined!\n\nPool ID: ${poolId}\nCredits: 1000\n\nYou can now place bets.`,
+        'Pool Created! 🎉',
+        `You're all set!\n\nYou've been given 1,000 credits to start playing.\n\nGood luck!`,
         [
           {
-            text: 'OK',
+            text: 'Get Started',
             onPress: () => {
               onPoolCreated?.();
               onClose();
@@ -162,7 +162,8 @@ export default function DevToolsModal({
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <View style={styles.header}>
-            <Text style={styles.title}>Dev Tools</Text>
+            <Text style={styles.title}>Action</Text>
+      
             <TouchableOpacity onPress={onClose} disabled={isLoading}>
               <Text style={styles.closeButton}>✕</Text>
             </TouchableOpacity>
@@ -171,9 +172,9 @@ export default function DevToolsModal({
           <ScrollView style={styles.content}>
             <Text style={styles.sectionTitle}>Pool Management</Text>
             <Text style={styles.description}>
-              Create a test pool to start placing bets
+            To get started, please join an available pool
             </Text>
-
+            <View style={{paddingVertical: 15}}/>
             <TouchableOpacity
               style={[styles.button, isLoading && styles.buttonDisabled]}
               onPress={createWeeklyPool}
@@ -188,38 +189,7 @@ export default function DevToolsModal({
                 <Text style={styles.buttonText}>Create & Join Weekly Pool</Text>
               )}
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryButton, isLoading && styles.buttonDisabled]}
-              onPress={setUserCredits}
-              disabled={isLoading}
-            >
-              {isSettingCredits ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color={Colors.dark.tint} />
-                  <Text style={styles.secondaryButtonText}>Setting Credits...</Text>
-                </View>
-              ) : (
-                <Text style={styles.secondaryButtonText}>Set My Credits to 1000</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.divider} />
-
-            <Text style={styles.sectionTitle}>Info</Text>
-            <View style={styles.infoCard}>
-              <Text style={styles.infoLabel}>User ID:</Text>
-              <Text style={styles.infoValue}>{userId || 'Not logged in'}</Text>
-            </View>
-
-            <View style={styles.warning}>
-              <Text style={styles.warningText}>
-                ⚠️ Development Mode Only
-              </Text>
-              <Text style={styles.warningSubtext}>
-                These tools are for testing. Remove before production.
-              </Text>
-            </View>
+         
           </ScrollView>
         </View>
       </View>
