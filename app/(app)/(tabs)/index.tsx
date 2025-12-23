@@ -6,12 +6,12 @@ import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsCloc
 import BetSlipBottomSheet from '@/app/modal';
 import DevToolsModal from '@/components/DevToolsModal';
 import { useLeagues } from '@/hooks/useLeagues';
-import { useGames } from '@/hooks/useGames';
+import { useMarketGames } from '@/hooks/useMarketGames';
 import { useCurrentUser } from '@/hooks/useUser';
 import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'expo-router';
-import GameCard from '@/components/GameCard';
+import MarketGameCard from '@/components/MarketGameCard';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -163,12 +163,14 @@ export default function HomeScreen() {
     depth: 1,
   });
 
-  // Fetch games - show all by default, or filter by selected league
-  const { data: gamesData, isLoading: isLoadingGames, refetch: refetchGames } = useGames({
-    leagueId: selectedLeague === 'all' ? undefined : selectedLeague,
+  // Fetch games with odds from market API - OPTIMIZED: Single API call instead of 51
+  const { data: marketGames, isLoading: isLoadingGames, refetch: refetchGames } = useMarketGames({
+    leagueID: selectedLeague === 'all' ? 'ALL' : selectedLeague,
     status: 'scheduled',
-    limit: 50, // Increased limit to show more games when showing all
+    oddsAvailable: true,
+    limit: 50,
   });
+
 
   // Calculate user's rank and stats
   const leaderboard = leaderboardData?.docs || [];
@@ -307,7 +309,7 @@ export default function HomeScreen() {
     }
   };
 
-
+console.log('------->>>>> Market Games:', marketGames?.[0])
 
   return (
     <View style={styles.container}>
@@ -412,22 +414,23 @@ export default function HomeScreen() {
 
               // Regular league pills
               const sportId = getSportIdFromExternalId(item.externalId);
+              const leagueID = item.externalId; // Use externalId for market API
               return (
                 <TouchableOpacity
                   style={[
                     styles.leaguePill,
-                    selectedLeague === item.id && styles.leaguePillActive,
+                    selectedLeague === leagueID && styles.leaguePillActive,
                   ]}
-                  onPress={() => setSelectedLeague(item.id)}
+                  onPress={() => setSelectedLeague(leagueID)}
                 >
                   <View style={styles.leaguePillContent}>
                     <View style={[
                       styles.leagueBadge,
-                      selectedLeague === item.id && styles.leagueBadgeActive
+                      selectedLeague === leagueID && styles.leagueBadgeActive
                     ]}>
                       <Text style={[
                         styles.leagueSymbol,
-                        selectedLeague === item.id && styles.leagueSymbolActive
+                        selectedLeague === leagueID && styles.leagueSymbolActive
                       ]}>
                         {getLeagueSymbol(sportId)}
                       </Text>
@@ -435,7 +438,7 @@ export default function HomeScreen() {
                     <Text
                       style={[
                         styles.leaguePillText,
-                        selectedLeague === item.id && styles.leaguePillTextActive,
+                        selectedLeague === leagueID && styles.leaguePillTextActive,
                       ]}
                     >
                       {item.name}
@@ -577,19 +580,17 @@ export default function HomeScreen() {
                 <Text style={styles.loadingText}>Loading games...</Text>
               </View>
             )
-          ) : gamesData?.docs && gamesData.docs.length > 0 ? (
-            gamesData.docs.map((game) => (
-              <GameCard
-                key={game.id}
+          ) : marketGames && marketGames.length > 0 ? (
+            marketGames.map((game) => (
+              <MarketGameCard
+                key={game.eventID}
                 game={game}
                 onSelectBet={(selectedGame, team) => {
                   setSelectedBet({ game: selectedGame, team });
                   setBetSlipVisible(true);
                 }}
-                onPress={(gameId) => {
-                  // Use externalId for the API call
-                  const externalId = game.externalId || gameId;
-                  router.push(`/(app)/game/${externalId}`);
+                onPress={(eventID) => {
+                  router.push(`/(app)/game/${eventID}`);
                 }}
               />
             ))

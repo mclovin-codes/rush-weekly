@@ -216,3 +216,43 @@ export type Populated<T, K extends keyof T> = Omit<T, K> & {
       : never;
 };
 
+// ==================== MARKET API TYPES ====================
+
+export interface MarketTeam {
+  name: string;
+  abbreviation: string;
+  moneyline: number | null;
+}
+
+export interface MarketSpread {
+  point: number;
+  payout: number;
+  target_team: string;
+}
+
+export interface MarketTotal {
+  line: number;
+  over_payout: number;
+  under_payout: number;
+}
+
+export interface MarketGame {
+  eventID: string;
+  leagueID: string;
+  start_time: string;
+  status?: 'scheduled' | 'live' | 'finalized' | 'canceled';
+  away_team: MarketTeam;
+  home_team: MarketTeam;
+  markets: {
+    spread: MarketSpread | null;
+    total: MarketTotal | null;
+  };
+}
+
+export interface MarketGamesFilters {
+  leagueID?: string;
+  status?: 'scheduled' | 'live' | 'finalized';
+  oddsAvailable?: boolean;
+  limit?: number;
+}
+
