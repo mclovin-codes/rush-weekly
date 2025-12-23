@@ -1,6 +1,8 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Animated, RefreshControl } from 'react-native';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { ArrowClockwise } from 'phosphor-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useRouter } from 'expo-router';
@@ -10,14 +12,71 @@ import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Get session and user data
   const { data: session } = authClient.useSession();
-  const { data: currentUser, isLoading: isLoadingUser } = useCurrentUser();
-  const { data: stats, isLoading: isLoadingStats } = useUserStats();
-  const { data: myPool, isLoading: isLoadingMyPool } = useMyPool();
-  const { data: activePool, isLoading: isLoadingPool } = useActivePool();
-  const { data: leaderboardData } = useLeaderboard(activePool?.id);
+  const { data: currentUser, isLoading: isLoadingUser, refetch: refetchUser } = useCurrentUser();
+  const { data: stats, isLoading: isLoadingStats, refetch: refetchStats } = useUserStats();
+  const { data: myPool, isLoading: isLoadingMyPool, refetch: refetchMyPool } = useMyPool();
+  const { data: activePool, isLoading: isLoadingPool, refetch: refetchPool } = useActivePool();
+  const { data: leaderboardData, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id);
+
+  // Refetch data when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchUser();
+      refetchStats();
+      refetchMyPool();
+      refetchPool();
+      refetchLeaderboard();
+    }, [])
+  );
+
+  // Spin animation for refresh button
+  useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
+    if (refreshing) {
+      spinAnim.setValue(0);
+      animation = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) {
+        animation.stop();
+      }
+    };
+  }, [refreshing]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Handle manual refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      refetchUser(),
+      refetchStats(),
+      refetchMyPool(),
+      refetchPool(),
+      refetchLeaderboard(),
+    ]);
+    setRefreshing(false);
+  };
 
   // Calculate ranks on the frontend based on score (descending)
   const leaderboard = useMemo(() => {
@@ -47,7 +106,22 @@ export default function ProfileScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>PROFILE</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.screenTitle}>PROFILE</Text>
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={styles.refreshButton}
+          >
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <ArrowClockwise
+                size={24}
+                color={Colors.dark.tint}
+                weight="bold"
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -216,11 +290,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   screenTitle: {
     ...Typography.title.large,
     color: Colors.dark.text,
     letterSpacing: 2,
     fontFamily: Fonts.display,
+  },
+  refreshButton: {
+    padding: 8,
   },
 
   // Section

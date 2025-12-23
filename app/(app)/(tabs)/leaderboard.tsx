@@ -1,15 +1,18 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import React, { useState, useMemo } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, RefreshControl, Animated } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useActivePool, useMyPool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 import { PoolMembership } from '@/types';
+import { ArrowClockwise } from 'phosphor-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Extended type to include calculated rank
 type LeaderboardEntryWithRank = PoolMembership & { rank: number };
 
 export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Get current user from auth
   const { data: session } = authClient.useSession();
@@ -19,6 +22,47 @@ export default function LeaderboardScreen() {
   const { data: activePool, isLoading: isLoadingPool, refetch: refetchPool } = useActivePool();
   const { data: myPool, isLoading: isLoadingMyPool, refetch: refetchMyPool } = useMyPool();
   const { data: leaderboardData, isLoading: isLoadingLeaderboard, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
+
+  // Refetch data when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      refetchPool();
+      refetchMyPool();
+      refetchLeaderboard();
+    }, [])
+  );
+
+  // Spin animation for refresh button
+  useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
+    if (refreshing) {
+      spinAnim.setValue(0);
+      animation = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      // Stop the animation and reset
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) {
+        animation.stop();
+      }
+    };
+  }, [refreshing]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   // Handle pull-to-refresh
   const onRefresh = async () => {
@@ -32,7 +76,7 @@ export default function LeaderboardScreen() {
   };
 
   // Calculate ranks on the frontend based on score (descending)
-  const leaderboard = useMemo(() => {
+  const leaderboard: LeaderboardEntryWithRank[] = useMemo(() => {
     const memberships = leaderboardData?.docs || [];
     // Sort by score descending (highest first) and add rank
     return memberships
@@ -84,7 +128,22 @@ export default function LeaderboardScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>LEADERBOARD</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.screenTitle}>LEADERBOARD</Text>
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={styles.refreshButton}
+          >
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <ArrowClockwise
+                size={24}
+                color={Colors.dark.tint}
+                weight="bold"
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
 
         {/* Pool Overview */}
         <View style={styles.poolOverview}>
@@ -172,7 +231,7 @@ export default function LeaderboardScreen() {
             </Text>
           </View>
         ) : (
-          leaderboard.map((entry) => {
+          leaderboard.map((entry: LeaderboardEntryWithRank) => {
             const user = typeof entry.user === 'object' ? entry.user : null;
             const isCurrentUser = user?.id === currentUserId;
 
@@ -248,12 +307,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   screenTitle: {
     ...Typography.title.large,
     color: Colors.dark.text,
     letterSpacing: 3,
-    marginBottom: 16,
     fontFamily: Fonts.display,
+  },
+  refreshButton: {
+    padding: 8,
   },
 
   // Pool Overview

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon } from "phosphor-react-native";
 
@@ -172,8 +172,18 @@ export default function HomeScreen() {
   });
 
 
-  // Calculate user's rank and stats
-  const leaderboard = leaderboardData?.docs || [];
+  // Calculate ranks on the frontend based on score (descending)
+  const leaderboard = useMemo(() => {
+    const memberships = leaderboardData?.docs || [];
+    // Sort by score descending (highest first) and add rank
+    return memberships
+      .sort((a, b) => b.score - a.score)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1, // Rank 1 = highest score
+      }));
+  }, [leaderboardData]);
+
   const currentUserEntry = leaderboard.find((entry) => {
     const user = typeof entry.user === 'object' ? entry.user : null;
     return user?.id === session?.user?.id;
@@ -249,9 +259,10 @@ export default function HomeScreen() {
   };
 
   const handleBetPlaced = async () => {
-    // Refresh user credits and games data after bet placement
+    // Refresh user credits, pool membership, and games data after bet placement
     await Promise.all([
       refetchUser(),
+      refetchMyPool(),
       refetchGames(),
       refetchLeaderboard(),
     ]);
