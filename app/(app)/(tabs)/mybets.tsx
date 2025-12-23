@@ -1,17 +1,58 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl } from 'react-native';
-import React, { useState, useMemo } from 'react';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, Animated } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
 import { PopulatedBet, Bet } from '@/types';
+import { ArrowClockwise } from 'phosphor-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const filterOptions = ['All', 'Open', 'Won', 'Lost'];
 
 export default function MyBetsScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
+  const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch user's bets from API
   const { data: bets = [], isLoading, error, refetch } = useMyBets();
+
+  // Refetch data when tab is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [])
+  );
+
+  // Spin animation for refresh button
+  useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+
+    if (refreshing) {
+      spinAnim.setValue(0);
+      animation = Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      spinAnim.stopAnimation();
+      spinAnim.setValue(0);
+    }
+
+    return () => {
+      if (animation) {
+        animation.stop();
+      }
+    };
+  }, [refreshing]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
   // Handle pull-to-refresh
   const onRefresh = async () => {
@@ -174,7 +215,22 @@ export default function MyBetsScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.screenTitle}>MY BETS</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.screenTitle}>MY BETS</Text>
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={refreshing}
+            style={styles.refreshButton}
+          >
+            <Animated.View style={{ transform: [{ rotate: spin }] }}>
+              <ArrowClockwise
+                size={24}
+                color="#FFFFFF"
+                weight="bold"
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Filter Pills */}
@@ -268,11 +324,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   screenTitle: {
     ...Typography.title.large,
     color: Colors.dark.text,
     letterSpacing: 3,
     fontFamily: Fonts.display,
+  },
+  refreshButton: {
+    padding: 8,
   },
 
   // Filter Pills

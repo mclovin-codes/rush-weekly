@@ -116,7 +116,7 @@ export default function ProfileScreen() {
             <Animated.View style={{ transform: [{ rotate: spin }] }}>
               <ArrowClockwise
                 size={24}
-                color={Colors.dark.tint}
+                color="#FFFFFF"
                 weight="bold"
               />
             </Animated.View>
