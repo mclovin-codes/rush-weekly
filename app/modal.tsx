@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Colors, Fonts } from '@/constants/theme';
-import { PopulatedGame, GameOdds, Bet, PlaceBetRequest } from '@/types';
+import { PopulatedGame, GameOdds, Bet, PlaceBetRequest, MarketGame } from '@/types';
 import { gameOddsService } from '@/services/game-odds';
 import { betService } from '@/services/bets';
 
@@ -25,13 +25,18 @@ const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
 interface BetSlipBottomSheetProps {
   visible: boolean;
   onClose: () => void;
-  game: PopulatedGame | null;
+  game: PopulatedGame | MarketGame | null;
   selectedTeam: 'home' | 'away';
   userUnits: number;
   userId?: string;
   poolId?: string;
   onBetPlaced?: () => void | Promise<void>;
 }
+
+// Type guard to check if game is MarketGame
+const isMarketGame = (game: PopulatedGame | MarketGame | null): game is MarketGame => {
+  return game !== null && typeof game === 'object' && 'eventID' in game;
+};
 
 // Helper function to calculate payout from American odds
 const calculatePayout = (stake: number, americanOdds: number): number => {
@@ -60,15 +65,21 @@ export default function BetSlipBottomSheet({
   const [isLoadingOdds, setIsLoadingOdds] = useState(false);
   const [isPlacingBet, setIsPlacingBet] = useState(false);
 
-  // Fetch game odds when modal opens
+  // Fetch game odds when modal opens (only for PopulatedGame)
   useEffect(() => {
     if (visible && game) {
-      fetchGameOdds();
+      if (isMarketGame(game)) {
+        // MarketGame already has odds - no need to fetch
+        setIsLoadingOdds(false);
+      } else {
+        // PopulatedGame needs to fetch odds
+        fetchGameOdds();
+      }
     }
   }, [visible, game]);
 
   const fetchGameOdds = async () => {
-    if (!game) return;
+    if (!game || isMarketGame(game)) return;
 
     setIsLoadingOdds(true);
     try {
@@ -82,12 +93,21 @@ export default function BetSlipBottomSheet({
     }
   };
 
-  // Get selected team info
-  const selectedTeamObj = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
-  const selectedTeamName = typeof selectedTeamObj === 'object' ? selectedTeamObj?.name : 'Unknown';
+  // Get selected team info - works for both game types
+  let selectedTeamName: string;
+  let selectedOdds: number;
 
-  // Get moneyline odds for selected team
-  const selectedOdds = gameOdds?.moneyline?.[selectedTeam] || 0;
+  if (isMarketGame(game)) {
+    // MarketGame structure
+    const teamObj = selectedTeam === 'home' ? game.home_team : game.away_team;
+    selectedTeamName = teamObj.name;
+    selectedOdds = teamObj.moneyline || 0;
+  } else {
+    // PopulatedGame structure
+    const selectedTeamObj = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
+    selectedTeamName = typeof selectedTeamObj === 'object' ? selectedTeamObj?.name : 'Unknown';
+    selectedOdds = gameOdds?.moneyline?.[selectedTeam] || 0;
+  }
 
   // Calculate potential win and profit
   const betAmountNum = betAmount ? parseFloat(betAmount) : 0;
@@ -157,8 +177,14 @@ export default function BetSlipBottomSheet({
       return;
     }
 
-    if (!gameOdds) {
+    // Check odds availability based on game type
+    if (!isMarketGame(game) && !gameOdds) {
       Alert.alert('No Odds Available', 'Betting odds are not available for this game');
+      return;
+    }
+
+    if (isMarketGame(game) && !selectedOdds) {
+      Alert.alert('No Odds Available', 'Betting odds are not available for this team');
       return;
     }
 
@@ -174,16 +200,34 @@ export default function BetSlipBottomSheet({
 
     setIsPlacingBet(true);
     try {
-      const betData: PlaceBetRequest = {
-        user: userId,
-        pool: poolId,
-        game: game.id,
-        betType: 'moneyline' as Bet['betType'],
-        selection: selectedTeam,
-        stake: betAmountNum,
-        oddsAtPlacement: selectedOdds,
-      };
+      let betData: PlaceBetRequest;
 
+      if (isMarketGame(game)) {
+        // MarketGame - use new format
+        betData = {
+          user: userId,
+          pool: poolId,
+          eventID: game.eventID,
+          leagueID: game.leagueID,
+          betType: 'moneyline' as Bet['betType'],
+          selection: selectedTeam,
+          stake: betAmountNum,
+        };
+      } else {
+        // PopulatedGame - use old format (backward compatible)
+        betData = {
+          user: userId,
+          pool: poolId,
+          eventID: game.externalId || game.id, // Use externalId as eventID
+          leagueID: typeof game.league === 'object' ? game.league.externalId : 'UNKNOWN',
+          betType: 'moneyline' as Bet['betType'],
+          selection: selectedTeam,
+          stake: betAmountNum,
+          game: game.id, // Keep for backward compatibility
+          oddsAtPlacement: selectedOdds,
+        };
+      }
+      console.log('bet data', betData)
       const response = await betService.placeBet(betData);
 
       if (!response.success) {
@@ -199,7 +243,7 @@ export default function BetSlipBottomSheet({
 
       Alert.alert(
         'Bet Placed!',
-        `${betAmountNum} units on ${selectedTeamName}`,
+        response.message || `${betAmountNum} units on ${selectedTeamName}`,
         [
           {
             text: 'OK',
@@ -213,6 +257,7 @@ export default function BetSlipBottomSheet({
       // Handle network errors or unexpected errors
       const errorMsg = error?.response?.data?.error || error?.message || 'An error occurred, try again';
       Alert.alert('Bet Failed', errorMsg);
+      console.log(JSON.stringify(error))
     } finally {
       setIsPlacingBet(false);
     }
@@ -265,7 +310,10 @@ export default function BetSlipBottomSheet({
               <View style={styles.matchup}>
                 <Text style={styles.matchupLabel}>Match</Text>
                 <Text style={styles.matchupText}>
-                  {typeof game.awayTeam === 'object' ? game.awayTeam.name : 'TBD'} @ {typeof game.homeTeam === 'object' ? game.homeTeam.name : 'TBD'}
+                  {isMarketGame(game)
+                    ? `${game.away_team.name} @ ${game.home_team.name}`
+                    : `${typeof game.awayTeam === 'object' ? game.awayTeam.name : 'TBD'} @ ${typeof game.homeTeam === 'object' ? game.homeTeam.name : 'TBD'}`
+                  }
                 </Text>
               </View>
               <View style={styles.divider} />

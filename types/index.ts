@@ -170,18 +170,22 @@ export interface LeaderboardFilters {
 export interface PlaceBetRequest {
   user: string;
   pool: string;
-  game: string;
+  eventID: string;           // Event ID from market API
+  leagueID: string;          // League ID (e.g., "NFL", "NBA")
   betType: Bet['betType'];
   selection: Bet['selection'];
   stake: number;
-  oddsAtPlacement: number;
-  lineAtPlacement?: number;
+  // Optional fields for backward compatibility
+  game?: string;             // Deprecated: use eventID
+  oddsAtPlacement?: number;  // Optional: backend fetches latest odds
+  lineAtPlacement?: number;  // Optional: for spread/total bets
 }
 
 export interface PlaceBetResponse {
   success: boolean;
   bet?: Bet;
   error?: string;
+  message?: string;
 }
 
 export interface LeaderboardEntry {
