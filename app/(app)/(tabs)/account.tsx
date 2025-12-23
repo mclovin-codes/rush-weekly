@@ -364,7 +364,7 @@ export default function AccountScreen() {
       </View>
 
       {/* Notifications */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
 
         <View style={styles.settingItem}>
@@ -408,7 +408,7 @@ export default function AccountScreen() {
             ios_backgroundColor={Colors.dark.cardElevated}
           />
         </View>
-      </View>
+      </View> */}
 
       {/* About */}
       <View style={styles.section}>
