@@ -1,6 +1,6 @@
 import { apiHelpers } from '@/config/api';
 import { API_ROUTES } from '@/constants/api-routes';
-import { Pool, PoolMembership, LeaderboardEntry, LeaderboardFilters, PaginatedResponse } from '@/types';
+import { Pool, PoolMembership, LeaderboardFilters, PaginatedResponse } from '@/types';
 import * as qs from 'qs-esm';
 
 export const poolService = {
@@ -25,13 +25,13 @@ export const poolService = {
     return response.docs?.[0] || null;
   },
 
-  getLeaderboard: async (filters: LeaderboardFilters): Promise<PaginatedResponse<LeaderboardEntry>> => {
-    // Build query to get all memberships for a pool, sorted by score
+  getLeaderboard: async (filters: LeaderboardFilters): Promise<PaginatedResponse<PoolMembership>> => {
+    // Build query to get all memberships for a pool, sorted by score descending
     const queryParams = {
       where: {
         pool: { equals: filters.poolId },
       },
-      sort: '-score',
+      sort: '-score', // Sort by score descending (highest first)
       depth: 1,
       page: filters.page || 1,
       limit: filters.limit || 100,

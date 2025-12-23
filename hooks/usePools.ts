@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { poolService } from '@/services/pools';
-import { Pool, PoolMembership, LeaderboardEntry, PaginatedResponse } from '@/types';
+import { Pool, PoolMembership, PaginatedResponse } from '@/types';
 import { authClient } from '@/lib/auth-client';
 
 /**
@@ -37,9 +37,11 @@ export const useMyPool = () => {
 
 /**
  * Hook to fetch leaderboard for a specific pool
+ * Returns pool memberships sorted by score (descending)
+ * Rank calculation is done on the frontend
  */
 export const useLeaderboard = (poolId: string | null | undefined, options?: { limit?: number }) => {
-  return useQuery<PaginatedResponse<LeaderboardEntry>>({
+  return useQuery<PaginatedResponse<PoolMembership>>({
     queryKey: ['leaderboard', poolId, options?.limit],
     queryFn: () => {
       if (!poolId) {

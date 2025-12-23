@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
@@ -19,8 +19,19 @@ export default function ProfileScreen() {
   const { data: activePool, isLoading: isLoadingPool } = useActivePool();
   const { data: leaderboardData } = useLeaderboard(activePool?.id);
 
+  // Calculate ranks on the frontend based on score (descending)
+  const leaderboard = useMemo(() => {
+    const memberships = leaderboardData?.docs || [];
+    // Sort by score descending (highest first) and add rank
+    return memberships
+      .sort((a, b) => b.score - a.score)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1, // Rank 1 = highest score
+      }));
+  }, [leaderboardData]);
+
   // Calculate user's rank from leaderboard
-  const leaderboard = leaderboardData?.docs || [];
   const currentUserEntry = leaderboard.find((entry) => {
     const user = typeof entry.user === 'object' ? entry.user : null;
     return user?.id === session?.user?.id;
@@ -137,8 +148,17 @@ export default function ProfileScreen() {
 
                 {myPool && (
                   <View style={styles.poolScore}>
-                    <Text style={styles.poolScoreLabel}>Your Score</Text>
-                    <Text style={styles.poolScoreValue}>{myPool.score?.toFixed(0) || 0}</Text>
+                    <Text style={styles.poolScoreLabel}>Profit/Loss</Text>
+                    {(() => {
+                      const score = myPool.score ?? 0;
+                      const scoreColor = score > 0 ? Colors.dark.success : score < 0 ? Colors.dark.danger : Colors.dark.text;
+                      const scorePrefix = score > 0 ? '+' : '';
+                      return (
+                        <Text style={[styles.poolScoreValue, { color: scoreColor }]}>
+                          {scorePrefix}{score.toFixed(0)}
+                        </Text>
+                      );
+                    })()}
                   </View>
                 )}
 

@@ -1,8 +1,12 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useActivePool, useMyPool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
+import { PoolMembership } from '@/types';
+
+// Extended type to include calculated rank
+type LeaderboardEntryWithRank = PoolMembership & { rank: number };
 
 export default function LeaderboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
@@ -27,7 +31,18 @@ export default function LeaderboardScreen() {
     setRefreshing(false);
   };
 
-  const leaderboard = leaderboardData?.docs || [];
+  // Calculate ranks on the frontend based on score (descending)
+  const leaderboard = useMemo(() => {
+    const memberships = leaderboardData?.docs || [];
+    // Sort by score descending (highest first) and add rank
+    return memberships
+      .sort((a, b) => b.score - a.score)
+      .map((entry, index) => ({
+        ...entry,
+        rank: index + 1, // Rank 1 = highest score
+      }));
+  }, [leaderboardData]);
+
   const totalPlayers = leaderboard.length;
 
   // Find current user's rank from leaderboard
@@ -107,10 +122,17 @@ export default function LeaderboardScreen() {
             </View>
           </View>
           <View style={styles.positionRight}>
-            <Text style={styles.unitsLabel}>Your Score</Text>
-            <Text style={styles.unitsAmount}>
-              {myPool?.score?.toFixed(0) || currentUserEntry?.score?.toFixed(0) || '0'}
-            </Text>
+            <Text style={styles.unitsLabel}>Profit/Loss</Text>
+            {(() => {
+              const score = myPool?.score ?? currentUserEntry?.score ?? 0;
+              const scoreColor = score > 0 ? Colors.dark.success : score < 0 ? Colors.dark.danger : Colors.dark.tint;
+              const scorePrefix = score > 0 ? '+' : '';
+              return (
+                <Text style={[styles.unitsAmount, { color: scoreColor }]}>
+                  {scorePrefix}{score.toFixed(0)}
+                </Text>
+              );
+            })()}
           </View>
         </View>
       </View>
@@ -121,7 +143,7 @@ export default function LeaderboardScreen() {
       <View style={styles.tableHeader}>
         <Text style={[styles.headerText, styles.rankHeader]}>RANK</Text>
         <Text style={[styles.headerText, styles.playerHeader]}>PLAYER</Text>
-        <Text style={[styles.headerText, styles.unitsHeader]}>SCORE</Text>
+        <Text style={[styles.headerText, styles.unitsHeader]}>P/L</Text>
       </View>
 
       {/* Leaderboard List */}
@@ -197,9 +219,10 @@ export default function LeaderboardScreen() {
                 {/* Score Column */}
                 <Text style={[
                   styles.unitsText,
-                  isCurrentUser && styles.currentUserText
+                  isCurrentUser && styles.currentUserText,
+                  entry.score > 0 ? styles.positiveScore : entry.score < 0 ? styles.negativeScore : {}
                 ]}>
-                  {entry.score.toFixed(0)}
+                  {entry.score > 0 ? '+' : ''}{entry.score.toFixed(0)}
                 </Text>
               </TouchableOpacity>
             );
@@ -499,6 +522,12 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontFamily: Fonts.medium,
     fontSize: 13,
+  },
+  positiveScore: {
+    color: Colors.dark.success,
+  },
+  negativeScore: {
+    color: Colors.dark.danger,
   },
 
   bottomSpacing: {
