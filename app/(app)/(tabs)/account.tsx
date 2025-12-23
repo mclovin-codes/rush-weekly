@@ -174,11 +174,11 @@ export default function AccountScreen() {
           break;
       }
 
-      // Call API to activate membership
+      // Call API to activate membership and reload with 1000 credits (testing phase)
       await apiHelpers.patch(`/api/users/${currentUser.id}`, {
         is_paid_member: true,
         subscription_end_date: endDate.toISOString(),
-        current_credits: currentUser.current_credits || 1000,
+        current_credits: 1000, // Reset to 1000 credits for testing
       });
 
       // Close bottom sheet
@@ -190,7 +190,7 @@ export default function AccountScreen() {
       // Show success message
       Alert.alert(
         'Membership Activated!',
-        `Your ${duration}ly membership has been activated. Welcome to RUSH!`,
+        `Your ${duration}ly membership has been activated.\n\nYour account has been reloaded with 1,000 credits. Welcome to RUSH!`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {
@@ -214,10 +214,10 @@ export default function AccountScreen() {
     setIsPurchasingCredits(true);
 
     try {
-      // Calculate new credit balance
-      const newCredits = (currentUser.current_credits || 0) + amount;
+      // Reload account with 1000 credits (testing phase)
+      const newCredits = 1000;
 
-      // Call API to add credits
+      // Call API to reset credits
       await apiHelpers.patch(`/api/users/${currentUser.id}`, {
         current_credits: newCredits,
       });
@@ -230,14 +230,14 @@ export default function AccountScreen() {
 
       // Show success message
       Alert.alert(
-        'Credits Added!',
-        `Successfully added ${amount.toLocaleString()} credits to your account.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
+        'Credits Reloaded!',
+        `Your account has been reloaded with 1,000 credits for testing purposes.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {
       console.error('Credits purchase error:', error);
       Alert.alert(
-        'Purchase Failed',
+        'Reload Failed',
         error?.message || 'Something went wrong. Please try again.',
         [{ text: 'OK' }]
       );

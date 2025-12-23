@@ -7,7 +7,7 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 
 export default function HelpSupportScreen() {
   const handleEmailSupport = () => {
-    Linking.openURL('mailto:support@rushfantasy.com');
+    Linking.openURL('mailto:gm@gilbertmpanga.com');
   };
 
   return (
