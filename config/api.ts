@@ -21,6 +21,12 @@ api.interceptors.request.use(
     if (cookies) {
       config.headers = config.headers ?? {};
       config.headers.Cookie = cookies;
+
+      if (__DEV__ && config.url?.includes('activate-membership')) {
+        console.log(`[API] 🔐 Auth cookies for ${config.url}:`, cookies.substring(0, 50) + '...');
+      }
+    } else if (__DEV__ && config.url?.includes('activate-membership')) {
+      console.warn(`[API] ⚠️ No cookies found for ${config.url}!`);
     }
 
     if (__DEV__) {

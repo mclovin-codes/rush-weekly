@@ -81,6 +81,7 @@ export const API_ROUTES = {
       GET_BY_ID: (id: string) => `/api/users/${id}`,
       UPDATE: (id: string) => `/api/users/${id}`,
       DELETE: (id: string) => `/api/users/${id}`,
+      ACTIVATE_MEMBERSHIP: '/api/users/activate-membership',
     },
 
     // ==================== CUSTOM ENDPOINTS ====================

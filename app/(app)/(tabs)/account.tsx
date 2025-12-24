@@ -6,7 +6,9 @@ import { useRouter } from 'expo-router';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
 import { apiHelpers } from "@/config/api";
+import { API_ROUTES } from "@/constants/api-routes";
 import { useCurrentUser } from '@/hooks/useUser';
+import { useActivePool, useMyPool } from '@/hooks/usePools';
 import MembershipBottomSheet, { MembershipBottomSheetRef } from '@/components/MembershipBottomSheet';
 import BuyBackCreditsBottomSheet, { BuyBackCreditsBottomSheetRef } from '@/components/BuyBackCreditsBottomSheet';
 
@@ -16,6 +18,8 @@ export default function AccountScreen() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const { data: currentUser, isLoading: isLoadingUser, refetch: refetchUser } = useCurrentUser();
+  const { refetch: refetchActivePool } = useActivePool();
+  const { refetch: refetchMyPool } = useMyPool();
   const membershipBottomSheetRef = useRef<MembershipBottomSheetRef>(null);
   const buyBackCreditsBottomSheetRef = useRef<BuyBackCreditsBottomSheetRef>(null);
 
@@ -150,6 +154,29 @@ export default function AccountScreen() {
   };
 
   const handleActivateMembership = async (duration: 'week' | 'month' | 'year') => {
+    console.log('========================================');
+    console.log('[AccountScreen] MEMBERSHIP ACTIVATION STARTED');
+    console.log('[AccountScreen] Session data:', JSON.stringify(session, null, 2));
+    console.log('[AccountScreen] User ID:', currentUser?.id);
+    console.log('[AccountScreen] Session user ID:', session?.user?.id);
+    console.log('[AccountScreen] Session token:', session?.session?.token);
+    console.log('[AccountScreen] Current user data:', JSON.stringify(currentUser, null, 2));
+
+    // Test session validity
+    console.log('[AccountScreen] Testing session validity...');
+    try {
+      const sessionTest = await apiHelpers.get(API_ROUTES.USERS.GET_ME);
+      console.log('[AccountScreen] ✅ Session test passed, user:', sessionTest?.username);
+    } catch (sessionError) {
+      console.error('[AccountScreen] ❌ Session test failed:', sessionError);
+    }
+    console.log('========================================');
+
+    if (!session?.user?.id) {
+      Alert.alert('Error', 'You must be logged in to activate membership');
+      return;
+    }
+
     if (!currentUser?.id) {
       Alert.alert('Error', 'User ID not found');
       return;
@@ -158,7 +185,7 @@ export default function AccountScreen() {
     setIsActivatingMembership(true);
 
     try {
-      // Calculate subscription end date based on duration
+      // Step 1: Calculate subscription end date
       const now = new Date();
       const endDate = new Date(now);
 
@@ -174,30 +201,210 @@ export default function AccountScreen() {
           break;
       }
 
-      // Call API to activate membership and reload with 1000 credits (testing phase)
-      await apiHelpers.patch(`/api/users/${currentUser.id}`, {
+      console.log('[AccountScreen] Subscription end date:', endDate.toISOString());
+
+      // Step 2: Check for existing active pool or create one
+      console.log('[AccountScreen] Checking for active pools...');
+      const activePools = await apiHelpers.get(API_ROUTES.POOLS.GET_ACTIVE);
+      console.log('[AccountScreen] Active pools response:', activePools);
+
+      let poolId: string;
+      let poolName: string;
+      let isNewPool = false;
+
+      if (activePools?.docs && activePools.docs.length > 0) {
+        // Join existing active pool
+        const existingPool = activePools.docs[0];
+        poolId = existingPool.id;
+        poolName = existingPool.name || `Pool ${existingPool.id.slice(0, 8)}`;
+        console.log('[AccountScreen] Found existing active pool:', poolName);
+        console.log('[AccountScreen] Pool ID:', poolId);
+        console.log('[AccountScreen] Full pool data:', JSON.stringify(existingPool, null, 2));
+      } else {
+        // No active pool exists, create a new one
+        console.log('[AccountScreen] No active pool found, creating new pool...');
+        isNewPool = true;
+
+        const weekStart = new Date(now);
+        weekStart.setHours(0, 0, 0, 0);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 7);
+
+        const poolData = {
+          name: `Weekly Pool - ${weekStart.toLocaleDateString()}`,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+          isActive: true,
+          initialCredits: 1000,
+          entryFee: 0,
+        };
+
+        const newPool = await apiHelpers.post(API_ROUTES.POOLS.CREATE, poolData);
+        poolId = newPool.id || newPool.doc?.id;
+        poolName = poolData.name;
+
+        if (!poolId) {
+          throw new Error('Failed to create pool');
+        }
+
+        console.log('[AccountScreen] Created new pool:', poolName);
+      }
+
+      // Step 3: Activate membership and add credits
+      console.log('========================================');
+      console.log('[AccountScreen] STEP 3: ACTIVATING MEMBERSHIP & ADDING CREDITS');
+      const currentCredits = currentUser.current_credits || currentUser.credits || 0;
+      const newCredits = currentCredits + 1000; // Add 1000 credits to current balance
+
+      console.log('[AccountScreen] BEFORE UPDATE:');
+      console.log('[AccountScreen]   Current credits:', currentCredits);
+      console.log('[AccountScreen]   Credits to add: 1000');
+      console.log('[AccountScreen]   New total will be:', newCredits);
+
+      const updatePayload = {
         is_paid_member: true,
         subscription_end_date: endDate.toISOString(),
-        current_credits: 1000, // Reset to 1000 credits for testing
-      });
+        current_credits: newCredits,
+      };
+      console.log('[AccountScreen] Update payload:', JSON.stringify(updatePayload, null, 2));
+      console.log('[AccountScreen] Update URL:', `/api/users/${currentUser.id}`);
+
+      // Try custom endpoint first, fallback to direct patch
+      let updateResponse;
+      try {
+        // Try custom activation endpoint that has proper permissions
+        console.log('[AccountScreen] Trying custom activation endpoint...');
+        console.log('[AccountScreen] Endpoint:', API_ROUTES.USERS.ACTIVATE_MEMBERSHIP);
+        console.log('[AccountScreen] Payload:', JSON.stringify({ duration, credits_to_add: 1000 }, null, 2));
+
+        updateResponse = await apiHelpers.post(API_ROUTES.USERS.ACTIVATE_MEMBERSHIP, {
+          duration,
+          credits_to_add: 1000,
+        });
+
+        console.log('[AccountScreen] ✅ Used custom activation endpoint successfully');
+      } catch (customEndpointError: any) {
+        console.error('[AccountScreen] ❌ Custom endpoint failed:', customEndpointError);
+        console.error('[AccountScreen] Error response:', customEndpointError?.response?.data);
+        console.error('[AccountScreen] Error status:', customEndpointError?.response?.status);
+
+        // If it's an auth error, don't fallback - throw it
+        if (customEndpointError?.response?.status === 401) {
+          throw new Error('Authentication failed. Please log out and log back in.');
+        }
+
+        console.log('[AccountScreen] ⚠️ Custom endpoint not available, trying direct patch...');
+        // Fallback to direct patch (will likely fail with permissions error)
+        updateResponse = await apiHelpers.patch(`/api/users/${currentUser.id}`, updatePayload);
+      }
+
+      console.log('[AccountScreen] AFTER UPDATE:');
+      console.log('[AccountScreen] API Response:', JSON.stringify(updateResponse, null, 2));
+      console.log('[AccountScreen] Response credits:', updateResponse?.current_credits);
+
+      // Verify the update was successful
+      if (!updateResponse?.current_credits) {
+        console.error('[AccountScreen] ❌ Update failed - no credits in response!');
+        throw new Error('Failed to update credits. Response: ' + JSON.stringify(updateResponse));
+      }
+
+      console.log('[AccountScreen] ✅ Credits updated successfully to:', updateResponse.current_credits);
+      console.log('========================================');
+
+      // Step 4: Check if user already has membership in this pool
+      console.log('[AccountScreen] Checking for existing pool membership...');
+      try {
+        const existingMembership = await apiHelpers.get(
+          `${API_ROUTES.POOL_MEMBERSHIPS.GET}?where[pool][equals]=${poolId}&where[user][equals]=${currentUser.id}`
+        );
+
+        if (existingMembership?.docs && existingMembership.docs.length > 0) {
+          console.log('[AccountScreen] User already has membership in this pool, skipping creation');
+        } else {
+          // Create pool membership
+          console.log('[AccountScreen] Creating pool membership...');
+          const membershipData = {
+            pool: poolId,
+            user: currentUser.id,
+            score: 0,
+            initial_credits_at_start: 1000,
+          };
+
+          await apiHelpers.post(API_ROUTES.POOL_MEMBERSHIPS.CREATE, membershipData);
+          console.log('[AccountScreen] Pool membership created successfully!');
+        }
+      } catch (membershipError: any) {
+        // If it's a duplicate error, that's okay
+        if (membershipError?.response?.status === 409 || membershipError?.message?.includes('duplicate')) {
+          console.log('[AccountScreen] Membership already exists (caught duplicate error)');
+        } else {
+          throw membershipError;
+        }
+      }
+
+      // Refresh all data to update UI
+      console.log('========================================');
+      console.log('[AccountScreen] STEP 5: REFRESHING ALL DATA');
+      console.log('[AccountScreen] Starting refetch...');
+
+      const refetchResults = await Promise.all([
+        refetchUser(),
+        refetchActivePool(),
+        refetchMyPool(),
+      ]);
+
+      console.log('[AccountScreen] Refetch complete!');
+      console.log('[AccountScreen] User refetch result:', refetchResults[0]?.data?.current_credits);
+      console.log('[AccountScreen] Active pool refetch result:', refetchResults[1]?.data?.id);
+      console.log('[AccountScreen] My pool refetch result:', refetchResults[2]?.data?.id);
+      console.log('========================================');
 
       // Close bottom sheet
       membershipBottomSheetRef.current?.close();
 
-      // Refresh user data
-      await refetchUser();
+      console.log('========================================');
+      console.log('[AccountScreen] SUCCESS! MEMBERSHIP ACTIVATED');
+      console.log('[AccountScreen] Expected credits:', newCredits);
+      console.log('[AccountScreen] Actual credits from API:', updateResponse.current_credits);
+      console.log('[AccountScreen] Pool:', poolName);
+      console.log('[AccountScreen] Was new pool?', isNewPool);
+      console.log('========================================');
+
+      // Use actual credits from API response
+      const finalCredits = updateResponse.current_credits || newCredits;
+      const creditsAdded = finalCredits - currentCredits;
 
       // Show success message
+      const successMessage = isNewPool
+        ? `Welcome to RUSH!\n\nPool: ${poolName || 'Active Pool'}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`
+        : `Welcome to RUSH!\n\nYou've joined: ${poolName || 'Active Pool'}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
+
+      console.log('[AccountScreen] Showing success alert:', successMessage);
+
       Alert.alert(
-        'Membership Activated!',
-        `Your ${duration}ly membership has been activated.\n\nYour account has been reloaded with 1,000 credits. Welcome to RUSH!`,
-        [{ text: 'OK' }]
+        'Membership Activated! 🎉',
+        successMessage,
+        [{
+          text: 'Get Started',
+          onPress: () => {
+            console.log('[AccountScreen] User clicked Get Started, navigating to home...');
+            router.replace('/(app)/(tabs)');
+          }
+        }]
       );
     } catch (error: any) {
-      console.error('Membership activation error:', error);
+      console.error('[AccountScreen] Membership activation error:', error);
+      console.error('[AccountScreen] Error details:', JSON.stringify(error, null, 2));
+      console.error('[AccountScreen] Error response:', error?.response?.data);
+
+      const errorMessage = error?.response?.data?.error
+        || error?.response?.data?.message
+        || error?.message
+        || 'Something went wrong. Please try again.';
+
       Alert.alert(
         'Activation Failed',
-        error?.message || 'Something went wrong. Please try again.',
+        `Error: ${errorMessage}\n\nCheck the console for more details.`,
         [{ text: 'OK' }]
       );
     } finally {
@@ -214,10 +421,16 @@ export default function AccountScreen() {
     setIsPurchasingCredits(true);
 
     try {
-      // Reload account with 1000 credits (testing phase)
-      const newCredits = 1000;
+      // Add 1000 credits to current balance (testing phase)
+      const currentCredits = currentUser.current_credits || currentUser.credits || 0;
+      const creditsToAdd = 1000;
+      const newCredits = currentCredits + creditsToAdd;
 
-      // Call API to reset credits
+      console.log('[AccountScreen] Adding credits:', creditsToAdd);
+      console.log('[AccountScreen] Current balance:', currentCredits);
+      console.log('[AccountScreen] New balance:', newCredits);
+
+      // Call API to add credits
       await apiHelpers.patch(`/api/users/${currentUser.id}`, {
         current_credits: newCredits,
       });
@@ -230,14 +443,14 @@ export default function AccountScreen() {
 
       // Show success message
       Alert.alert(
-        'Credits Reloaded!',
-        `Your account has been reloaded with 1,000 credits for testing purposes.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
+        'Credits Added!',
+        `+${creditsToAdd.toLocaleString()} credits added for testing purposes.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {
       console.error('Credits purchase error:', error);
       Alert.alert(
-        'Reload Failed',
+        'Purchase Failed',
         error?.message || 'Something went wrong. Please try again.',
         [{ text: 'OK' }]
       );

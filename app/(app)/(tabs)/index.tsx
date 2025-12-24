@@ -348,7 +348,7 @@ export default function HomeScreen() {
     }
   };
 
-console.log('------->>>>> Market Games:', marketGames?.[0])
+
 
   return (
     <View style={styles.container}>
