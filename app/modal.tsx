@@ -13,14 +13,16 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Fonts } from '@/constants/theme';
 import { PopulatedGame, GameOdds, Bet, PlaceBetRequest, MarketGame } from '@/types';
 import { gameOddsService } from '@/services/game-odds';
 import { betService } from '@/services/bets';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.75;
 
 interface BetSlipBottomSheetProps {
   visible: boolean;
@@ -59,6 +61,7 @@ export default function BetSlipBottomSheet({
   poolId,
   onBetPlaced,
 }: BetSlipBottomSheetProps) {
+  const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [betAmount, setBetAmount] = useState('');
   const [gameOdds, setGameOdds] = useState<GameOdds | null>(null);
@@ -288,6 +291,7 @@ export default function BetSlipBottomSheet({
               styles.sheet,
               {
                 transform: [{ translateY }],
+                paddingBottom: Math.max(insets.bottom, 20),
               },
             ]}
           >
@@ -296,17 +300,21 @@ export default function BetSlipBottomSheet({
               <View style={styles.handle} />
             </View>
 
-         
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Place Bet</Text>
-              <TouchableOpacity onPress={closeSheet} activeOpacity={0.7}>
-                <Text style={styles.closeButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={styles.headerTitle}>Place Bet</Text>
+                <TouchableOpacity onPress={closeSheet} activeOpacity={0.7}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* Selection Info */}
-            <View style={styles.selectionCard}>
+              {/* Selection Info */}
+              <View style={styles.selectionCard}>
               <View style={styles.matchup}>
                 <Text style={styles.matchupLabel}>Match</Text>
                 <Text style={styles.matchupText}>
@@ -382,29 +390,30 @@ export default function BetSlipBottomSheet({
               </View>
             </View>
 
-            {/* Place Bet Button */}
-            <TouchableOpacity
-              style={[
-                styles.placeBetButton,
-                (!betAmount || isPlacingBet || isLoadingOdds) && styles.placeBetButtonDisabled,
-              ]}
-              onPress={handlePlaceBet}
-              disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || isLoadingOdds}
-              activeOpacity={0.7}
-            >
-              {isPlacingBet ? (
-                <View style={styles.loadingButton}>
-                  <ActivityIndicator size="small" color={Colors.dark.background} />
-                  <Text style={styles.placeBetButtonText}>Placing Bet...</Text>
-                </View>
-              ) : (
-                <Text style={styles.placeBetButtonText}>
-                  {betAmount && parseFloat(betAmount) > 0
-                    ? `Place Bet - ${betAmount} units`
-                    : 'Enter Amount'}
-                </Text>
-              )}
-            </TouchableOpacity>
+              {/* Place Bet Button */}
+              <TouchableOpacity
+                style={[
+                  styles.placeBetButton,
+                  (!betAmount || isPlacingBet || isLoadingOdds) && styles.placeBetButtonDisabled,
+                ]}
+                onPress={handlePlaceBet}
+                disabled={!betAmount || parseFloat(betAmount) <= 0 || isPlacingBet || isLoadingOdds}
+                activeOpacity={0.7}
+              >
+                {isPlacingBet ? (
+                  <View style={styles.loadingButton}>
+                    <ActivityIndicator size="small" color={Colors.dark.background} />
+                    <Text style={styles.placeBetButtonText}>Placing Bet...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.placeBetButtonText}>
+                    {betAmount && parseFloat(betAmount) > 0
+                      ? `Place Bet - ${betAmount} units`
+                      : 'Enter Amount'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </Animated.View>
         </KeyboardAvoidingView>
       </View>
@@ -429,7 +438,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.dark.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 40,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   handleContainer: {
     alignItems: 'center',

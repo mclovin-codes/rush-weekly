@@ -138,8 +138,8 @@ function PulsingSkeleton({ style }: { style?: any }) {
 export default function HomeScreen() {
   const router = useRouter();
 
-  // Use 'all' as default to show all games
-  const [selectedLeague, setSelectedLeague] = useState<string>('all');
+  // Default will be set to NFL (or first available league)
+  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
   const [betSlipVisible, setBetSlipVisible] = useState(false);
   const [devToolsVisible, setDevToolsVisible] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
@@ -147,6 +147,7 @@ export default function HomeScreen() {
     team: 'home' | 'away';
   } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [reloadingGames, setReloadingGames] = useState(false);
   const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch user and pool data
@@ -163,9 +164,23 @@ export default function HomeScreen() {
     depth: 1,
   });
 
-  // Fetch games with odds from market API - OPTIMIZED: Single API call instead of 51
+  // Set default league to NFL (or first available) when leagues load
+  useEffect(() => {
+    if (leaguesData?.docs && leaguesData.docs.length > 0 && !selectedLeague) {
+      // Try to find NFL first
+      const nflLeague = leaguesData.docs.find(league =>
+        league.externalId?.toLowerCase().includes('nfl')
+      );
+
+      // Use NFL if found, otherwise use first league
+      const defaultLeague = nflLeague || leaguesData.docs[0];
+      setSelectedLeague(defaultLeague.externalId);
+    }
+  }, [leaguesData, selectedLeague]);
+
+  // Fetch games with odds from market API - OPTIMIZED: Single API call for selected league only
   const { data: marketGames, isLoading: isLoadingGames, refetch: refetchGames } = useMarketGames({
-    leagueID: selectedLeague === 'all' ? 'ALL' : selectedLeague,
+    leagueID: selectedLeague || 'NFL', // Fallback to NFL if no league selected yet
     status: 'scheduled',
     oddsAvailable: true,
     limit: 50,
@@ -266,6 +281,19 @@ export default function HomeScreen() {
       refetchGames(),
       refetchLeaderboard(),
     ]);
+  };
+
+  const handleReloadGames = async () => {
+    setReloadingGames(true);
+    try {
+      await refetchGames();
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Error reloading games:', error);
+    } finally {
+      setReloadingGames(false);
+    }
   };
 
   // Spin animation for refresh button
@@ -384,46 +412,10 @@ console.log('------->>>>> Market Games:', marketGames?.[0])
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
-            data={[{ id: 'all', name: 'All', externalId: 'all' }, ...(leaguesData?.docs || [])]}
+            data={leaguesData?.docs || []}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.leagueFilterContent}
             renderItem={({ item }) => {
-              // Handle "All" pill specially
-              if (item.id === 'all') {
-                return (
-                  <TouchableOpacity
-                    style={[
-                      styles.leaguePill,
-                      selectedLeague === 'all' && styles.leaguePillActive,
-                    ]}
-                    onPress={() => setSelectedLeague('all')}
-                  >
-                    <View style={styles.leaguePillContent}>
-                      <View style={[
-                        styles.leagueBadge,
-                        selectedLeague === 'all' && styles.leagueBadgeActive
-                      ]}>
-                        <Text style={[
-                          styles.leagueSymbol,
-                          selectedLeague === 'all' && styles.leagueSymbolActive
-                        ]}>
-                          ★
-                        </Text>
-                      </View>
-                      <Text
-                        style={[
-                          styles.leaguePillText,
-                          selectedLeague === 'all' && styles.leaguePillTextActive,
-                        ]}
-                      >
-                        All Leagues
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              }
-
-              // Regular league pills
               const sportId = getSportIdFromExternalId(item.externalId);
               const leagueID = item.externalId; // Use externalId for market API
               return (
@@ -608,6 +600,24 @@ console.log('------->>>>> Market Games:', marketGames?.[0])
           ) : (
             <View style={styles.emptyGamesContainer}>
               <Text style={styles.emptyGamesText}>No games available for this league</Text>
+              <TouchableOpacity
+                style={styles.reloadButton}
+                onPress={handleReloadGames}
+                activeOpacity={0.7}
+                disabled={reloadingGames}
+              >
+                {reloadingGames ? (
+                  <>
+                    <ActivityIndicator size="small" color={Colors.dark.tint} />
+                    <Text style={styles.reloadButtonText}>Reloading...</Text>
+                  </>
+                ) : (
+                  <>
+                    <ArrowsClockwise size={16} weight="bold" color={Colors.dark.tint} />
+                    <Text style={styles.reloadButtonText}>Reload Games</Text>
+                  </>
+                )}
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -1083,6 +1093,24 @@ const styles = StyleSheet.create({
   emptyGamesText: {
     ...Typography.body.medium,
     color: Colors.dark.textSecondary,
+    marginBottom: 16,
+  },
+  reloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.dark.tint + '15',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.dark.tint,
+  },
+  reloadButtonText: {
+    ...Typography.body.medium,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+    fontSize: 13,
   },
 
   // Skeleton Loaders
