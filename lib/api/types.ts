@@ -75,9 +75,9 @@ export interface User {
 
 export interface Pool {
   id: string;
-  weekStart: string;
-  weekEnd: string;
-  isActive: boolean;
+  week_start: string;
+  week_end: string;
+  is_active: boolean;
   createdAt: string;
   updatedAt: string;
 }

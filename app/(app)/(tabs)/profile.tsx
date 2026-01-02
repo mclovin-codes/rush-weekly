@@ -208,14 +208,14 @@ export default function ProfileScreen() {
                   <View style={styles.poolDateItem}>
                     <Text style={styles.poolDateLabel}>Starts</Text>
                     <Text style={styles.poolDateValue}>
-                      {new Date(activePool.weekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(activePool.week_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </Text>
                   </View>
                   <View style={styles.poolDateDivider} />
                   <View style={styles.poolDateItem}>
                     <Text style={styles.poolDateLabel}>Ends</Text>
                     <Text style={styles.poolDateValue}>
-                      {new Date(activePool.weekEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {new Date(activePool.week_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </Text>
                   </View>
                 </View>

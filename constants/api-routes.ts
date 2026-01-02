@@ -48,7 +48,7 @@ export const API_ROUTES = {
     // ==================== POOLS ====================
     POOLS: {
       GET: '/api/pools',
-      GET_ACTIVE: '/api/pools?where[isActive][equals]=true',
+      GET_ACTIVE: '/api/pools?where[is_active][equals]=true',
       CREATE: '/api/pools',
       GET_BY_ID: (id: string) => `/api/pools/${id}`,
       UPDATE: (id: string) => `/api/pools/${id}`,

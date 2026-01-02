@@ -77,9 +77,9 @@ export interface User extends BaseDocument {
 }
 
 export interface Pool extends BaseDocument {
-  weekStart: string;
-  weekEnd: string;
-  isActive: boolean;
+  week_start: string;
+  week_end: string;
+  is_active: boolean;
 }
 
 export interface PoolMembership extends BaseDocument {

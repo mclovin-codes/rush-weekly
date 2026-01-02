@@ -2,7 +2,43 @@
 
 > Complete API reference for the Fantasy Pool application built with Payload CMS
 
-**Version:** 1.1
+**Current Version:** 1.2 (Updated January 2026)
+
+---
+
+## ⚠️ Breaking Changes in v1.2
+
+### Pools Collection Field Names Updated
+
+The following fields in the `pools` collection have been renamed to use snake_case:
+
+| Old Field Name | New Field Name | Type |
+|----------------|----------------|------|
+| `weekStart` | `week_start` | date |
+| `weekEnd` | `week_end` | date |
+| `isActive` | `is_active` | boolean |
+| `starting_credits` | `starting_credits` | number (unchanged) |
+
+**Migration Checklist for Frontend:**
+- [ ] Update TypeScript interfaces/types for Pool model
+- [ ] Update all API calls that create/update pools
+- [ ] Update query filters using `isActive` → `is_active`
+- [ ] Update any form inputs or UI components displaying pool data
+- [ ] Test pool listing, creation, and filtering functionality
+
+**Example Updates:**
+
+```typescript
+// ❌ OLD - Will cause errors
+const activePool = await fetch('/api/pools?where[isActive][equals]=true')
+const pool = { weekStart: '2024-01-01', weekEnd: '2024-01-07', isActive: true }
+
+// ✅ NEW - Correct
+const activePool = await fetch('/api/pools?where[is_active][equals]=true')
+const pool = { week_start: '2024-01-01', week_end: '2024-01-07', is_active: true }
+```
+
+---
 
 ## Table of Contents
 
@@ -583,6 +619,15 @@ DELETE /api/users/:id
 
 Manage weekly betting pools.
 
+> **⚠️ IMPORTANT SCHEMA UPDATE (January 2026):**
+> Pool field names have been updated to use snake_case for database consistency:
+> - `weekStart` → `week_start`
+> - `weekEnd` → `week_end`
+> - `isActive` → `is_active`
+> - `starting_credits` (unchanged)
+>
+> **Frontend developers:** Update all API calls and type definitions to use the new field names.
+
 ### Get all pools
 
 ```http
@@ -595,10 +640,10 @@ GET /api/pools
   "docs": [
     {
       "id": "pool_id",
-      "weekStart": "2024-12-09",
-      "weekEnd": "2024-12-15",
+      "week_start": "2024-12-09",
+      "week_end": "2024-12-15",
       "starting_credits": 1000,
-      "isActive": true,
+      "is_active": true,
       "createdAt": "2024-12-09T00:01:00.000Z",
       "updatedAt": "2024-12-09T00:01:00.000Z"
     }
@@ -618,7 +663,7 @@ GET /api/pools/:id
 ### Get active pool
 
 ```http
-GET /api/pools?where[isActive][equals]=true&limit=1
+GET /api/pools?where[is_active][equals]=true&limit=1
 ```
 
 Returns the current active pool for the week.
@@ -632,20 +677,20 @@ POST /api/pools
 **Request Body:**
 ```json
 {
-  "weekStart": "2024-12-09",
-  "weekEnd": "2024-12-15",
+  "week_start": "2024-12-09",
+  "week_end": "2024-12-15",
   "starting_credits": 1000,
-  "isActive": true
+  "is_active": true
 }
 ```
 
 **Required Fields:**
-- `weekStart` (date) - Start date of the pool week
-- `weekEnd` (date) - End date of the pool week
+- `week_start` (date) - Start date of the pool week
+- `week_end` (date) - End date of the pool week
 - `starting_credits` (number, default: 1000) - Initial credit amount for all members
 
 **Optional Fields:**
-- `isActive` (boolean, default: true) - Whether this pool is currently active
+- `is_active` (boolean, default: true) - Whether this pool is currently active
 
 **Notes:**
 - `starting_credits` determines how many credits each member receives at the beginning of this pool week
@@ -661,7 +706,7 @@ PATCH /api/pools/:id
 **Example: Deactivate pool**
 ```json
 {
-  "isActive": false
+  "is_active": false
 }
 ```
 
@@ -712,7 +757,7 @@ GET /api/pool-memberships/:id
 ### Get user's current pool membership
 
 ```http
-GET /api/pool-memberships?where[user][equals]=:user_id&where[pool.isActive][equals]=true&depth=1
+GET /api/pool-memberships?where[user][equals]=:user_id&where[pool.is_active][equals]=true&depth=1
 ```
 
 Returns the user's membership in the currently active pool.
@@ -958,7 +1003,7 @@ GET /api/games?where[status][equals]=live&where[league][equals]=league_id&depth=
 
 ```http
 # Get all pending bets for a user in an active pool
-GET /api/bets?where[user][equals]=user_id&where[status][equals]=pending&where[pool.isActive][equals]=true&depth=1
+GET /api/bets?where[user][equals]=user_id&where[status][equals]=pending&where[pool.is_active][equals]=true&depth=1
 ```
 
 ---
@@ -1091,10 +1136,10 @@ POST /api/game-odds
 ```http
 POST /api/pools
 {
-  "weekStart": "2024-09-08",
-  "weekEnd": "2024-09-14",
+  "week_start": "2024-09-08",
+  "week_end": "2024-09-14",
   "starting_credits": 1000,
-  "isActive": true
+  "is_active": true
 }
 ```
 
@@ -1198,7 +1243,25 @@ PATCH /api/pool-memberships/:membership_id
 
 ---
 
-**Version:** 1.1
-**Last Updated:** December 2024
+## Changelog
+
+### Version 1.2 (January 2026)
+- **Breaking Change:** Updated Pools collection field names to snake_case:
+  - `weekStart` → `week_start`
+  - `weekEnd` → `week_end`
+  - `isActive` → `is_active`
+- Fixed settlement service to properly handle populated relationship objects
+- Added automatic `initial_credits_at_start` initialization for pool memberships
+- Improved score calculation in settlement process
+
+### Version 1.1 (December 2024)
+- Initial API documentation
+- Virtual economy and subscription gateway system
+- Complete betting workflow
+
+---
+
+**Current Version:** 1.2
+**Last Updated:** January 2026
 **Payload CMS Version:** 3.x
 **Auth System:** Better Auth Plugin

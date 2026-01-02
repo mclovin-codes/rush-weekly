@@ -14,7 +14,7 @@ export const poolService = {
     const queryParams = {
       where: {
         user: { equals: userId },
-        'pool.isActive': { equals: true },
+        'pool.is_active': { equals: true },
       },
       depth: 1,
     };

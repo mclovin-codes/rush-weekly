@@ -232,9 +232,9 @@ export default function AccountScreen() {
 
         const poolData = {
           name: `Weekly Pool - ${weekStart.toLocaleDateString()}`,
-          weekStart: weekStart.toISOString(),
-          weekEnd: weekEnd.toISOString(),
-          isActive: true,
+          week_start: weekStart.toISOString(),
+          week_end: weekEnd.toISOString(),
+          is_active: true,
           initialCredits: 1000,
           entryFee: 0,
         };

@@ -101,17 +101,17 @@ export default function LeaderboardScreen() {
 
   // Calculate week number from pool start date
   const getWeekNumber = () => {
-    if (!activePool?.weekStart) return 0;
-    const start = new Date(activePool.weekStart);
+    if (!activePool?.week_start) return 0;
+    const start = new Date(activePool.week_start);
     const weekNumber = Math.ceil((start.getTime() - new Date(start.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
     return weekNumber;
   };
 
   // Calculate time remaining in the week
   const getTimeRemaining = () => {
-    if (!activePool?.weekEnd) return '0d 0h';
+    if (!activePool?.week_end) return '0d 0h';
     const now = new Date();
-    const end = new Date(activePool.weekEnd);
+    const end = new Date(activePool.week_end);
     const diff = end.getTime() - now.getTime();
 
     if (diff <= 0) return '0d 0h';
