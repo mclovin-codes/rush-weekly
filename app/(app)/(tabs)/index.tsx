@@ -213,9 +213,12 @@ export default function HomeScreen() {
 
   // Calculate time remaining in the week
   const getTimeRemaining = () => {
-    if (!activePool?.week_end) return null;
+    // Support both old (weekEnd) and new (week_end) field names for backwards compatibility
+    const weekEnd = (activePool as any)?.week_end || (activePool as any)?.weekEnd;
+    if (!weekEnd) return null;
+
     const now = new Date();
-    const end = new Date(activePool.week_end);
+    const end = new Date(weekEnd);
     const diff = end.getTime() - now.getTime();
 
     if (diff <= 0) return null;
@@ -229,11 +232,15 @@ export default function HomeScreen() {
 
   // Get week number from pool
   const getWeekNumber = () => {
-    if (!activePool?.week_start) return 0;
+    // Support both old (weekStart) and new (week_start) field names for backwards compatibility
+    const weekStart = (activePool as any)?.week_start || (activePool as any)?.weekStart;
+    if (!weekStart) return 0;
+
     // Calculate week number from the start of the year
-    const start = new Date(activePool.week_start);
+    const start = new Date(weekStart);
     const yearStart = new Date(start.getFullYear(), 0, 1);
     const weekNumber = Math.ceil((start.getTime() - yearStart.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
     return weekNumber;
   };
 
@@ -244,10 +251,14 @@ export default function HomeScreen() {
 
   // Check if week is in progress (more than 1 day has passed)
   const isWeekInProgress = () => {
-    if (!activePool?.week_start) return false;
+    // Support both old (weekStart) and new (week_start) field names for backwards compatibility
+    const weekStart = (activePool as any)?.week_start || (activePool as any)?.weekStart;
+    if (!weekStart) return false;
+
     const now = new Date();
-    const start = new Date(activePool.week_start);
+    const start = new Date(weekStart);
     const daysPassed = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
     return daysPassed >= 1;
   };
 
@@ -465,7 +476,7 @@ export default function HomeScreen() {
             <>
               <View style={styles.countdownRow}>
                 <PulsingText style={styles.countdownMainText}>
-                  WEEK {getWeekNumber()} ENDS IN{' '}
+                  CURRENT WEEK ENDS IN{' '}
                   {(() => {
                     const time = getTimeRemaining();
                     if (!time) return 'SOON';
