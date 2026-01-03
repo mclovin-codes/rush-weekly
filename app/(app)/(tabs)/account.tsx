@@ -418,21 +418,50 @@ export default function AccountScreen() {
       return;
     }
 
+    const currentCredits = currentUser.current_credits || currentUser.credits || 0;
+
+    // Restriction 1: Can only buy back if balance is 0
+    if (currentCredits !== 0) {
+      Alert.alert(
+        'Credits Remaining',
+        'You can only buy-back credits when your balance is 0. Please use your remaining credits first.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // Restriction 2: Can only buy back once per week
+    const lastBuybackDate = currentUser.last_buyback_date;
+    if (lastBuybackDate) {
+      const lastBuyback = new Date(lastBuybackDate);
+      const now = new Date();
+      const daysSinceLastBuyback = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceLastBuyback < 7) {
+        const daysRemaining = Math.ceil(7 - daysSinceLastBuyback);
+        Alert.alert(
+          'Buy-Back Limit Reached',
+          `You can only buy-back credits once per week.\n\nPlease wait ${daysRemaining} more day${daysRemaining !== 1 ? 's' : ''} before purchasing again.`,
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+    }
+
     setIsPurchasingCredits(true);
 
     try {
-      // Add 1000 credits to current balance (testing phase)
-      const currentCredits = currentUser.current_credits || currentUser.credits || 0;
       const creditsToAdd = 1000;
-      const newCredits = currentCredits + creditsToAdd;
+      const newCredits = creditsToAdd; // Starting from 0
 
       console.log('[AccountScreen] Adding credits:', creditsToAdd);
       console.log('[AccountScreen] Current balance:', currentCredits);
       console.log('[AccountScreen] New balance:', newCredits);
 
-      // Call API to add credits
+      // Call API to add credits and update last buyback date
       await apiHelpers.patch(`/api/users/${currentUser.id}`, {
         current_credits: newCredits,
+        last_buyback_date: new Date().toISOString(),
       });
 
       // Close bottom sheet
@@ -444,7 +473,7 @@ export default function AccountScreen() {
       // Show success message
       Alert.alert(
         'Credits Added!',
-        `+${creditsToAdd.toLocaleString()} credits added for testing purposes.\n\nNew balance: ${newCredits.toLocaleString()} credits`,
+        `+${creditsToAdd.toLocaleString()} credits added.\n\nNew balance: ${newCredits.toLocaleString()} credits\n\nRemember: You can buy-back again in 7 days when your balance reaches 0.`,
         [{ text: 'OK' }]
       );
     } catch (error: any) {

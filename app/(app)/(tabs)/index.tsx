@@ -643,7 +643,9 @@ export default function HomeScreen() {
         visible={betSlipVisible}
         onClose={handleCloseBetSlip}
         game={selectedBet?.game}
+        betType={selectedBet?.betType}
         selectedTeam={selectedBet?.team || 'home'}
+        selection={selectedBet?.selection}
         userUnits={currentUser?.current_credits || currentUser?.credits || 0}
         userId={session?.user?.id}
         poolId={typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool}

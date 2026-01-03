@@ -28,7 +28,9 @@ interface BetSlipBottomSheetProps {
   visible: boolean;
   onClose: () => void;
   game: PopulatedGame | MarketGame | null;
+  betType?: 'spread' | 'total' | 'moneyline';
   selectedTeam: 'home' | 'away';
+  selection?: 'over' | 'under';
   userUnits: number;
   userId?: string;
   poolId?: string;
@@ -55,7 +57,9 @@ export default function BetSlipBottomSheet({
   visible,
   onClose,
   game,
+  betType = 'moneyline',
   selectedTeam,
+  selection,
   userUnits,
   userId,
   poolId,
@@ -96,26 +100,90 @@ export default function BetSlipBottomSheet({
     }
   };
 
-  // Get selected team info - works for both game types
-  let selectedTeamName: string;
-  let selectedOdds: number;
+  // Get bet details based on bet type
+  const getBetDetails = () => {
+    if (!game) return { description: '', odds: 0, line: null };
 
-  if (isMarketGame(game)) {
-    // MarketGame structure
-    const teamObj = selectedTeam === 'home' ? game.home_team : game.away_team;
-    selectedTeamName = teamObj.name;
-    selectedOdds = teamObj.moneyline || 0;
-  } else {
-    // PopulatedGame structure
-    const selectedTeamObj = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
-    selectedTeamName = typeof selectedTeamObj === 'object' ? selectedTeamObj?.name : 'Unknown';
-    selectedOdds = gameOdds?.moneyline?.[selectedTeam] || 0;
-  }
+    if (isMarketGame(game)) {
+      const spread = game.markets?.spread;
+      const total = game.markets?.total;
+
+      switch (betType) {
+        case 'spread':
+          const spreadSide = selectedTeam === 'home' ? spread?.home : spread?.away;
+          return {
+            description: `${selectedTeam === 'home' ? game.home_team.abbreviation : game.away_team.abbreviation} ${spreadSide?.point > 0 ? '+' : ''}${spreadSide?.point || '--'}`,
+            odds: spreadSide?.payout || 0,
+            line: spreadSide?.point || null,
+          };
+        case 'total':
+          const isOver = selection === 'over';
+          return {
+            description: `${isOver ? 'Over' : 'Under'} ${total?.line || '--'}`,
+            odds: isOver ? (total?.over_payout || 0) : (total?.under_payout || 0),
+            line: total?.line || null,
+          };
+        case 'moneyline':
+        default:
+          const teamObj = selectedTeam === 'home' ? game.home_team : game.away_team;
+          return {
+            description: teamObj.name,
+            odds: teamObj.moneyline || 0,
+            line: null,
+          };
+      }
+    } else {
+      // PopulatedGame structure
+      const selectedTeamObj = selectedTeam === 'home' ? game?.homeTeam : game?.awayTeam;
+      const teamName = typeof selectedTeamObj === 'object' ? selectedTeamObj?.name : 'Unknown';
+
+      switch (betType) {
+        case 'spread':
+          const spreadLine = gameOdds?.spread?.point || 0;
+          const spreadPayout = gameOdds?.spread?.[selectedTeam] || 0;
+          return {
+            description: `${teamName} ${spreadLine > 0 ? '+' : ''}${spreadLine}`,
+            odds: spreadPayout,
+            line: spreadLine,
+          };
+        case 'total':
+          const totalLine = gameOdds?.total?.point || 0;
+          const totalPayout = selection === 'over' ? gameOdds?.total?.overPayout : gameOdds?.total?.underPayout;
+          return {
+            description: `${selection === 'over' ? 'Over' : 'Under'} ${totalLine}`,
+            odds: totalPayout || 0,
+            line: totalLine,
+          };
+        case 'moneyline':
+        default:
+          return {
+            description: teamName,
+            odds: gameOdds?.moneyline?.[selectedTeam] || 0,
+            line: null,
+          };
+      }
+    }
+  };
+
+  const betDetails = getBetDetails();
+
+  // Get bet type label
+  const getBetTypeLabel = () => {
+    switch (betType) {
+      case 'spread':
+        return 'Spread';
+      case 'total':
+        return 'Total';
+      case 'moneyline':
+      default:
+        return 'Moneyline';
+    }
+  };
 
   // Calculate potential win and profit
   const betAmountNum = betAmount ? parseFloat(betAmount) : 0;
-  const potentialWin = betAmountNum && selectedOdds ? calculatePayout(betAmountNum, selectedOdds).toFixed(2) : '0';
-  const potentialProfit = betAmountNum && selectedOdds ? (calculatePayout(betAmountNum, selectedOdds) - betAmountNum).toFixed(2) : '0';
+  const potentialWin = betAmountNum && betDetails.odds ? calculatePayout(betAmountNum, betDetails.odds).toFixed(2) : '0';
+  const potentialProfit = betAmountNum && betDetails.odds ? (calculatePayout(betAmountNum, betDetails.odds) - betAmountNum).toFixed(2) : '0';
 
   const panResponder = useRef(
     PanResponder.create({
@@ -180,14 +248,9 @@ export default function BetSlipBottomSheet({
       return;
     }
 
-    // Check odds availability based on game type
-    if (!isMarketGame(game) && !gameOdds) {
-      Alert.alert('No Odds Available', 'Betting odds are not available for this game');
-      return;
-    }
-
-    if (isMarketGame(game) && !selectedOdds) {
-      Alert.alert('No Odds Available', 'Betting odds are not available for this team');
+    // Check odds availability
+    if (!betDetails.odds) {
+      Alert.alert('No Odds Available', 'Betting odds are not available');
       return;
     }
 
@@ -212,8 +275,8 @@ export default function BetSlipBottomSheet({
           pool: poolId,
           eventID: game.eventID,
           leagueID: game.leagueID,
-          betType: 'moneyline' as Bet['betType'],
-          selection: selectedTeam,
+          betType: betType,
+          selection: betType === 'total' ? selection! : selectedTeam,
           stake: betAmountNum,
         };
       } else {
@@ -221,20 +284,21 @@ export default function BetSlipBottomSheet({
         betData = {
           user: userId,
           pool: poolId,
-          eventID: game.externalId || game.id, // Use externalId as eventID
+          eventID: game.externalId || game.id,
           leagueID: typeof game.league === 'object' ? game.league.externalId : 'UNKNOWN',
-          betType: 'moneyline' as Bet['betType'],
-          selection: selectedTeam,
+          betType: betType,
+          selection: betType === 'total' ? selection! : selectedTeam,
           stake: betAmountNum,
-          game: game.id, // Keep for backward compatibility
-          oddsAtPlacement: selectedOdds,
+          game: game.id,
+          oddsAtPlacement: betDetails.odds,
+          lineAtPlacement: betDetails.line || undefined,
         };
       }
-      console.log('bet data', betData)
+
+      console.log('Placing bet:', betData);
       const response = await betService.placeBet(betData);
 
       if (!response.success) {
-        // Show the specific error message from the API
         Alert.alert('Bet Failed', response.error || 'An error occurred, try again');
         return;
       }
@@ -246,7 +310,7 @@ export default function BetSlipBottomSheet({
 
       Alert.alert(
         'Bet Placed!',
-        response.message || `${betAmountNum} units on ${selectedTeamName}`,
+        response.message || `${betAmountNum} units on ${betDetails.description}`,
         [
           {
             text: 'OK',
@@ -257,10 +321,9 @@ export default function BetSlipBottomSheet({
         ]
       );
     } catch (error: any) {
-      // Handle network errors or unexpected errors
       const errorMsg = error?.response?.data?.error || error?.message || 'An error occurred, try again';
       Alert.alert('Bet Failed', errorMsg);
-      console.log(JSON.stringify(error))
+      console.error('Bet error:', error);
     } finally {
       setIsPlacingBet(false);
     }
@@ -315,80 +378,80 @@ export default function BetSlipBottomSheet({
 
               {/* Selection Info */}
               <View style={styles.selectionCard}>
-              <View style={styles.matchup}>
-                <Text style={styles.matchupLabel}>Match</Text>
-                <Text style={styles.matchupText}>
-                  {isMarketGame(game)
-                    ? `${game.away_team.name} @ ${game.home_team.name}`
-                    : `${typeof game.awayTeam === 'object' ? game.awayTeam.name : 'TBD'} @ ${typeof game.homeTeam === 'object' ? game.homeTeam.name : 'TBD'}`
-                  }
+                <View style={styles.matchup}>
+                  <Text style={styles.matchupLabel}>Match</Text>
+                  <Text style={styles.matchupText}>
+                    {isMarketGame(game)
+                      ? `${game.away_team.abbreviation} @ ${game.home_team.abbreviation}`
+                      : `${typeof game.awayTeam === 'object' ? game.awayTeam.name : 'TBD'} @ ${typeof game.homeTeam === 'object' ? game.homeTeam.name : 'TBD'}`
+                    }
+                  </Text>
+                </View>
+                <View style={styles.divider} />
+                {isLoadingOdds ? (
+                  <View style={styles.loadingOdds}>
+                    <ActivityIndicator size="small" color={Colors.dark.tint} />
+                    <Text style={styles.loadingText}>Loading odds...</Text>
+                  </View>
+                ) : (
+                  <View style={styles.selection}>
+                    <View>
+                      <Text style={styles.selectionLabel}>Your Pick ({getBetTypeLabel()})</Text>
+                      <Text style={styles.selectionTeam}>{betDetails.description}</Text>
+                    </View>
+                    <View style={styles.oddsContainer}>
+                      <Text style={styles.oddsValue}>
+                        {betDetails.odds > 0 ? `+${betDetails.odds}` : betDetails.odds}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Bet Amount Input */}
+              <View style={styles.inputSection}>
+                <Text style={styles.inputLabel}>Bet Amount</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    value={betAmount}
+                    onChangeText={setBetAmount}
+                    placeholder="0"
+                    placeholderTextColor="#666666"
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.inputUnit}>units</Text>
+                </View>
+                <Text style={styles.balanceText}>
+                  Available: {userUnits.toLocaleString()} units
                 </Text>
               </View>
-              <View style={styles.divider} />
-              {isLoadingOdds ? (
-                <View style={styles.loadingOdds}>
-                  <ActivityIndicator size="small" color={Colors.dark.tint} />
-                  <Text style={styles.loadingText}>Loading odds...</Text>
+
+              {/* Quick Amount Buttons */}
+              <View style={styles.quickAmounts}>
+                {[10, 25, 50, 100].map((amount) => (
+                  <TouchableOpacity
+                    key={amount}
+                    style={styles.quickButton}
+                    onPress={() => handleQuickAmount(amount)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.quickButtonText}>{amount}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Potential Win */}
+              <View style={styles.potentialWinCard}>
+                <View style={styles.potentialRow}>
+                  <Text style={styles.potentialLabel}>Potential Win</Text>
+                  <Text style={styles.potentialValue}>{potentialWin} units</Text>
                 </View>
-              ) : (
-                <View style={styles.selection}>
-                  <View>
-                    <Text style={styles.selectionLabel}>Your Pick (Moneyline)</Text>
-                    <Text style={styles.selectionTeam}>{selectedTeamName}</Text>
-                  </View>
-                  <View style={styles.oddsContainer}>
-                    <Text style={styles.oddsValue}>
-                      {selectedOdds > 0 ? `+${selectedOdds}` : selectedOdds}
-                    </Text>
-                  </View>
+                <View style={styles.potentialRow}>
+                  <Text style={styles.potentialLabel}>Profit</Text>
+                  <Text style={styles.profitValue}>+{potentialProfit} units</Text>
                 </View>
-              )}
-            </View>
-
-            {/* Bet Amount Input */}
-            <View style={styles.inputSection}>
-              <Text style={styles.inputLabel}>Bet Amount</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={betAmount}
-                  onChangeText={setBetAmount}
-                  placeholder="0"
-                  placeholderTextColor="#666666"
-                  keyboardType="numeric"
-                />
-                <Text style={styles.inputUnit}>units</Text>
               </View>
-              <Text style={styles.balanceText}>
-                Available: {userUnits.toLocaleString()} units
-              </Text>
-            </View>
-
-            {/* Quick Amount Buttons */}
-            <View style={styles.quickAmounts}>
-              {[10, 25, 50, 100].map((amount) => (
-                <TouchableOpacity
-                  key={amount}
-                  style={styles.quickButton}
-                  onPress={() => handleQuickAmount(amount)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.quickButtonText}>{amount}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Potential Win */}
-            <View style={styles.potentialWinCard}>
-              <View style={styles.potentialRow}>
-                <Text style={styles.potentialLabel}>Potential Win</Text>
-                <Text style={styles.potentialValue}>{potentialWin} units</Text>
-              </View>
-              <View style={styles.potentialRow}>
-                <Text style={styles.potentialLabel}>Profit</Text>
-                <Text style={styles.profitValue}>+{potentialProfit} units</Text>
-              </View>
-            </View>
 
               {/* Place Bet Button */}
               <TouchableOpacity

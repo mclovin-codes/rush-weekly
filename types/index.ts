@@ -74,6 +74,7 @@ export interface User extends BaseDocument {
   current_credits?: number;
   is_paid_member?: boolean;
   subscription_end_date?: string;
+  last_buyback_date?: string;
 }
 
 export interface Pool extends BaseDocument {
