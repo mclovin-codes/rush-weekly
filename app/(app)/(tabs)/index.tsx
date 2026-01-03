@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon } from "phosphor-react-native";
+import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon, Clock } from "phosphor-react-native";
 import { MarketGame } from '@/types';
 
 import BetSlipBottomSheet from '@/app/modal';
@@ -505,21 +505,12 @@ export default function HomeScreen() {
             // No Active Pool State
             <>
               <View style={styles.noPoolHeader}>
-                <Text style={styles.noPoolIcon}>⚠️</Text>
+                <Clock size={32} color={Colors.dark.textSecondary} weight="duotone" />
                 <Text style={styles.noPoolTitle}>NO ACTIVE POOL</Text>
               </View>
               <Text style={styles.nextPoolText}>
-                Create or join a pool to start betting
+                A new pool will be available soon. Check back later!
               </Text>
-              <TouchableOpacity
-                style={styles.joinPoolButton}
-                onPress={() => setDevToolsVisible(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.joinPoolButtonText}>
-                  Create Pool →
-                </Text>
-              </TouchableOpacity>
             </>
           )}
         </View>

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { MarketGame } from '@/types';
+import { Clock } from 'phosphor-react-native';
 
 interface MarketGameCardProps {
   game: MarketGame;
@@ -17,6 +18,39 @@ export default function MarketGameCard({ game, onSelectBet, onPress }: MarketGam
     day: 'numeric',
     month: 'short',
   });
+
+  // Smart time formatting
+  const getStartTimeInfo = () => {
+    const now = new Date();
+    const startDate = new Date(game.start_time);
+
+    // Reset hours for date comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const gameDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+
+    const timeString = startDate.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    if (gameDay.getTime() === today.getTime()) {
+      return { label: 'Today', time: timeString, isToday: true };
+    } else if (gameDay.getTime() === tomorrow.getTime()) {
+      return { label: 'Tomorrow', time: timeString, isTomorrow: true };
+    } else {
+      const dayLabel = startDate.toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+      return { label: dayLabel, time: timeString, isLater: true };
+    }
+  };
+
+  const startTimeInfo = getStartTimeInfo();
 
   const formatOdds = (oddsValue: number | null | undefined) => {
     if (!oddsValue) return '--';
@@ -40,14 +74,39 @@ export default function MarketGameCard({ game, onSelectBet, onPress }: MarketGam
     <View style={styles.gameCard}>
       {/* Header with Matchup */}
       <View style={styles.header}>
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>{dateLabel}</Text>
-        </View>
         <View style={styles.matchupContainer}>
           <Text style={styles.awayTeam}>{game.away_team.abbreviation}</Text>
           <Text style={styles.atSymbol}>@</Text>
           <Text style={styles.homeTeam}>{game.home_team.abbreviation}</Text>
         </View>
+      </View>
+
+      {/* Start Time Badge */}
+      <View style={[
+        styles.startTimeBadge,
+        startTimeInfo.isToday && styles.startTimeBadgeToday,
+        startTimeInfo.isTomorrow && styles.startTimeBadgeTomorrow,
+      ]}>
+        <Clock
+          size={14}
+          color={startTimeInfo.isToday ? Colors.dark.success : startTimeInfo.isTomorrow ? Colors.dark.tint : Colors.dark.textSecondary}
+          weight="bold"
+        />
+        <Text style={[
+          styles.startTimeLabel,
+          startTimeInfo.isToday && styles.startTimeLabelToday,
+          startTimeInfo.isTomorrow && styles.startTimeLabelTomorrow,
+        ]}>
+          {startTimeInfo.label}
+        </Text>
+        <Text style={styles.startTimeDot}>•</Text>
+        <Text style={[
+          styles.startTimeText,
+          startTimeInfo.isToday && styles.startTimeTextToday,
+          startTimeInfo.isTomorrow && styles.startTimeTextTomorrow,
+        ]}>
+          {startTimeInfo.time}
+        </Text>
       </View>
 
       {/* Betting Options Grid */}
@@ -220,9 +279,9 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
@@ -259,6 +318,60 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.display,
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  startTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.cardElevated,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    alignSelf: 'flex-start',
+  },
+  startTimeBadgeToday: {
+    backgroundColor: Colors.dark.success + '15',
+    borderColor: Colors.dark.success + '40',
+  },
+  startTimeBadgeTomorrow: {
+    backgroundColor: Colors.dark.tint + '15',
+    borderColor: Colors.dark.tint + '40',
+  },
+  startTimeLabel: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  startTimeLabelToday: {
+    color: Colors.dark.success,
+  },
+  startTimeLabelTomorrow: {
+    color: Colors.dark.tint,
+  },
+  startTimeDot: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+  },
+  startTimeText: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  startTimeTextToday: {
+    color: Colors.dark.success,
+    fontFamily: Fonts.medium,
+  },
+  startTimeTextTomorrow: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
   },
   bettingGrid: {
     gap: 8,
