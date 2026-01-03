@@ -228,10 +228,15 @@ export interface MarketTeam {
   moneyline: number | null;
 }
 
-export interface MarketSpread {
+export interface MarketSpreadSide {
   point: number;
   payout: number;
   target_team: string;
+}
+
+export interface MarketSpread {
+  home: MarketSpreadSide;
+  away: MarketSpreadSide;
 }
 
 export interface MarketTotal {

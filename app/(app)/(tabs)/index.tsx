@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatLis
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon } from "phosphor-react-native";
+import { MarketGame } from '@/types';
 
 import BetSlipBottomSheet from '@/app/modal';
 import DevToolsModal from '@/components/DevToolsModal';
@@ -143,8 +144,10 @@ export default function HomeScreen() {
   const [betSlipVisible, setBetSlipVisible] = useState(false);
   const [devToolsVisible, setDevToolsVisible] = useState(false);
   const [selectedBet, setSelectedBet] = useState<{
-    game: any;
+    game: MarketGame;
+    betType: 'spread' | 'total' | 'moneyline';
     team: 'home' | 'away';
+    selection?: 'over' | 'under';
   } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [reloadingGames, setReloadingGames] = useState(false);
@@ -358,7 +361,6 @@ export default function HomeScreen() {
       setRefreshing(false);
     }
   };
-
 
 
   return (
@@ -599,8 +601,8 @@ export default function HomeScreen() {
               <MarketGameCard
                 key={game.eventID}
                 game={game}
-                onSelectBet={(selectedGame, team) => {
-                  setSelectedBet({ game: selectedGame, team });
+                onSelectBet={(selectedGame, betType, team, selection) => {
+                  setSelectedBet({ game: selectedGame, betType, team, selection });
                   setBetSlipVisible(true);
                 }}
                 onPress={(eventID) => {

@@ -2,350 +2,370 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { MarketGame } from '@/types';
-import { CaretRight } from 'phosphor-react-native';
 
 interface MarketGameCardProps {
   game: MarketGame;
-  onSelectBet: (game: MarketGame, team: 'home' | 'away') => void;
+  onSelectBet: (game: MarketGame, betType: 'spread' | 'total' | 'moneyline', team: 'home' | 'away', selection?: 'over' | 'under') => void;
   onPress?: (eventID: string) => void;
 }
 
 export default function MarketGameCard({ game, onSelectBet, onPress }: MarketGameCardProps) {
-  // Format date and time with full context
+  // Format date
   const gameDate = new Date(game.start_time);
-  const now = new Date();
-
-  // Calculate hours until game
-  const hoursUntilGame = (gameDate.getTime() - now.getTime()) / (1000 * 60 * 60);
-  const daysUntilGame = Math.floor(hoursUntilGame / 24);
-
-  // Determine time label and color
-  let timeLabel = '';
-  let timeColor = Colors.dark.textSecondary;
-  let showBadge = false;
-  let badgeText = '';
-  let badgeColor = Colors.dark.textSecondary;
-
-  if (hoursUntilGame < 0) {
-    // Game has started or finished
-    timeLabel = gameDate.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.textSecondary;
-  } else if (hoursUntilGame < 2) {
-    // Starting very soon (less than 2 hours)
-    showBadge = true;
-    badgeText = 'STARTING SOON';
-    badgeColor = Colors.dark.danger;
-    timeLabel = gameDate.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.danger;
-  } else if (daysUntilGame === 0) {
-    // Today
-    showBadge = true;
-    badgeText = 'TODAY';
-    badgeColor = Colors.dark.success;
-    timeLabel = gameDate.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.success;
-  } else if (daysUntilGame === 1) {
-    // Tomorrow
-    showBadge = true;
-    badgeText = 'TOMORROW';
-    badgeColor = Colors.dark.tint;
-    timeLabel = gameDate.toLocaleString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.tint;
-  } else if (daysUntilGame <= 7) {
-    // This week
-    timeLabel = gameDate.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.text;
-  } else {
-    // More than a week away
-    timeLabel = gameDate.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-    timeColor = Colors.dark.textSecondary;
-  }
+  const dateLabel = gameDate.toLocaleString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
   const formatOdds = (oddsValue: number | null | undefined) => {
     if (!oddsValue) return '--';
     return oddsValue > 0 ? `+${oddsValue}` : `${oddsValue}`;
   };
 
-  const spread = game.markets.spread;
-  const total = game.markets.total;
+  const formatPoint = (point: number | null | undefined) => {
+    if (!point) return '--';
+    return point > 0 ? `+${point}` : `${point}`;
+  };
+
+  const getOddsColor = (odds: number | null | undefined) => {
+    if (!odds) return Colors.dark.textSecondary;
+    return odds > 0 ? Colors.dark.success : Colors.dark.text;
+  };
+
+  const spread = game.markets?.spread;
+  const total = game.markets?.total;
 
   return (
-    <TouchableOpacity
-      style={styles.gameCard}
-      onPress={() => onPress?.(game.eventID)}
-      activeOpacity={0.9}
-    >
-      {/* Compact Header with Matchup */}
-      <View style={styles.compactHeader}>
-        <View style={styles.matchupInfo}>
-          <Text style={styles.teamAbbr}>{game.away_team.abbreviation}</Text>
-          <Text style={styles.vsText}>@</Text>
-          <Text style={styles.teamAbbr}>{game.home_team.abbreviation}</Text>
+    <View style={styles.gameCard}>
+      {/* Header with Matchup */}
+      <View style={styles.header}>
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateText}>{dateLabel}</Text>
         </View>
-        <View style={styles.gameTimeInfo}>
-          {showBadge && (
-            <View style={[styles.timeBadge, { backgroundColor: badgeColor + '20', borderColor: badgeColor }]}>
-              <Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
-            </View>
-          )}
-          <Text style={[styles.gameTime, { color: timeColor }]}>{timeLabel}</Text>
+        <View style={styles.matchupContainer}>
+          <Text style={styles.awayTeam}>{game.away_team.abbreviation}</Text>
+          <Text style={styles.atSymbol}>@</Text>
+          <Text style={styles.homeTeam}>{game.home_team.abbreviation}</Text>
         </View>
       </View>
 
-      {/* Grid Layout for Bets */}
-      <View style={styles.betsGrid}>
-        {/* First Row: Spread and Total */}
-        <View style={styles.betRow}>
-          <TouchableOpacity style={styles.betCell}>
-            <Text style={styles.betCellLabel}>SPREAD</Text>
-            {spread ? (
-              <>
-                <Text style={styles.betCellValue}>
-                  {spread.point > 0 ? `+${spread.point}` : spread.point}
-                </Text>
-                <Text style={styles.betCellSubtext}>
-                  {spread.target_team} {formatOdds(spread.payout)}
-                </Text>
-              </>
-            ) : (
-              <Text style={styles.betCellValue}>--</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.betCell}>
-            <Text style={styles.betCellLabel}>TOTAL</Text>
-            {total ? (
-              <>
-                <Text style={styles.betCellValue}>O/U {total.line}</Text>
-                <Text style={styles.betCellSubtext}>
-                  {formatOdds(total.over_payout)}
-                </Text>
-              </>
-            ) : (
-              <Text style={styles.betCellValue}>--</Text>
-            )}
-          </TouchableOpacity>
+      {/* Betting Options Grid */}
+      <View style={styles.bettingGrid}>
+        {/* Column Headers */}
+        <View style={styles.betTypeRow}>
+          <View style={styles.teamLabelColumn}>
+            <Text style={styles.teamLabelText}>TEAM</Text>
+          </View>
+          <View style={styles.betColumn}>
+            <Text style={styles.betTypeLabel}>SPREAD</Text>
+          </View>
+          <View style={styles.betColumn}>
+            <Text style={styles.betTypeLabel}>TOTAL</Text>
+          </View>
+          <View style={styles.betColumn}>
+            <Text style={styles.betTypeLabel}>ML</Text>
+          </View>
         </View>
 
-        {/* Second Row: Moneyline with Visual Cues */}
-        <View style={styles.betRow}>
+        {/* Away Team Bets */}
+        <View style={styles.teamBetsRow}>
+          <View style={styles.teamLabelColumn}>
+            <View style={styles.teamBadge}>
+              <Text style={styles.teamBadgeText}>{game.away_team.abbreviation}</Text>
+            </View>
+          </View>
+
+          {/* Spread */}
           <TouchableOpacity
-            style={[styles.betCell, styles.underdogCell]}
-            onPress={() => onSelectBet(game, 'away')}
-            activeOpacity={0.8}
+            style={styles.betColumn}
+            onPress={() => spread?.away && onSelectBet(game, 'spread', 'away')}
+            activeOpacity={0.7}
           >
-            <View style={styles.betCellHeader}>
-              <Text style={[styles.betCellLabel, styles.underdogLabel]}>AWAY</Text>
+            <View style={styles.betCell}>
+              {spread?.away ? (
+                <>
+                  <Text style={[styles.betValue, { color: spread.away.point > 0 ? Colors.dark.success : Colors.dark.text }]}>
+                    {formatPoint(spread.away.point)}
+                  </Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(spread.away.payout) }]}>
+                    {formatOdds(spread.away.payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
             </View>
-            <Text style={[styles.betCellValue, styles.underdogValue]}>
-              {game.away_team.name}
-            </Text>
-            <Text style={styles.oddsText}>
-              {formatOdds(game.away_team.moneyline)}
-            </Text>
           </TouchableOpacity>
 
+          {/* Total */}
           <TouchableOpacity
-            style={[styles.betCell, styles.underdogCell]}
-            onPress={() => onSelectBet(game, 'home')}
-            activeOpacity={0.8}
+            style={styles.betColumn}
+            onPress={() => total && onSelectBet(game, 'total', 'away', 'over')}
+            activeOpacity={0.7}
           >
-            <View style={styles.betCellHeader}>
-              <Text style={[styles.betCellLabel, styles.underdogLabel]}>HOME</Text>
+            <View style={styles.betCell}>
+              {total ? (
+                <>
+                  <Text style={styles.betValue}>O {total.line}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(total.over_payout) }]}>
+                    {formatOdds(total.over_payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
             </View>
-            <Text style={[styles.betCellValue, styles.underdogValue]}>
-              {game.home_team.name}
-            </Text>
-            <Text style={styles.oddsText}>
-              {formatOdds(game.home_team.moneyline)}
-            </Text>
+          </TouchableOpacity>
+
+          {/* Moneyline */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => onSelectBet(game, 'moneyline', 'away')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              <Text style={[styles.moneylineValue, { color: getOddsColor(game.away_team.moneyline) }]}>
+                {formatOdds(game.away_team.moneyline)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Home Team Bets */}
+        <View style={[styles.teamBetsRow, styles.lastRow]}>
+          <View style={styles.teamLabelColumn}>
+            <View style={[styles.teamBadge, styles.homeBadge]}>
+              <Text style={styles.teamBadgeText}>{game.home_team.abbreviation}</Text>
+            </View>
+          </View>
+
+          {/* Spread */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => spread?.home && onSelectBet(game, 'spread', 'home')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              {spread?.home ? (
+                <>
+                  <Text style={[styles.betValue, { color: spread.home.point > 0 ? Colors.dark.success : Colors.dark.text }]}>
+                    {formatPoint(spread.home.point)}
+                  </Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(spread.home.payout) }]}>
+                    {formatOdds(spread.home.payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Total */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => total && onSelectBet(game, 'total', 'home', 'under')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              {total ? (
+                <>
+                  <Text style={styles.betValue}>U {total.line}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(total.under_payout) }]}>
+                    {formatOdds(total.under_payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Moneyline */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => onSelectBet(game, 'moneyline', 'home')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              <Text style={[styles.moneylineValue, { color: getOddsColor(game.home_team.moneyline) }]}>
+                {formatOdds(game.home_team.moneyline)}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* View Details Indicator */}
-      <View style={styles.viewDetailsContainer}>
-        <View style={styles.viewDetailsDivider} />
-        <View style={styles.viewDetailsChip}>
-          <Text style={styles.viewDetailsText}>Tap for full game details</Text>
-          <CaretRight size={14} color={Colors.dark.tint} weight="bold" />
-        </View>
-      </View>
-    </TouchableOpacity>
+      {/* Tap for Details Hint */}
+      <TouchableOpacity
+        style={styles.detailsHint}
+        onPress={() => onPress?.(game.eventID)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.detailsHintText}>Tap for game details</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gameCard: {
     backgroundColor: Colors.dark.card,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 10,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  compactHeader: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingBottom: 8,
+    marginBottom: 14,
+    paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
-  matchupInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  dateContainer: {
+    flex: 1,
   },
-  teamAbbr: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.text,
-    fontFamily: Fonts.display,
-    fontSize: 15,
-  },
-  vsText: {
+  dateText: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
     fontSize: 12,
   },
-  gameTimeInfo: {
-    alignItems: 'flex-end',
+  matchupContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  timeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    marginBottom: 4,
-  },
-  badgeText: {
-    ...Typography.meta.small,
-    fontFamily: Fonts.medium,
-    fontSize: 8,
+  awayTeam: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
     letterSpacing: 0.5,
   },
-  gameTime: {
+  atSymbol: {
     ...Typography.meta.small,
-    fontSize: 10,
-    fontFamily: Fonts.medium,
+    color: Colors.dark.textSecondary,
+    fontSize: 11,
   },
-  betsGrid: {
-    gap: 6,
+  homeTeam: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
-  betRow: {
-    flexDirection: 'row',
-    gap: 6,
+  bettingGrid: {
+    gap: 8,
   },
-  betCell: {
-    flex: 1,
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
-    alignItems: 'center',
-  },
-  betCellHeader: {
+  betTypeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
-  betCellLabel: {
+  teamBetsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  lastRow: {
+    marginBottom: 0,
+  },
+  teamLabelColumn: {
+    width: 50,
+    alignItems: 'center',
+  },
+  teamLabelText: {
     ...Typography.meta.small,
     color: Colors.dark.textSecondary,
     fontSize: 9,
-    textTransform: 'uppercase',
+    fontFamily: Fonts.medium,
     letterSpacing: 0.5,
-    marginBottom: 3,
   },
-  betCellValue: {
+  teamBadge: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    minWidth: 46,
+    alignItems: 'center',
+  },
+  homeBadge: {
+    borderColor: Colors.dark.tint + '30',
+  },
+  teamBadgeText: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  betColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  betTypeLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  betCell: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  betValue: {
     ...Typography.body.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.medium,
+    fontSize: 14,
+    marginBottom: 3,
+  },
+  betOdds: {
+    ...Typography.body.small,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+  },
+  moneylineValue: {
+    ...Typography.body.medium,
+    fontFamily: Fonts.display,
+    fontSize: 15,
+  },
+  unavailableText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
     fontSize: 13,
   },
-  betCellSubtext: {
+  detailsHint: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.dark.border,
+    alignItems: 'center',
+  },
+  detailsHintText: {
     ...Typography.meta.small,
     color: Colors.dark.textSecondary,
     fontSize: 10,
-    marginTop: 2,
-  },
-  underdogCell: {
-    backgroundColor: Colors.dark.cardElevated,
-    borderColor: Colors.dark.border,
-  },
-  underdogLabel: {
-    color: Colors.dark.textSecondary,
-  },
-  underdogValue: {
-    color: Colors.dark.text,
-  },
-  oddsText: {
-    ...Typography.body.small,
-    color: Colors.dark.tint,
-    fontFamily: Fonts.display,
-    fontSize: 14,
-    marginTop: 4,
-  },
-  viewDetailsContainer: {
-    marginTop: 8,
-    paddingTop: 8,
-    alignItems: 'center',
-  },
-  viewDetailsDivider: {
-    width: '100%',
-    height: 1,
-    backgroundColor: Colors.dark.border,
-    marginBottom: 8,
-  },
-  viewDetailsChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: Colors.dark.tint + '15',
-    borderWidth: 1,
-    borderColor: Colors.dark.tint + '40',
-  },
-  viewDetailsText: {
-    ...Typography.meta.small,
-    color: Colors.dark.tint,
     fontFamily: Fonts.medium,
-    fontSize: 10,
-    letterSpacing: 0.3,
   },
 });
