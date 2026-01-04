@@ -156,20 +156,8 @@ export default function AccountScreen() {
   const handleActivateMembership = async (duration: 'week' | 'month' | 'year') => {
     console.log('========================================');
     console.log('[AccountScreen] MEMBERSHIP ACTIVATION STARTED');
-    console.log('[AccountScreen] Session data:', JSON.stringify(session, null, 2));
+    console.log('[AccountScreen] Duration:', duration);
     console.log('[AccountScreen] User ID:', currentUser?.id);
-    console.log('[AccountScreen] Session user ID:', session?.user?.id);
-    console.log('[AccountScreen] Session token:', session?.session?.token);
-    console.log('[AccountScreen] Current user data:', JSON.stringify(currentUser, null, 2));
-
-    // Test session validity
-    console.log('[AccountScreen] Testing session validity...');
-    try {
-      const sessionTest = await apiHelpers.get(API_ROUTES.USERS.GET_ME);
-      console.log('[AccountScreen] ✅ Session test passed, user:', sessionTest?.username);
-    } catch (sessionError) {
-      console.error('[AccountScreen] ❌ Session test failed:', sessionError);
-    }
     console.log('========================================');
 
     if (!session?.user?.id) {
@@ -185,201 +173,68 @@ export default function AccountScreen() {
     setIsActivatingMembership(true);
 
     try {
-      // Step 1: Calculate subscription end date
-      const now = new Date();
-      const endDate = new Date(now);
-
-      switch (duration) {
-        case 'week':
-          endDate.setDate(endDate.getDate() + 7);
-          break;
-        case 'month':
-          endDate.setMonth(endDate.getMonth() + 1);
-          break;
-        case 'year':
-          endDate.setFullYear(endDate.getFullYear() + 1);
-          break;
-      }
-
-      console.log('[AccountScreen] Subscription end date:', endDate.toISOString());
-
-      // Step 2: Check for existing active pool or create one
-      console.log('[AccountScreen] Checking for active pools...');
-      const activePools = await apiHelpers.get(API_ROUTES.POOLS.GET_ACTIVE);
-      console.log('[AccountScreen] Active pools response:', activePools);
-
-      let poolId: string;
-      let poolName: string;
-      let isNewPool = false;
-
-      if (activePools?.docs && activePools.docs.length > 0) {
-        // Join existing active pool
-        const existingPool = activePools.docs[0];
-        poolId = existingPool.id;
-        poolName = existingPool.name || `Pool ${existingPool.id.slice(0, 8)}`;
-        console.log('[AccountScreen] Found existing active pool:', poolName);
-        console.log('[AccountScreen] Pool ID:', poolId);
-        console.log('[AccountScreen] Full pool data:', JSON.stringify(existingPool, null, 2));
-      } else {
-        // No active pool exists, create a new one
-        console.log('[AccountScreen] No active pool found, creating new pool...');
-        isNewPool = true;
-
-        const weekStart = new Date(now);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 7);
-
-        const poolData = {
-          name: `Weekly Pool - ${weekStart.toLocaleDateString()}`,
-          week_start: weekStart.toISOString(),
-          week_end: weekEnd.toISOString(),
-          is_active: true,
-          initialCredits: 1000,
-          entryFee: 0,
-        };
-
-        const newPool = await apiHelpers.post(API_ROUTES.POOLS.CREATE, poolData);
-        poolId = newPool.id || newPool.doc?.id;
-        poolName = poolData.name;
-
-        if (!poolId) {
-          throw new Error('Failed to create pool');
-        }
-
-        console.log('[AccountScreen] Created new pool:', poolName);
-      }
-
-      // Step 3: Activate membership and add credits
-      console.log('========================================');
-      console.log('[AccountScreen] STEP 3: ACTIVATING MEMBERSHIP & ADDING CREDITS');
       const currentCredits = currentUser.current_credits || currentUser.credits || 0;
-      const newCredits = currentCredits + 1000; // Add 1000 credits to current balance
 
-      console.log('[AccountScreen] BEFORE UPDATE:');
-      console.log('[AccountScreen]   Current credits:', currentCredits);
-      console.log('[AccountScreen]   Credits to add: 1000');
-      console.log('[AccountScreen]   New total will be:', newCredits);
+      // Step 1: Activate membership and add credits
+      console.log('[AccountScreen] Step 1: Activating membership...');
+      console.log('[AccountScreen] Current credits:', currentCredits);
 
-      const updatePayload = {
-        is_paid_member: true,
-        subscription_end_date: endDate.toISOString(),
-        current_credits: newCredits,
-      };
-      console.log('[AccountScreen] Update payload:', JSON.stringify(updatePayload, null, 2));
-      console.log('[AccountScreen] Update URL:', `/api/users/${currentUser.id}`);
+      const activationResponse = await apiHelpers.post(API_ROUTES.USERS.ACTIVATE_MEMBERSHIP, {
+        duration,
+        credits_to_add: 1000,
+      });
 
-      // Try custom endpoint first, fallback to direct patch
-      let updateResponse;
-      try {
-        // Try custom activation endpoint that has proper permissions
-        console.log('[AccountScreen] Trying custom activation endpoint...');
-        console.log('[AccountScreen] Endpoint:', API_ROUTES.USERS.ACTIVATE_MEMBERSHIP);
-        console.log('[AccountScreen] Payload:', JSON.stringify({ duration, credits_to_add: 1000 }, null, 2));
+      console.log('[AccountScreen] ✅ Membership activated');
+      console.log('[AccountScreen] New credits:', activationResponse?.current_credits);
 
-        updateResponse = await apiHelpers.post(API_ROUTES.USERS.ACTIVATE_MEMBERSHIP, {
-          duration,
-          credits_to_add: 1000,
-        });
+      // Step 2: Join current week's pool (or create if needed)
+      console.log('[AccountScreen] Step 2: Joining current week pool...');
 
-        console.log('[AccountScreen] ✅ Used custom activation endpoint successfully');
-      } catch (customEndpointError: any) {
-        console.error('[AccountScreen] ❌ Custom endpoint failed:', customEndpointError);
-        console.error('[AccountScreen] Error response:', customEndpointError?.response?.data);
-        console.error('[AccountScreen] Error status:', customEndpointError?.response?.status);
+      const poolResponse = await apiHelpers.post('/api/pools/join-current-week');
 
-        // If it's an auth error, don't fallback - throw it
-        if (customEndpointError?.response?.status === 401) {
-          throw new Error('Authentication failed. Please log out and log back in.');
-        }
+      console.log('[AccountScreen] ✅ Pool joined/created');
+      console.log('[AccountScreen] Pool ID:', poolResponse?.pool?.id);
+      console.log('[AccountScreen] Message:', poolResponse?.message);
 
-        console.log('[AccountScreen] ⚠️ Custom endpoint not available, trying direct patch...');
-        // Fallback to direct patch (will likely fail with permissions error)
-        updateResponse = await apiHelpers.patch(`/api/users/${currentUser.id}`, updatePayload);
-      }
+      // Step 3: Refresh all data
+      console.log('[AccountScreen] Step 3: Refreshing data...');
 
-      console.log('[AccountScreen] AFTER UPDATE:');
-      console.log('[AccountScreen] API Response:', JSON.stringify(updateResponse, null, 2));
-      console.log('[AccountScreen] Response credits:', updateResponse?.current_credits);
-
-      // Verify the update was successful
-      if (!updateResponse?.current_credits) {
-        console.error('[AccountScreen] ❌ Update failed - no credits in response!');
-        throw new Error('Failed to update credits. Response: ' + JSON.stringify(updateResponse));
-      }
-
-      console.log('[AccountScreen] ✅ Credits updated successfully to:', updateResponse.current_credits);
-      console.log('========================================');
-
-      // Step 4: Check if user already has membership in this pool
-      console.log('[AccountScreen] Checking for existing pool membership...');
-      try {
-        const existingMembership = await apiHelpers.get(
-          `${API_ROUTES.POOL_MEMBERSHIPS.GET}?where[pool][equals]=${poolId}&where[user][equals]=${currentUser.id}`
-        );
-
-        if (existingMembership?.docs && existingMembership.docs.length > 0) {
-          console.log('[AccountScreen] User already has membership in this pool, skipping creation');
-        } else {
-          // Create pool membership
-          console.log('[AccountScreen] Creating pool membership...');
-          const membershipData = {
-            pool: poolId,
-            user: currentUser.id,
-            score: 0,
-            initial_credits_at_start: 1000,
-          };
-
-          await apiHelpers.post(API_ROUTES.POOL_MEMBERSHIPS.CREATE, membershipData);
-          console.log('[AccountScreen] Pool membership created successfully!');
-        }
-      } catch (membershipError: any) {
-        // If it's a duplicate error, that's okay
-        if (membershipError?.response?.status === 409 || membershipError?.message?.includes('duplicate')) {
-          console.log('[AccountScreen] Membership already exists (caught duplicate error)');
-        } else {
-          throw membershipError;
-        }
-      }
-
-      // Refresh all data to update UI
-      console.log('========================================');
-      console.log('[AccountScreen] STEP 5: REFRESHING ALL DATA');
-      console.log('[AccountScreen] Starting refetch...');
-
-      const refetchResults = await Promise.all([
+      await Promise.all([
         refetchUser(),
         refetchActivePool(),
         refetchMyPool(),
       ]);
 
-      console.log('[AccountScreen] Refetch complete!');
-      console.log('[AccountScreen] User refetch result:', refetchResults[0]?.data?.current_credits);
-      console.log('[AccountScreen] Active pool refetch result:', refetchResults[1]?.data?.id);
-      console.log('[AccountScreen] My pool refetch result:', refetchResults[2]?.data?.id);
-      console.log('========================================');
+      console.log('[AccountScreen] ✅ Data refreshed');
 
       // Close bottom sheet
       membershipBottomSheetRef.current?.close();
 
-      console.log('========================================');
-      console.log('[AccountScreen] SUCCESS! MEMBERSHIP ACTIVATED');
-      console.log('[AccountScreen] Expected credits:', newCredits);
-      console.log('[AccountScreen] Actual credits from API:', updateResponse.current_credits);
-      console.log('[AccountScreen] Pool:', poolName);
-      console.log('[AccountScreen] Was new pool?', isNewPool);
-      console.log('========================================');
-
-      // Use actual credits from API response
-      const finalCredits = updateResponse.current_credits || newCredits;
+      // Calculate final credits
+      const finalCredits = activationResponse.current_credits || (currentCredits + 1000);
       const creditsAdded = finalCredits - currentCredits;
 
-      // Show success message
-      const successMessage = isNewPool
-        ? `Welcome to RUSH!\n\nPool: ${poolName || 'Active Pool'}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`
-        : `Welcome to RUSH!\n\nYou've joined: ${poolName || 'Active Pool'}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
+      // Determine pool info
+      const poolName = poolResponse?.pool?.name || 'Active Pool';
+      const isNewPool = poolResponse?.message?.includes('Created') || false;
+      const isExisting = poolResponse?.message?.includes('Already in') || false;
 
-      console.log('[AccountScreen] Showing success alert:', successMessage);
+      // Show success message
+      let successMessage = '';
+      if (isExisting) {
+        successMessage = `Membership Activated!\n\nYou're already in: ${poolName}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
+      } else if (isNewPool) {
+        successMessage = `Welcome to RUSH!\n\nNew Pool Created: ${poolName}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
+      } else {
+        successMessage = `Welcome to RUSH!\n\nYou've joined: ${poolName}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
+      }
+
+      console.log('========================================');
+      console.log('[AccountScreen] ✅ SUCCESS! MEMBERSHIP ACTIVATED');
+      console.log('[AccountScreen] Final credits:', finalCredits);
+      console.log('[AccountScreen] Pool:', poolName);
+      console.log('[AccountScreen] Message:', poolResponse?.message);
+      console.log('========================================');
 
       Alert.alert(
         'Membership Activated! 🎉',
@@ -387,24 +242,30 @@ export default function AccountScreen() {
         [{
           text: 'Get Started',
           onPress: () => {
-            console.log('[AccountScreen] User clicked Get Started, navigating to home...');
+            console.log('[AccountScreen] Navigating to home...');
             router.replace('/(app)/(tabs)');
           }
         }]
       );
     } catch (error: any) {
-      console.error('[AccountScreen] Membership activation error:', error);
-      console.error('[AccountScreen] Error details:', JSON.stringify(error, null, 2));
+      console.error('[AccountScreen] ❌ Membership activation error:', error);
       console.error('[AccountScreen] Error response:', error?.response?.data);
 
-      const errorMessage = error?.response?.data?.error
-        || error?.response?.data?.message
-        || error?.message
-        || 'Something went wrong. Please try again.';
+      // Handle specific error cases
+      let errorMessage = error?.response?.data?.error || error?.message || 'Something went wrong. Please try again.';
+
+      // Special handling for Monday-only restriction
+      if (error?.response?.data?.error?.includes('Monday')) {
+        const nextMonday = error?.response?.data?.nextMonday;
+        if (nextMonday) {
+          const date = new Date(nextMonday);
+          errorMessage = `${error.response.data.error}\n\nNext available date: ${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`;
+        }
+      }
 
       Alert.alert(
         'Activation Failed',
-        `Error: ${errorMessage}\n\nCheck the console for more details.`,
+        errorMessage,
         [{ text: 'OK' }]
       );
     } finally {

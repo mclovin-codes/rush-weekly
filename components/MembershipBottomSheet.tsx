@@ -41,6 +41,7 @@ const MembershipBottomSheet = forwardRef<MembershipBottomSheetRef, MembershipBot
     }));
 
     const renderBackdrop = useMemo(
+      // eslint-disable-next-line react/display-name
       () => (props: any) =>
         (
           <BottomSheetBackdrop
