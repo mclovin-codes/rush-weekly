@@ -169,7 +169,7 @@ export default function ProfileScreen() {
             <View style={styles.creditsCard}>
               <View style={styles.creditsMain}>
                 <Text style={styles.creditsAmount}>
-                  {currentUser?.current_credits || currentUser?.credits || 0}
+                  {(currentUser?.current_credits || currentUser?.credits || 0).toFixed(2)}
                 </Text>
                 <Text style={styles.creditsLabel}>Credits</Text>
               </View>

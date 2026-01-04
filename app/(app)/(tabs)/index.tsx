@@ -398,7 +398,7 @@ export default function HomeScreen() {
           <View style={styles.statsRow}>
             <Text style={styles.unitsLabel}>Credits: </Text>
             <Text style={styles.unitsValue}>
-              {currentUser?.current_credits || currentUser?.credits || 0}
+              {(currentUser?.current_credits || currentUser?.credits || 0).toFixed(2)}
             </Text>
             {unitsChange !== 0 && (
               <Text style={[
