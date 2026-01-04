@@ -520,7 +520,7 @@ export default function AccountScreen() {
               <View style={[styles.userInfoRow, styles.userInfoRowLast]}>
                 <Text style={styles.userInfoLabel}>Credits Balance</Text>
                 <Text style={[styles.userInfoValue, styles.creditsValue]}>
-                  {currentUser?.current_credits || currentUser?.credits || 0}
+                  {(currentUser?.current_credits || currentUser?.credits || 0).toFixed(2)}
                 </Text>
               </View>
             </View>
