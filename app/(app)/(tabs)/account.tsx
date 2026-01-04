@@ -585,9 +585,66 @@ export default function AccountScreen() {
           </View>
           <View style={styles.menuContent}>
             <Text style={styles.menuTitle}>Buy-Back Credits</Text>
-            <Text style={styles.menuSubtitle}>Reload your credits balance</Text>
+            <Text style={styles.menuSubtitle}>
+              {(() => {
+                const currentCredits = currentUser?.current_credits || currentUser?.credits || 0;
+
+                // Check if balance is 0
+                if (currentCredits !== 0) {
+                  return 'Available when balance is 0';
+                }
+
+                // Check cooldown
+                if (currentUser?.last_buyback_date) {
+                  const lastBuyback = new Date(currentUser.last_buyback_date);
+                  const now = new Date();
+                  const daysSince = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
+
+                  if (daysSince < 7) {
+                    const daysLeft = Math.ceil(7 - daysSince);
+                    return `Available in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`;
+                  }
+                }
+
+                return 'Available now - Once per week';
+              })()}
+            </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.dark.textSecondary} />
+          {(() => {
+            const currentCredits = currentUser?.current_credits || currentUser?.credits || 0;
+            const lastBuybackDate = currentUser?.last_buyback_date;
+
+            // Balance not 0
+            if (currentCredits !== 0) {
+              return (
+                <View style={styles.statusBadge}>
+                  <Ionicons name="alert-circle" size={16} color="#FFA500" />
+                </View>
+              );
+            }
+
+            // Check cooldown
+            if (lastBuybackDate) {
+              const lastBuyback = new Date(lastBuybackDate);
+              const now = new Date();
+              const daysSince = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
+
+              if (daysSince < 7) {
+                return (
+                  <View style={styles.statusBadge}>
+                    <Ionicons name="time" size={16} color={Colors.dark.tint} />
+                  </View>
+                );
+              }
+            }
+
+            // Available
+            return (
+              <View style={[styles.statusBadge, styles.statusBadgeActive]}>
+                <Ionicons name="checkmark-circle" size={16} color={Colors.dark.success} />
+              </View>
+            );
+          })()}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -731,6 +788,7 @@ export default function AccountScreen() {
         onPurchase={handlePurchaseCredits}
         isLoading={isPurchasingCredits}
         currentCredits={currentUser?.current_credits || 0}
+        lastBuybackDate={currentUser?.last_buyback_date || null}
       />
     </>
   );
@@ -977,5 +1035,19 @@ const styles = StyleSheet.create({
 
   bottomPadding: {
     height: 40,
+  },
+
+  // Status Badge
+  statusBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.dark.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  statusBadgeActive: {
+    backgroundColor: Colors.dark.success + '20',
   },
 });

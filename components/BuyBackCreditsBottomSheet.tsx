@@ -1,6 +1,6 @@
 import React, { useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { BottomSheetModal, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 
@@ -13,12 +13,50 @@ interface BuyBackCreditsBottomSheetProps {
   onPurchase: (amount: number) => void;
   isLoading?: boolean;
   currentCredits?: number;
+  lastBuybackDate?: string | null;
 }
 
 const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBackCreditsBottomSheetProps>(
-  ({ onPurchase, isLoading = false, currentCredits = 0 }, ref) => {
+  ({ onPurchase, isLoading = false, currentCredits = 0, lastBuybackDate = null }, ref) => {
     const bottomSheetRef = useRef<BottomSheetModal>(null);
     const snapPoints = useMemo(() => ['75%'], []);
+
+    // Calculate if buy-back is allowed
+    const canBuyBack = useMemo(() => {
+      // Check 1: Balance must be 0
+      if (currentCredits !== 0) {
+        return {
+          allowed: false,
+          reason: 'balance',
+          message: 'You can only buy-back when your balance is 0',
+          daysRemaining: 0,
+        };
+      }
+
+      // Check 2: Must wait 7 days since last buyback
+      if (lastBuybackDate) {
+        const lastBuyback = new Date(lastBuybackDate);
+        const now = new Date();
+        const daysSinceLastBuyback = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceLastBuyback < 7) {
+          const daysRemaining = Math.ceil(7 - daysSinceLastBuyback);
+          return {
+            allowed: false,
+            reason: 'cooldown',
+            message: `You can buy-back again in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`,
+            daysRemaining,
+          };
+        }
+      }
+
+      return {
+        allowed: true,
+        reason: null,
+        message: 'Buy-back available',
+        daysRemaining: 0,
+      };
+    }, [currentCredits, lastBuybackDate]);
 
     console.log('[BuyBackCreditsBottomSheet] Component rendering');
     console.log('[BuyBackCreditsBottomSheet] Snap points:', snapPoints);
@@ -46,6 +84,7 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
     }));
 
     const renderBackdrop = useMemo(
+      // eslint-disable-next-line react/display-name
       () => (props: any) =>
         (
           <BottomSheetBackdrop
@@ -78,7 +117,7 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
         }}
         style={{ zIndex: 9999 }}
       >
-        <View style={styles.container}>
+        <BottomSheetScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Buy-Back Credits</Text>
@@ -94,9 +133,33 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
             </View>
             <View style={styles.balanceInfo}>
               <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceValue}>{currentCredits.toLocaleString()} credits</Text>
+              <Text style={styles.balanceValue}>{currentCredits.toFixed(2)} credits</Text>
             </View>
           </View>
+
+          {/* Status Alert */}
+          {!canBuyBack.allowed && (
+            <View style={[
+              styles.statusAlert,
+              canBuyBack.reason === 'balance' ? styles.statusAlertWarning : styles.statusAlertInfo
+            ]}>
+              <Ionicons
+                name={canBuyBack.reason === 'balance' ? 'alert-circle' : 'time'}
+                size={20}
+                color={canBuyBack.reason === 'balance' ? '#FFA500' : Colors.dark.tint}
+              />
+              <Text style={styles.statusAlertText}>{canBuyBack.message}</Text>
+            </View>
+          )}
+
+          {canBuyBack.allowed && (
+            <View style={styles.statusAlert}>
+              <Ionicons name="checkmark-circle" size={20} color={Colors.dark.success} />
+              <Text style={[styles.statusAlertText, { color: Colors.dark.success }]}>
+                Buy-back available! You can purchase credits now.
+              </Text>
+            </View>
+          )}
 
           {/* Credit Package */}
           <View style={styles.packageCard}>
@@ -112,16 +175,28 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
             </View>
 
             <TouchableOpacity
-              style={styles.purchaseButton}
-              onPress={() => !isLoading && onPurchase(CREDIT_AMOUNT)}
-              disabled={isLoading}
+              style={[
+                styles.purchaseButton,
+                (!canBuyBack.allowed || isLoading) && styles.purchaseButtonDisabled
+              ]}
+              onPress={() => !isLoading && canBuyBack.allowed && onPurchase(CREDIT_AMOUNT)}
+              disabled={isLoading || !canBuyBack.allowed}
             >
               {isLoading ? (
                 <ActivityIndicator size="small" color={Colors.dark.background} />
               ) : (
                 <>
-                  <Ionicons name="cart" size={20} color={Colors.dark.background} />
-                  <Text style={styles.purchaseButtonText}>Purchase Credits</Text>
+                  <Ionicons
+                    name={canBuyBack.allowed ? "cart" : "lock-closed"}
+                    size={20}
+                    color={canBuyBack.allowed ? Colors.dark.background : Colors.dark.textSecondary}
+                  />
+                  <Text style={[
+                    styles.purchaseButtonText,
+                    !canBuyBack.allowed && styles.purchaseButtonTextDisabled
+                  ]}>
+                    {canBuyBack.allowed ? 'Purchase Credits' : 'Unavailable'}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -133,10 +208,10 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
               <Ionicons name="information-circle" size={16} color={Colors.dark.textSecondary} />
             </View>
             <Text style={styles.footerText}>
-              Virtual credits have no cash value and cannot be withdrawn
+              Virtual credits have no cash value. Buy-back is only available when your balance is 0, once every 7 days.
             </Text>
           </View>
-        </View>
+        </BottomSheetScrollView>
       </BottomSheetModal>
     );
   }
@@ -155,7 +230,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  contentContainer: {
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 20,
@@ -263,11 +341,44 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  purchaseButtonDisabled: {
+    backgroundColor: Colors.dark.border,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   purchaseButtonText: {
     ...Typography.emphasis.medium,
     color: Colors.dark.background,
     fontFamily: Fonts.display,
     letterSpacing: 0.5,
+  },
+  purchaseButtonTextDisabled: {
+    color: Colors.dark.textSecondary,
+  },
+  statusAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.tint + '15',
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+  },
+  statusAlertWarning: {
+    backgroundColor: '#FFA500' + '15',
+    borderColor: '#FFA500' + '40',
+  },
+  statusAlertInfo: {
+    backgroundColor: Colors.dark.tint + '15',
+    borderColor: Colors.dark.tint + '40',
+  },
+  statusAlertText: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    flex: 1,
+    lineHeight: 20,
   },
   footer: {
     flexDirection: 'row',
