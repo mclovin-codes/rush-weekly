@@ -193,7 +193,7 @@ export default function LeaderboardScreen() {
             </View>
             <View style={styles.positionStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Credits</Text>
+                <Text style={styles.statLabel}>Score</Text>
                 <Text style={styles.statValue}>{currentUserEntry.score.toFixed(0)}</Text>
               </View>
               <View style={styles.statDivider} />
@@ -223,7 +223,7 @@ export default function LeaderboardScreen() {
       <View style={styles.tableHeader}>
         <Text style={[styles.headerText, styles.rankHeader]}>#</Text>
         <Text style={[styles.headerText, styles.playerHeader]}>PLAYER</Text>
-        <Text style={[styles.headerText, styles.unitsHeader]}>CREDITS</Text>
+        <Text style={[styles.headerText, styles.unitsHeader]}>SCORE</Text>
         <Text style={[styles.headerText, styles.plHeader]}>+/-</Text>
         <Text style={[styles.headerText, styles.payoutHeader]}>PAYOUT</Text>
       </View>

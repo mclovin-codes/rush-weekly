@@ -273,13 +273,14 @@ export default function AccountScreen() {
     }
   };
 
-  const handlePurchaseCredits = async (amount: number) => {
+  const handlePurchaseCredits = async () => {
     if (!currentUser?.id) {
       Alert.alert('Error', 'User ID not found');
       return;
     }
 
     const currentCredits = currentUser.current_credits || currentUser.credits || 0;
+    const creditsToAdd = 1000; // Fixed amount for buy-back
 
     // Restriction 1: Can only buy back if balance is 0
     if (currentCredits !== 0) {
@@ -312,7 +313,6 @@ export default function AccountScreen() {
     setIsPurchasingCredits(true);
 
     try {
-      const creditsToAdd = 1000;
       const newCredits = creditsToAdd; // Starting from 0
 
       console.log('[AccountScreen] Adding credits:', creditsToAdd);

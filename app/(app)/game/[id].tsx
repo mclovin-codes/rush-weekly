@@ -12,6 +12,13 @@ import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { CaretLeft, TrendUp } from 'phosphor-react-native';
 import { API_BASE_URL } from '@/constants/api';
+import MarketGameCard from '@/components/MarketGameCard';
+import { MarketGame } from '@/types';
+import { useMarketGames } from '@/hooks/useMarketGames';
+import BetSlipBottomSheet from '@/app/modal';
+import { useCurrentUser } from '@/hooks/useUser';
+import { useMyPool } from '@/hooks/usePools';
+import { authClient } from '@/lib/auth-client';
 
 const { width } = Dimensions.get('window');
 
@@ -61,15 +68,39 @@ interface GameDetails {
 
 export default function GameDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  console.log('🔥xxxxx-xxxx-xx', `${API_BASE_URL}/api/events/show-more/${id}`)
   const router = useRouter();
   const [gameData, setGameData] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [betSlipVisible, setBetSlipVisible] = useState(false);
+  const [selectedBet, setSelectedBet] = useState<{
+    game: MarketGame;
+    betType: 'spread' | 'total' | 'moneyline';
+    team: 'home' | 'away';
+    selection?: 'over' | 'under';
+  } | null>(null);
+
+  // Fetch user and pool data for betting
+  const { data: session } = authClient.useSession();
+  const { data: currentUser, refetch: refetchUser } = useCurrentUser();
+  const { data: myPool, refetch: refetchMyPool } = useMyPool();
+
+  // Fetch market game data for betting options
+  const { data: marketGames } = useMarketGames({
+    status: 'scheduled',
+    oddsAvailable: true,
+    limit: 100,
+  });
+
+  // Find the specific game from market data
+  const marketGame = marketGames?.find(game => game.eventID === id);
 
   useEffect(() => {
     const fetchGameDetails = async () => {
       try {
         setLoading(true);
+   
         const response = await fetch(`${API_BASE_URL}/api/events/show-more/${id}`);
 
         if (!response.ok) {
@@ -162,6 +193,19 @@ export default function GameDetailsScreen() {
   const { event_summary, teams_data, inning_results, betting_markets } = gameData;
   const winner = teams_data.away_team.score > teams_data.home_team.score ? 'away' : 'home';
 
+  const handleCloseBetSlip = () => {
+    setBetSlipVisible(false);
+    setSelectedBet(null);
+  };
+
+  const handleBetPlaced = async () => {
+    // Refresh user credits and pool data after bet placement
+    await Promise.all([
+      refetchUser(),
+      refetchMyPool(),
+    ]);
+  };
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -236,34 +280,6 @@ export default function GameDetailsScreen() {
           </View>
         </View>
 
-        {/* Team Stats */}
-        {(teams_data.away_team.batting_hits !== undefined || teams_data.away_team.fielding_errors !== undefined) && (
-          <View style={styles.statsCard}>
-            <Text style={styles.sectionTitle}>Team Statistics</Text>
-            <View style={styles.statsGrid}>
-              <View style={styles.statColumn}>
-                <Text style={styles.statLabel}>TEAM</Text>
-                <Text style={styles.statValue}>{teams_data.away_team.name_short}</Text>
-                <Text style={styles.statValue}>{teams_data.home_team.name_short}</Text>
-              </View>
-              {teams_data.away_team.batting_hits !== undefined && (
-                <View style={styles.statColumn}>
-                  <Text style={styles.statLabel}>HITS</Text>
-                  <Text style={styles.statValue}>{teams_data.away_team.batting_hits}</Text>
-                  <Text style={styles.statValue}>{teams_data.home_team.batting_hits}</Text>
-                </View>
-              )}
-              {teams_data.away_team.fielding_errors !== undefined && (
-                <View style={styles.statColumn}>
-                  <Text style={styles.statLabel}>ERRORS</Text>
-                  <Text style={styles.statValue}>{teams_data.away_team.fielding_errors}</Text>
-                  <Text style={styles.statValue}>{teams_data.home_team.fielding_errors}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        )}
-
         {/* Inning by Inning / Quarter by Quarter */}
         {Object.keys(inning_results).length > 0 && (
           <View style={styles.inningsCard}>
@@ -321,106 +337,34 @@ export default function GameDetailsScreen() {
           </View>
         )}
 
-        {/* Betting Markets */}
-        <View style={styles.bettingCard}>
-          <Text style={styles.sectionTitle}>Betting Markets</Text>
-
-          {/* Moneyline */}
-          <View style={styles.marketSection}>
-            <Text style={styles.marketTitle}>MONEYLINE</Text>
-            <View style={styles.marketRow}>
-              <View style={styles.marketTeam}>
-                <Text style={styles.marketTeamName}>{teams_data.away_team.name_short}</Text>
-                <View style={styles.oddsChip}>
-                  <Text style={styles.oddsChipText}>{formatOdds(betting_markets.moneyline.away_odds)}</Text>
-                </View>
-              </View>
-              <View style={styles.marketTeam}>
-                <Text style={styles.marketTeamName}>{teams_data.home_team.name_short}</Text>
-                <View style={styles.oddsChip}>
-                  <Text style={styles.oddsChipText}>{formatOdds(betting_markets.moneyline.home_odds)}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Total Points */}
-          {betting_markets.total_points_over_under && (
-            <View style={styles.marketSection}>
-              <Text style={styles.marketTitle}>TOTAL POINTS (O/U)</Text>
-              <View style={styles.marketRow}>
-                <View style={styles.marketTeam}>
-                  <Text style={styles.marketTeamName}>
-                    OVER {betting_markets.total_points_over_under.over_under_line}
-                  </Text>
-                  <View style={styles.oddsChip}>
-                    <Text style={styles.oddsChipText}>
-                      {formatOdds(betting_markets.total_points_over_under.over_odds)}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.marketTeam}>
-                  <Text style={styles.marketTeamName}>
-                    UNDER {betting_markets.total_points_over_under.over_under_line}
-                  </Text>
-                  <View style={styles.oddsChip}>
-                    <Text style={styles.oddsChipText}>
-                      {formatOdds(betting_markets.total_points_over_under.under_odds)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              {betting_markets.total_points_over_under.actual_score_total && (
-                <View style={styles.actualScoreContainer}>
-                  <Text style={styles.actualScoreLabel}>Final Total:</Text>
-                  <Text style={styles.actualScoreValue}>
-                    {betting_markets.total_points_over_under.actual_score_total}
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Point Spread */}
-          {betting_markets.point_spread && (
-            <View style={styles.marketSection}>
-              <Text style={styles.marketTitle}>POINT SPREAD</Text>
-              <View style={styles.marketRow}>
-                <View style={styles.marketTeam}>
-                  <Text style={styles.marketTeamName}>
-                    {teams_data.away_team.name_short}{' '}
-                    {betting_markets.point_spread.spread_line !== undefined &&
-                      (betting_markets.point_spread.spread_line > 0
-                        ? `+${betting_markets.point_spread.spread_line}`
-                        : betting_markets.point_spread.spread_line)}
-                  </Text>
-                  <View style={styles.oddsChip}>
-                    <Text style={styles.oddsChipText}>
-                      {formatOdds(betting_markets.point_spread.away_odds)}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.marketTeam}>
-                  <Text style={styles.marketTeamName}>
-                    {teams_data.home_team.name_short}{' '}
-                    {betting_markets.point_spread.spread_line !== undefined &&
-                      (betting_markets.point_spread.spread_line > 0
-                        ? `-${betting_markets.point_spread.spread_line}`
-                        : `+${Math.abs(betting_markets.point_spread.spread_line)}`)}
-                  </Text>
-                  <View style={styles.oddsChip}>
-                    <Text style={styles.oddsChipText}>
-                      {formatOdds(betting_markets.point_spread.home_odds)}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
+        {/* Betting Markets - Using MarketGameCard */}
+        {/* <View style={styles.marketGameSection}>
+            <MarketGameCard
+              game={marketGame}
+              onSelectBet={(selectedGame, betType, team, selection) => {
+                setSelectedBet({ game: selectedGame, betType, team, selection });
+                setBetSlipVisible(true);
+              }}
+              onPress={() => {}} // Already on game details page
+            />
+          </View> */}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Bet Slip Bottom Sheet */}
+      <BetSlipBottomSheet
+        visible={betSlipVisible}
+        onClose={handleCloseBetSlip}
+        game={selectedBet?.game || null}
+        betType={selectedBet?.betType}
+        selectedTeam={selectedBet?.team || 'home'}
+        selection={selectedBet?.selection}
+        userUnits={currentUser?.current_credits || currentUser?.credits || 0}
+        userId={session?.user?.id}
+        poolId={typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool}
+        onBetPlaced={handleBetPlaced}
+      />
     </View>
   );
 }
@@ -680,6 +624,10 @@ const styles = StyleSheet.create({
     color: Colors.dark.tint,
     fontFamily: Fonts.display,
   },
+  marketGameSection: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
   bettingCard: {
     marginHorizontal: 16,
     marginBottom: 16,
@@ -746,6 +694,10 @@ const styles = StyleSheet.create({
     ...Typography.emphasis.medium,
     color: Colors.dark.tint,
     fontFamily: Fonts.display,
+  },
+  bettingOptionsSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
   },
   bottomSpacing: {
     height: 40,
