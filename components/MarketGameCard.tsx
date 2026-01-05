@@ -8,9 +8,10 @@ interface MarketGameCardProps {
   game: MarketGame;
   onSelectBet: (game: MarketGame, betType: 'spread' | 'total' | 'moneyline', team: 'home' | 'away', selection?: 'over' | 'under') => void;
   onPress?: (eventID: string) => void;
+  shouldNavigate?: boolean;
 }
 
-export default function MarketGameCard({ game, onSelectBet, onPress }: MarketGameCardProps) {
+export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavigate = true }: MarketGameCardProps) {
   // Format date
   const gameDate = new Date(game.start_time);
   const dateLabel = gameDate.toLocaleString('en-US', {
@@ -257,13 +258,15 @@ export default function MarketGameCard({ game, onSelectBet, onPress }: MarketGam
       </View>
 
       {/* Tap for Details Hint */}
-      <TouchableOpacity
-        style={styles.detailsHint}
-        onPress={() => onPress?.(game.eventID)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.detailsHintText}>Tap for game details</Text>
-      </TouchableOpacity>
+      {
+        shouldNavigate && (<TouchableOpacity
+          style={styles.detailsHint}
+          onPress={() => onPress?.(game.eventID)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.detailsHintText}>Tap for game details</Text>
+        </TouchableOpacity>)
+      }
     </View>
   );
 }

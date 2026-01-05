@@ -87,14 +87,33 @@ interface GameDetails {
   player_props: PlayerProp[] | null;
 }
 
+const extractEventCore = (gameData: any) => {
+  const {
+    eventID,
+    leagueID,
+    start_time,
+    away_team,
+    home_team,
+    markets,
+  } = gameData;
+
+  return {
+    eventID,
+    leagueID,
+    start_time,
+    away_team,
+    home_team,
+    markets,
+  };
+};
+
 export default function GameDetailsScreen() {
-  console.log('[GameDetailsScreen] ========== COMPONENT RENDER ==========');
 
   const { id } = useLocalSearchParams<{ id: string }>();
-  console.log('[GameDetailsScreen] Event ID from params:', id);
-  console.log('[GameDetailsScreen] API URL:', `${API_BASE_URL}/api/events/show-more/${id}`);
+  
 
   const router = useRouter();
+
   const [gameData, setGameData] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,95 +126,74 @@ export default function GameDetailsScreen() {
   } | null>(null);
   const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
 
-  // Fetch user and pool data for betting
-  console.log('[GameDetailsScreen] Fetching session...');
+
   const { data: session } = authClient.useSession();
-  console.log('[GameDetailsScreen] Session user ID:', session?.user?.id || 'No session');
 
-  console.log('[GameDetailsScreen] Fetching current user...');
   const { data: currentUser, refetch: refetchUser } = useCurrentUser();
-  console.log('[GameDetailsScreen] Current user ID:', currentUser?.id || 'No user');
+ 
 
-  console.log('[GameDetailsScreen] Fetching pool...');
   const { data: myPool, refetch: refetchMyPool } = useMyPool();
-  console.log('[GameDetailsScreen] Pool ID:', typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool || 'No pool');
-
+  
   // Fetch market game data for betting options
-  console.log('[GameDetailsScreen] Fetching market games...');
+
   const { data: marketGames } = useMarketGames({
     status: 'scheduled',
     oddsAvailable: true,
     limit: 100,
   });
-  console.log('[GameDetailsScreen] Market games fetched:', marketGames?.length || 0, 'games');
+
 
   // Find the specific game from market data
   const marketGame = marketGames?.find(game => game.eventID === id);
-  console.log('[GameDetailsScreen] Market game for this event:', marketGame ? 'Found' : 'Not found');
+
 
   useEffect(() => {
-    console.log('[GameDetailsScreen] useEffect triggered with ID:', id);
+
 
     const fetchGameDetails = async () => {
       try {
-        console.log('[GameDetailsScreen] 📡 Starting API fetch...');
+
         setLoading(true);
 
         const url = `${API_BASE_URL}/api/events/show-more/${id}`;
-        console.log('[GameDetailsScreen] Fetching URL:', url);
+
 
         const response = await fetch(url);
-        console.log('[GameDetailsScreen] Response received. Status:', response.status, response.statusText);
+
 
         if (!response.ok) {
-          console.error('[GameDetailsScreen] ❌ Response not OK:', response.status);
+
           throw new Error(`Failed to fetch game details: ${response.status}`);
         }
 
-        console.log('[GameDetailsScreen] Parsing JSON...');
-        const data = await response.json();
-        console.log('[GameDetailsScreen] ✅ Data parsed successfully:', {
-          hasEventSummary: !!data.event_summary,
-          eventID: data.event_summary?.eventID,
-          status: data.event_summary?.status,
-          hasTeamsData: !!data.teams_data,
-          awayTeam: data.teams_data?.away_team?.name_short,
-          homeTeam: data.teams_data?.home_team?.name_short,
-          awayScore: data.teams_data?.away_team?.score,
-          homeScore: data.teams_data?.home_team?.score,
-          hasInningResults: !!data.inning_results && Object.keys(data.inning_results || {}).length > 0,
-          hasBettingMarkets: !!data.betting_markets,
-          hasPlayerProps: !!data.player_props,
-        });
 
-        console.log('[GameDetailsScreen] Setting game data...');
+        const data = await response.json();
+        
         setGameData(data);
+
         setError(null);
-        console.log('[GameDetailsScreen] ✅ Game data set successfully!');
+
       } catch (err) {
-        console.error('[GameDetailsScreen] ❌ ERROR fetching game details:', err);
-        console.error('[GameDetailsScreen] Error message:', err instanceof Error ? err.message : String(err));
-        console.error('[GameDetailsScreen] Error stack:', err instanceof Error ? err.stack : 'No stack trace');
-        setError(err instanceof Error ? err.message : 'An error occurred');
+       setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
-        console.log('[GameDetailsScreen] Fetch complete. Loading:', false);
+
       }
     };
 
     if (id) {
-      console.log('[GameDetailsScreen] ID exists, fetching...');
+
       fetchGameDetails();
     } else {
       console.warn('[GameDetailsScreen] ⚠️ No ID provided, skipping fetch!');
     }
   }, [id]);
 
-  const formatOdds = (odds: string | undefined) => {
-    if (!odds) return '--';
-    const numOdds = parseFloat(odds);
-    return numOdds > 0 ? `+${numOdds}` : `${numOdds}`;
-  };
+  // const formatOdds = (odds: string | undefined) => {
+  //   if (!odds) return '--';
+  //   const numOdds = parseFloat(odds);
+  //   return numOdds > 0 ? `+${numOdds}` : `${numOdds}`;
+  // };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -210,10 +208,10 @@ export default function GameDetailsScreen() {
     });
   };
 
-  console.log('[GameDetailsScreen] Render state:', { loading, error: !!error, hasData: !!gameData });
+
 
   if (loading) {
-    console.log('[GameDetailsScreen] Rendering loading state');
+
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -236,7 +234,7 @@ export default function GameDetailsScreen() {
   }
 
   if (error || !gameData) {
-    console.log('[GameDetailsScreen] Rendering error state:', { error, hasGameData: !!gameData });
+
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -263,30 +261,20 @@ export default function GameDetailsScreen() {
     );
   }
 
-  console.log('[GameDetailsScreen] Rendering main view');
+
 
   const { event_summary, teams_data, inning_results, betting_markets, player_props } = gameData;
-  console.log('[GameDetailsScreen] Game data structure:', {
-    eventID: event_summary?.eventID,
-    status: event_summary?.status,
-    leagueID: event_summary?.leagueID,
-    awayTeam: teams_data?.away_team?.name_short,
-    homeTeam: teams_data?.home_team?.name_short,
-    awayScore: teams_data?.away_team?.score,
-    homeScore: teams_data?.home_team?.score,
-    hasPlayerProps: player_props !== null,
-    playerPropsCount: player_props?.length || 0,
-  });
+ 
 
   // Only calculate winner if we have teams_data
   const winner = teams_data?.away_team && teams_data?.home_team
     ? (teams_data.away_team.score > teams_data.home_team.score ? 'away' : 'home')
     : null;
-  console.log('[GameDetailsScreen] Winner:', winner);
+
 
   // Check if we have the necessary game data
   const hasGameData = event_summary && teams_data;
-  console.log('[GameDetailsScreen] Has game data (scores, teams):', hasGameData);
+
 
   // Helper functions for player props
   const formatPropsOdds = (odds: number | null | undefined): string => {
@@ -313,23 +301,24 @@ export default function GameDetailsScreen() {
     }))
     .filter(player => player.props.length > 0);
 
-  console.log('[GameDetailsScreen] Players with odds:', playersWithOdds?.length || 0);
+
 
   const handleCloseBetSlip = () => {
-    console.log('[GameDetailsScreen] Closing bet slip');
+
     setBetSlipVisible(false);
     setSelectedBet(null);
   };
 
   const handleBetPlaced = async () => {
-    console.log('[GameDetailsScreen] Bet placed, refreshing data...');
+
     // Refresh user credits and pool data after bet placement
     await Promise.all([
       refetchUser(),
       refetchMyPool(),
     ]);
-    console.log('[GameDetailsScreen] Data refreshed after bet');
+
   };
+  const coreGame = extractEventCore(gameData);
 
   return (
     <View style={styles.container}>
@@ -347,6 +336,18 @@ export default function GameDetailsScreen() {
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+<View  style={styles.gameInfoSection}>
+<Text style={styles.sectionTitle}>Game Info</Text>
+<MarketGameCard
+      key={coreGame.eventID}
+      game={coreGame}
+      onSelectBet={() => null}
+      onPress={() => null}
+      shouldNavigate={false}
+    />
+</View>
+
+
         {/* Game Info - Only show if we have event_summary */}
         {hasGameData && event_summary && (
           <View style={styles.gameInfoSection}>
@@ -513,7 +514,7 @@ export default function GameDetailsScreen() {
               <TouchableOpacity
                 style={styles.expandButton}
                 onPress={() => {
-                  console.log('[GameDetailsScreen] Toggling player props expansion');
+
                   setPlayerPropsExpanded(!playerPropsExpanded);
                 }}
               >
@@ -539,7 +540,7 @@ export default function GameDetailsScreen() {
             <MarketGameCard
               game={marketGame}
               onSelectBet={(selectedGame, betType, team, selection) => {
-                console.log('[GameDetailsScreen] Bet selected:', { betType, team, selection });
+
                 setSelectedBet({ game: selectedGame, betType, team, selection });
                 setBetSlipVisible(true);
               }}
