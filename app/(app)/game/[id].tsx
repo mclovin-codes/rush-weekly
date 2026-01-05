@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { CaretLeft, TrendUp } from 'phosphor-react-native';
 import { API_BASE_URL } from '@/constants/api';
@@ -46,6 +47,25 @@ interface BettingMarket {
   spread_line?: number;
 }
 
+interface Prop {
+  stat_type: string;
+  display_name: string;
+  category: string;
+  // Over/Under props
+  line?: number;
+  over_payout?: number | null;
+  under_payout?: number | null;
+  // Yes/No props
+  yes_payout?: number | null;
+  no_payout?: number | null;
+}
+
+interface PlayerProp {
+  player_id: string;
+  player_name: string;
+  props: Prop[];
+}
+
 interface GameDetails {
   event_summary: {
     eventID: string;
@@ -64,11 +84,16 @@ interface GameDetails {
     total_points_over_under: BettingMarket;
     point_spread: BettingMarket;
   };
+  player_props: PlayerProp[] | null;
 }
 
 export default function GameDetailsScreen() {
+  console.log('[GameDetailsScreen] ========== COMPONENT RENDER ==========');
+
   const { id } = useLocalSearchParams<{ id: string }>();
-  console.log('🔥xxxxx-xxxx-xx', `${API_BASE_URL}/api/events/show-more/${id}`)
+  console.log('[GameDetailsScreen] Event ID from params:', id);
+  console.log('[GameDetailsScreen] API URL:', `${API_BASE_URL}/api/events/show-more/${id}`);
+
   const router = useRouter();
   const [gameData, setGameData] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,45 +105,89 @@ export default function GameDetailsScreen() {
     team: 'home' | 'away';
     selection?: 'over' | 'under';
   } | null>(null);
+  const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
 
   // Fetch user and pool data for betting
+  console.log('[GameDetailsScreen] Fetching session...');
   const { data: session } = authClient.useSession();
+  console.log('[GameDetailsScreen] Session user ID:', session?.user?.id || 'No session');
+
+  console.log('[GameDetailsScreen] Fetching current user...');
   const { data: currentUser, refetch: refetchUser } = useCurrentUser();
+  console.log('[GameDetailsScreen] Current user ID:', currentUser?.id || 'No user');
+
+  console.log('[GameDetailsScreen] Fetching pool...');
   const { data: myPool, refetch: refetchMyPool } = useMyPool();
+  console.log('[GameDetailsScreen] Pool ID:', typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool || 'No pool');
 
   // Fetch market game data for betting options
+  console.log('[GameDetailsScreen] Fetching market games...');
   const { data: marketGames } = useMarketGames({
     status: 'scheduled',
     oddsAvailable: true,
     limit: 100,
   });
+  console.log('[GameDetailsScreen] Market games fetched:', marketGames?.length || 0, 'games');
 
   // Find the specific game from market data
   const marketGame = marketGames?.find(game => game.eventID === id);
+  console.log('[GameDetailsScreen] Market game for this event:', marketGame ? 'Found' : 'Not found');
 
   useEffect(() => {
+    console.log('[GameDetailsScreen] useEffect triggered with ID:', id);
+
     const fetchGameDetails = async () => {
       try {
+        console.log('[GameDetailsScreen] 📡 Starting API fetch...');
         setLoading(true);
-   
-        const response = await fetch(`${API_BASE_URL}/api/events/show-more/${id}`);
+
+        const url = `${API_BASE_URL}/api/events/show-more/${id}`;
+        console.log('[GameDetailsScreen] Fetching URL:', url);
+
+        const response = await fetch(url);
+        console.log('[GameDetailsScreen] Response received. Status:', response.status, response.statusText);
 
         if (!response.ok) {
-          throw new Error('Failed to fetch game details');
+          console.error('[GameDetailsScreen] ❌ Response not OK:', response.status);
+          throw new Error(`Failed to fetch game details: ${response.status}`);
         }
 
+        console.log('[GameDetailsScreen] Parsing JSON...');
         const data = await response.json();
+        console.log('[GameDetailsScreen] ✅ Data parsed successfully:', {
+          hasEventSummary: !!data.event_summary,
+          eventID: data.event_summary?.eventID,
+          status: data.event_summary?.status,
+          hasTeamsData: !!data.teams_data,
+          awayTeam: data.teams_data?.away_team?.name_short,
+          homeTeam: data.teams_data?.home_team?.name_short,
+          awayScore: data.teams_data?.away_team?.score,
+          homeScore: data.teams_data?.home_team?.score,
+          hasInningResults: !!data.inning_results && Object.keys(data.inning_results || {}).length > 0,
+          hasBettingMarkets: !!data.betting_markets,
+          hasPlayerProps: !!data.player_props,
+        });
+
+        console.log('[GameDetailsScreen] Setting game data...');
         setGameData(data);
         setError(null);
+        console.log('[GameDetailsScreen] ✅ Game data set successfully!');
       } catch (err) {
+        console.error('[GameDetailsScreen] ❌ ERROR fetching game details:', err);
+        console.error('[GameDetailsScreen] Error message:', err instanceof Error ? err.message : String(err));
+        console.error('[GameDetailsScreen] Error stack:', err instanceof Error ? err.stack : 'No stack trace');
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
+        console.log('[GameDetailsScreen] Fetch complete. Loading:', false);
       }
     };
 
     if (id) {
+      console.log('[GameDetailsScreen] ID exists, fetching...');
       fetchGameDetails();
+    } else {
+      console.warn('[GameDetailsScreen] ⚠️ No ID provided, skipping fetch!');
     }
   }, [id]);
 
@@ -141,7 +210,10 @@ export default function GameDetailsScreen() {
     });
   };
 
+  console.log('[GameDetailsScreen] Render state:', { loading, error: !!error, hasData: !!gameData });
+
   if (loading) {
+    console.log('[GameDetailsScreen] Rendering loading state');
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -164,6 +236,7 @@ export default function GameDetailsScreen() {
   }
 
   if (error || !gameData) {
+    console.log('[GameDetailsScreen] Rendering error state:', { error, hasGameData: !!gameData });
     return (
       <View style={styles.container}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -190,20 +263,72 @@ export default function GameDetailsScreen() {
     );
   }
 
-  const { event_summary, teams_data, inning_results, betting_markets } = gameData;
-  const winner = teams_data.away_team.score > teams_data.home_team.score ? 'away' : 'home';
+  console.log('[GameDetailsScreen] Rendering main view');
+
+  const { event_summary, teams_data, inning_results, betting_markets, player_props } = gameData;
+  console.log('[GameDetailsScreen] Game data structure:', {
+    eventID: event_summary?.eventID,
+    status: event_summary?.status,
+    leagueID: event_summary?.leagueID,
+    awayTeam: teams_data?.away_team?.name_short,
+    homeTeam: teams_data?.home_team?.name_short,
+    awayScore: teams_data?.away_team?.score,
+    homeScore: teams_data?.home_team?.score,
+    hasPlayerProps: player_props !== null,
+    playerPropsCount: player_props?.length || 0,
+  });
+
+  // Only calculate winner if we have teams_data
+  const winner = teams_data?.away_team && teams_data?.home_team
+    ? (teams_data.away_team.score > teams_data.home_team.score ? 'away' : 'home')
+    : null;
+  console.log('[GameDetailsScreen] Winner:', winner);
+
+  // Check if we have the necessary game data
+  const hasGameData = event_summary && teams_data;
+  console.log('[GameDetailsScreen] Has game data (scores, teams):', hasGameData);
+
+  // Helper functions for player props
+  const formatPropsOdds = (odds: number | null | undefined): string => {
+    if (odds === null || odds === undefined) return '-';
+    return odds > 0 ? `+${odds}` : String(odds);
+  };
+
+  const isOverUnderProp = (prop: Prop): boolean => {
+    return prop.line !== undefined;
+  };
+
+  const propHasOdds = (prop: Prop): boolean => {
+    if (isOverUnderProp(prop)) {
+      return prop.over_payout !== null || prop.under_payout !== null;
+    }
+    return prop.yes_payout !== null || prop.no_payout !== null;
+  };
+
+  // Filter players with available odds
+  const playersWithOdds = player_props
+    ?.map(player => ({
+      ...player,
+      props: player.props.filter(propHasOdds),
+    }))
+    .filter(player => player.props.length > 0);
+
+  console.log('[GameDetailsScreen] Players with odds:', playersWithOdds?.length || 0);
 
   const handleCloseBetSlip = () => {
+    console.log('[GameDetailsScreen] Closing bet slip');
     setBetSlipVisible(false);
     setSelectedBet(null);
   };
 
   const handleBetPlaced = async () => {
+    console.log('[GameDetailsScreen] Bet placed, refreshing data...');
     // Refresh user credits and pool data after bet placement
     await Promise.all([
       refetchUser(),
       refetchMyPool(),
     ]);
+    console.log('[GameDetailsScreen] Data refreshed after bet');
   };
 
   return (
@@ -222,66 +347,62 @@ export default function GameDetailsScreen() {
       </View>
 
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Status Badge */}
-        <View style={styles.statusContainer}>
-          <View style={[
-            styles.statusBadge,
-            event_summary.status === 'Final' ? styles.statusFinal : styles.statusLive
-          ]}>
-            <Text style={styles.statusText}>{event_summary.status}</Text>
-          </View>
-          <Text style={styles.leagueText}>{event_summary.leagueID} • {event_summary.sportID}</Text>
-        </View>
-
-        {/* Game Time */}
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>{formatDate(event_summary.startTime_UTC)}</Text>
-        </View>
-
-        {/* Score Display */}
-        <View style={styles.scoreCard}>
-          {/* Away Team */}
-          <View style={[styles.teamRow, winner === 'away' && styles.winnerRow]}>
-            <View style={styles.teamInfo}>
-              <Text style={[styles.teamName, winner === 'away' && styles.winnerText]}>
-                {teams_data.away_team.name_long}
-              </Text>
-              <Text style={styles.teamAbbr}>{teams_data.away_team.name_short}</Text>
+        {/* Game Info - Only show if we have event_summary */}
+        {hasGameData && event_summary && (
+          <View style={styles.gameInfoSection}>
+            <View style={styles.gameInfoRow}>
+              <Text style={styles.leagueText}>{event_summary.leagueID}</Text>
+              <View style={[
+                styles.statusBadge,
+                event_summary.status === 'Final' ? styles.statusFinal : styles.statusLive
+              ]}>
+                <Text style={styles.statusText}>{event_summary.status.toUpperCase()}</Text>
+              </View>
             </View>
-            <View style={[styles.scoreContainer, winner === 'away' && styles.winnerScore]}>
+            <Text style={styles.gameTime}>{formatDate(event_summary.startTime_UTC)}</Text>
+          </View>
+        )}
+
+        {/* Score Display - Only show if we have teams_data */}
+        {hasGameData && teams_data && (
+          <View style={styles.scoreSection}>
+            {/* Away Team */}
+            <View style={styles.teamRow}>
+              <View style={styles.teamNameContainer}>
+                <Text style={[styles.teamName, winner === 'away' && styles.winnerText]}>
+                  {teams_data.away_team.name_short}
+                </Text>
+                <Text style={styles.teamCity}>
+                  {teams_data.away_team.name_long?.split(' ').slice(0, -1).join(' ') || ''}
+                </Text>
+              </View>
               <Text style={[styles.scoreText, winner === 'away' && styles.winnerScoreText]}>
                 {teams_data.away_team.score}
               </Text>
-              {winner === 'away' && (
-                <TrendUp size={20} color={Colors.dark.success} weight="bold" />
-              )}
             </View>
-          </View>
 
-          {/* Divider */}
-          <View style={styles.scoreDivider} />
+            {/* Divider */}
+            <View style={styles.scoreDivider} />
 
-          {/* Home Team */}
-          <View style={[styles.teamRow, winner === 'home' && styles.winnerRow]}>
-            <View style={styles.teamInfo}>
-              <Text style={[styles.teamName, winner === 'home' && styles.winnerText]}>
-                {teams_data.home_team.name_long}
-              </Text>
-              <Text style={styles.teamAbbr}>{teams_data.home_team.name_short}</Text>
-            </View>
-            <View style={[styles.scoreContainer, winner === 'home' && styles.winnerScore]}>
+            {/* Home Team */}
+            <View style={styles.teamRow}>
+              <View style={styles.teamNameContainer}>
+                <Text style={[styles.teamName, winner === 'home' && styles.winnerText]}>
+                  {teams_data.home_team.name_short}
+                </Text>
+                <Text style={styles.teamCity}>
+                  {teams_data.home_team.name_long?.split(' ').slice(0, -1).join(' ') || ''}
+                </Text>
+              </View>
               <Text style={[styles.scoreText, winner === 'home' && styles.winnerScoreText]}>
                 {teams_data.home_team.score}
               </Text>
-              {winner === 'home' && (
-                <TrendUp size={20} color={Colors.dark.success} weight="bold" />
-              )}
             </View>
           </View>
-        </View>
+        )}
 
-        {/* Inning by Inning / Quarter by Quarter */}
-        {Object.keys(inning_results).length > 0 && (
+        {/* Inning by Inning / Quarter by Quarter - Only show if we have data */}
+        {hasGameData && inning_results && Object.keys(inning_results).length > 0 && teams_data && (
           <View style={styles.inningsCard}>
             <Text style={styles.sectionTitle}>Score Breakdown</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -337,17 +458,95 @@ export default function GameDetailsScreen() {
           </View>
         )}
 
+        {/* Player Props Section */}
+        {player_props && playersWithOdds && playersWithOdds.length > 0 && (
+          <View style={styles.playerPropsSection}>
+            <Text style={styles.sectionTitle}>Player Props</Text>
+            <Text style={styles.sectionSubtitle}>
+              {playersWithOdds.length} player{playersWithOdds.length !== 1 ? 's' : ''} • {
+                playersWithOdds.reduce((acc, p) => acc + p.props.length, 0)
+              } prop{playersWithOdds.reduce((acc, p) => acc + p.props.length, 0) !== 1 ? 's' : ''}
+            </Text>
+            {(playerPropsExpanded ? playersWithOdds : playersWithOdds.slice(0, 5)).map((player) => (
+              <View key={player.player_id} style={styles.playerCard}>
+                <Text style={styles.playerName}>{player.player_name}</Text>
+                {player.props.map((prop, idx) => (
+                  <View key={`${player.player_id}-${prop.stat_type}-${idx}`} style={styles.propRow}>
+                    <View style={styles.propHeader}>
+                      <Text style={styles.propName}>{prop.display_name}</Text>
+                      {isOverUnderProp(prop) && prop.line !== undefined && (
+                        <Text style={styles.propLine}>{prop.line}</Text>
+                      )}
+                    </View>
+                    <View style={styles.propOdds}>
+                      {isOverUnderProp(prop) ? (
+                        <>
+                          <View style={[styles.oddButton, styles.overButton]}>
+                            <Text style={styles.oddLabel}>OVER</Text>
+                            <Text style={styles.oddValue}>{formatPropsOdds(prop.over_payout)}</Text>
+                          </View>
+                          <View style={[styles.oddButton, styles.underButton]}>
+                            <Text style={styles.oddLabel}>UNDER</Text>
+                            <Text style={styles.oddValue}>{formatPropsOdds(prop.under_payout)}</Text>
+                          </View>
+                        </>
+                      ) : (
+                        <>
+                          <View style={[styles.oddButton, styles.yesButton]}>
+                            <Text style={styles.oddLabel}>YES</Text>
+                            <Text style={styles.oddValue}>{formatPropsOdds(prop.yes_payout)}</Text>
+                          </View>
+                          {prop.no_payout !== null && (
+                            <View style={[styles.oddButton, styles.noButton]}>
+                              <Text style={styles.oddLabel}>NO</Text>
+                              <Text style={styles.oddValue}>{formatPropsOdds(prop.no_payout)}</Text>
+                            </View>
+                          )}
+                        </>
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
+            {playersWithOdds.length > 5 && (
+              <TouchableOpacity
+                style={styles.expandButton}
+                onPress={() => {
+                  console.log('[GameDetailsScreen] Toggling player props expansion');
+                  setPlayerPropsExpanded(!playerPropsExpanded);
+                }}
+              >
+                <Text style={styles.expandButtonText}>
+                  {playerPropsExpanded
+                    ? 'Show less'
+                    : `+${playersWithOdds.length - 5} more players available`
+                  }
+                </Text>
+                <Ionicons
+                  name={playerPropsExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={Colors.dark.tint}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
         {/* Betting Markets - Using MarketGameCard */}
-        {/* <View style={styles.marketGameSection}>
+        {marketGame && (
+          <View style={styles.marketGameSection}>
             <MarketGameCard
               game={marketGame}
               onSelectBet={(selectedGame, betType, team, selection) => {
+                console.log('[GameDetailsScreen] Bet selected:', { betType, team, selection });
                 setSelectedBet({ game: selectedGame, betType, team, selection });
                 setBetSlipVisible(true);
               }}
               onPress={() => {}} // Already on game details page
             />
-          </View> */}
+          </View>
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
@@ -434,101 +633,89 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  statusContainer: {
-    alignItems: 'center',
-    paddingVertical: 16,
+  gameInfoSection: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
-  statusBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 12,
+  gameInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  leagueText: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.medium,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
   statusFinal: {
-    backgroundColor: Colors.dark.textSecondary + '20',
+    backgroundColor: Colors.dark.textSecondary + '15',
   },
   statusLive: {
-    backgroundColor: Colors.dark.danger + '20',
+    backgroundColor: Colors.dark.success + '15',
   },
   statusText: {
-    ...Typography.emphasis.small,
+    ...Typography.meta.small,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontSize: 10,
+    letterSpacing: 1.2,
   },
-  leagueText: {
+  gameTime: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    marginTop: 4,
   },
-  dateContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  dateText: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
-    textAlign: 'center',
-  },
-  scoreCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: Colors.dark.card,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: Colors.dark.border,
+  scoreSection: {
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 20,
   },
   teamRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
-  winnerRow: {
-    backgroundColor: Colors.dark.success + '10',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-  },
-  teamInfo: {
+  teamNameContainer: {
     flex: 1,
   },
   teamName: {
-    ...Typography.title.small,
+    ...Typography.title.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
-    marginBottom: 4,
+    fontSize: 24,
+    marginBottom: 2,
   },
-  winnerText: {
-    color: Colors.dark.success,
-  },
-  teamAbbr: {
+  teamCity: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
+    fontSize: 13,
   },
-  scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  winnerScore: {
-    backgroundColor: Colors.dark.success + '20',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+  winnerText: {
+    color: Colors.dark.tint,
   },
   scoreText: {
     ...Typography.title.large,
+    fontSize: 40,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
+    minWidth: 60,
+    textAlign: 'right',
   },
   winnerScoreText: {
-    color: Colors.dark.success,
+    color: Colors.dark.tint,
   },
   scoreDivider: {
     height: 1,
-    backgroundColor: Colors.dark.border,
-    marginVertical: 4,
+    backgroundColor: Colors.dark.border + '40',
+    marginVertical: 8,
   },
   statsCard: {
     marginHorizontal: 16,
@@ -543,7 +730,9 @@ const styles = StyleSheet.create({
     ...Typography.sectionHeader.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
+    fontSize: 16,
     marginBottom: 16,
+    letterSpacing: 0.5,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -566,13 +755,13 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   inningsCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
     backgroundColor: Colors.dark.card,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: Colors.dark.border + '40',
   },
   inningsTable: {
     minWidth: width - 32,
@@ -625,81 +814,204 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.display,
   },
   marketGameSection: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   bettingCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
     backgroundColor: Colors.dark.card,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: Colors.dark.border + '40',
   },
   marketSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   marketTitle: {
     ...Typography.meta.medium,
     color: Colors.dark.textSecondary,
-    marginBottom: 12,
+    marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    fontSize: 11,
   },
   marketRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
   marketTeam: {
     flex: 1,
-    backgroundColor: Colors.dark.cardElevated,
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: Colors.dark.cardElevated + '80',
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: Colors.dark.border + '30',
   },
   marketTeamName: {
     ...Typography.body.small,
     color: Colors.dark.text,
     marginBottom: 8,
+    fontSize: 13,
   },
   oddsChip: {
     backgroundColor: Colors.dark.tint,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   oddsChipText: {
     ...Typography.emphasis.medium,
     color: Colors.dark.background,
     fontFamily: Fonts.display,
+    fontSize: 13,
   },
   actualScoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 10,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: Colors.dark.border,
+    borderTopColor: Colors.dark.border + '40',
   },
   actualScoreLabel: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
-    marginRight: 8,
+    marginRight: 6,
+    fontSize: 12,
   },
   actualScoreValue: {
     ...Typography.emphasis.medium,
     color: Colors.dark.tint,
     fontFamily: Fonts.display,
+    fontSize: 14,
   },
   bettingOptionsSection: {
     marginHorizontal: 16,
     marginBottom: 16,
   },
   bottomSpacing: {
-    height: 40,
+    height: 80,
+  },
+
+  // Player Props Styles
+  playerPropsSection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionSubtitle: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    marginBottom: 16,
+    fontSize: 13,
+  },
+  playerCard: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border + '40',
+  },
+  playerName: {
+    ...Typography.title.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 18,
+    marginBottom: 12,
+  },
+  propRow: {
+    marginBottom: 12,
+  },
+  propHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  propName: {
+    ...Typography.body.medium,
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+  },
+  propLine: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+  },
+  propOdds: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  oddButton: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  overButton: {
+    backgroundColor: Colors.dark.success + '20',
+    borderWidth: 1,
+    borderColor: Colors.dark.success + '40',
+  },
+  underButton: {
+    backgroundColor: Colors.dark.danger + '20',
+    borderWidth: 1,
+    borderColor: Colors.dark.danger + '40',
+  },
+  yesButton: {
+    backgroundColor: Colors.dark.tint + '20',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+  },
+  noButton: {
+    backgroundColor: Colors.dark.textSecondary + '20',
+    borderWidth: 1,
+    borderColor: Colors.dark.textSecondary + '40',
+  },
+  oddLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  oddValue: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 14,
+  },
+  morePlayersText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 13,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.dark.card,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+    gap: 8,
+  },
+  expandButtonText: {
+    ...Typography.body.medium,
+    color: Colors.dark.tint,
+    fontSize: 14,
+    fontFamily: Fonts.medium,
   },
 });
