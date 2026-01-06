@@ -17,6 +17,7 @@ import {
   BarlowCondensed_600SemiBold,
 } from '@expo-google-fonts/barlow-condensed';
 import { QueryProvider } from '@/providers/QueryProvider';
+import { BetSlipProvider } from '@/providers/BetSlipProvider';
 
 
 export const unstable_settings = {
@@ -58,15 +59,17 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <QueryProvider>
-          <ThemeProvider value={DarkTheme}>
-            <Stack>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal'}}  />
-              <Stack.Screen name="(app)" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="light" />
-          </ThemeProvider>
+          <BetSlipProvider>
+            <ThemeProvider value={DarkTheme}>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal'}}  />
+                <Stack.Screen name="(app)" options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="light" />
+            </ThemeProvider>
+          </BetSlipProvider>
         </QueryProvider>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

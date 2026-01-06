@@ -13,6 +13,7 @@ import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'expo-router';
 import MarketGameCard from '@/components/MarketGameCard';
+import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -141,17 +142,13 @@ export default function HomeScreen() {
 
   // Default will be set to NFL (or first available league)
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
-  const [betSlipVisible, setBetSlipVisible] = useState(false);
   const [devToolsVisible, setDevToolsVisible] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<{
-    game: MarketGame;
-    betType: 'spread' | 'total' | 'moneyline';
-    team: 'home' | 'away';
-    selection?: 'over' | 'under';
-  } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [reloadingGames, setReloadingGames] = useState(false);
   const spinAnim = useRef(new Animated.Value(0)).current;
+
+  // Bet slip context
+  const { addSelection } = useBetSlip();
 
   // Fetch user and pool data
   const { data: session } = authClient.useSession();
@@ -270,11 +267,6 @@ export default function HomeScreen() {
     const time = getTimeRemaining();
     if (!time) return 0;
     return time.days;
-  };
-
-  const handleCloseBetSlip = () => {
-    setBetSlipVisible(false);
-    setSelectedBet(null);
   };
 
   const handlePoolCreated = async () => {
@@ -593,8 +585,54 @@ export default function HomeScreen() {
                 key={game.eventID}
                 game={game}
                 onSelectBet={(selectedGame, betType, team, selection) => {
-                  setSelectedBet({ game: selectedGame, betType, team, selection });
-                  setBetSlipVisible(true);
+                  // Create bet selection for multi-bet slip
+                  const getBetTypeLabel = () => {
+                    if (betType === 'spread') {
+                      const spread = selectedGame.markets?.spread;
+                      const spreadSide = team === 'home' ? spread?.home : spread?.away;
+                      return `Spread ${spreadSide?.point && spreadSide.point > 0 ? '+' : ''}${spreadSide?.point || '--'}`;
+                    }
+                    if (betType === 'total') {
+                      const total = selectedGame.markets?.total;
+                      return `${selection === 'over' ? 'Over' : 'Under'} ${total?.line || '--'}`;
+                    }
+                    return 'Moneyline';
+                  };
+
+                  const getOdds = () => {
+                    if (betType === 'spread') {
+                      const spread = selectedGame.markets?.spread;
+                      const spreadSide = team === 'home' ? spread?.home : spread?.away;
+                      return spreadSide?.payout || 0;
+                    }
+                    if (betType === 'total') {
+                      const total = selectedGame.markets?.total;
+                      return selection === 'over' ? (total?.over_payout || 0) : (total?.under_payout || 0);
+                    }
+                    const teamObj = team === 'home' ? selectedGame.home_team : selectedGame.away_team;
+                    return teamObj.moneyline || 0;
+                  };
+
+                  const betSelection: BetSelection = {
+                    id: `${selectedGame.eventID}-${betType}-${team}-${selection || ''}`,
+                    eventID: selectedGame.eventID,
+                    leagueID: selectedGame.leagueID,
+                    gameTime: selectedGame.start_time,
+                    matchup: `${selectedGame.away_team.abbreviation} @ ${selectedGame.home_team.abbreviation}`,
+                    teamName: team === 'home' ? selectedGame.home_team.name : selectedGame.away_team.name,
+                    betType: betType,
+                    betTypeLabel: getBetTypeLabel(),
+                    selection: betType === 'total' ? (selection as 'over' | 'under') : team,
+                    odds: getOdds(),
+                    line: betType === 'spread' || betType === 'total' ?
+                      (betType === 'spread' ?
+                        (team === 'home' ? selectedGame.markets?.spread?.home?.point : selectedGame.markets?.spread?.away?.point) :
+                        selectedGame.markets?.total?.line) :
+                      null,
+                    game: selectedGame,
+                  };
+
+                  addSelection(betSelection);
                 }}
                 onPress={(eventID) => {
                   router.push(`/(app)/game/${eventID}`);
@@ -631,12 +669,6 @@ export default function HomeScreen() {
 
       {/* Bet Slip Bottom Sheet */}
       <BetSlipBottomSheet
-        visible={betSlipVisible}
-        onClose={handleCloseBetSlip}
-        game={selectedBet?.game}
-        betType={selectedBet?.betType}
-        selectedTeam={selectedBet?.team || 'home'}
-        selection={selectedBet?.selection}
         userUnits={currentUser?.current_credits || currentUser?.credits || 0}
         userId={session?.user?.id}
         poolId={typeof myPool?.pool === 'object' ? myPool.pool.id : myPool?.pool}
