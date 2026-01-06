@@ -21,6 +21,7 @@ import { useCurrentUser } from '@/hooks/useUser';
 import { useMyPool } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
 import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
+import BetSlipFloatingButton from '@/components/BetSlipFloatingButton';
 
 const { width } = Dimensions.get('window');
 
@@ -628,6 +629,9 @@ export default function GameDetailsScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Floating Bet Slip Button */}
+      <BetSlipFloatingButton />
 
       {/* Bet Slip Bottom Sheet */}
       <BetSlipBottomSheet

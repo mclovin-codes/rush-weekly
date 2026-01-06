@@ -14,6 +14,7 @@ import { authClient } from '@/lib/auth-client';
 import { useRouter } from 'expo-router';
 import MarketGameCard from '@/components/MarketGameCard';
 import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
+import BetSlipFloatingButton from '@/components/BetSlipFloatingButton';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -662,6 +663,9 @@ export default function HomeScreen() {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
+
+      {/* Floating Bet Slip Button */}
+      <BetSlipFloatingButton />
 
       {/* Bet Slip Bottom Sheet */}
       <BetSlipBottomSheet
