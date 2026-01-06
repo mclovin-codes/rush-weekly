@@ -69,7 +69,6 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
   };
 
   const spread = game.markets?.spread;
-  const total = game.markets?.total;
 
   return (
     <View style={styles.gameCard}>
@@ -121,9 +120,6 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
             <Text style={styles.betTypeLabel}>SPREAD</Text>
           </View>
           <View style={styles.betColumn}>
-            <Text style={styles.betTypeLabel}>TOTAL</Text>
-          </View>
-          <View style={styles.betColumn}>
             <Text style={styles.betTypeLabel}>ML</Text>
           </View>
         </View>
@@ -150,26 +146,6 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.away.payout) }]}>
                     {formatOdds(spread.away.payout)}
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.unavailableText}>--</Text>
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* Total */}
-          <TouchableOpacity
-            style={styles.betColumn}
-            onPress={() => total && onSelectBet(game, 'total', 'away', 'over')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.betCell}>
-              {total ? (
-                <>
-                  <Text style={styles.betValue}>O {total.line}</Text>
-                  <Text style={[styles.betOdds, { color: getOddsColor(total.over_payout) }]}>
-                    {formatOdds(total.over_payout)}
                   </Text>
                 </>
               ) : (
@@ -214,26 +190,6 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.home.payout) }]}>
                     {formatOdds(spread.home.payout)}
-                  </Text>
-                </>
-              ) : (
-                <Text style={styles.unavailableText}>--</Text>
-              )}
-            </View>
-          </TouchableOpacity>
-
-          {/* Total */}
-          <TouchableOpacity
-            style={styles.betColumn}
-            onPress={() => total && onSelectBet(game, 'total', 'home', 'under')}
-            activeOpacity={0.7}
-          >
-            <View style={styles.betCell}>
-              {total ? (
-                <>
-                  <Text style={styles.betValue}>U {total.line}</Text>
-                  <Text style={[styles.betOdds, { color: getOddsColor(total.under_payout) }]}>
-                    {formatOdds(total.under_payout)}
                   </Text>
                 </>
               ) : (

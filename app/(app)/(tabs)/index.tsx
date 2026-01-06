@@ -584,17 +584,18 @@ export default function HomeScreen() {
               <MarketGameCard
                 key={game.eventID}
                 game={game}
-                onSelectBet={(selectedGame, betType, team, selection) => {
+                onSelectBet={(selectedGame, betType, team) => {
+                  // Disable total bets (will be enabled in v2)
+                  if (betType === 'total') {
+                    return;
+                  }
+
                   // Create bet selection for multi-bet slip
                   const getBetTypeLabel = () => {
                     if (betType === 'spread') {
                       const spread = selectedGame.markets?.spread;
                       const spreadSide = team === 'home' ? spread?.home : spread?.away;
                       return `Spread ${spreadSide?.point && spreadSide.point > 0 ? '+' : ''}${spreadSide?.point || '--'}`;
-                    }
-                    if (betType === 'total') {
-                      const total = selectedGame.markets?.total;
-                      return `${selection === 'over' ? 'Over' : 'Under'} ${total?.line || '--'}`;
                     }
                     return 'Moneyline';
                   };
@@ -605,16 +606,13 @@ export default function HomeScreen() {
                       const spreadSide = team === 'home' ? spread?.home : spread?.away;
                       return spreadSide?.payout || 0;
                     }
-                    if (betType === 'total') {
-                      const total = selectedGame.markets?.total;
-                      return selection === 'over' ? (total?.over_payout || 0) : (total?.under_payout || 0);
-                    }
                     const teamObj = team === 'home' ? selectedGame.home_team : selectedGame.away_team;
                     return teamObj.moneyline || 0;
                   };
 
                   const betSelection: BetSelection = {
-                    id: `${selectedGame.eventID}-${betType}-${team}-${selection || ''}`,
+                    // ID based on eventID only, so only one bet per event is allowed
+                    id: selectedGame.eventID,
                     eventID: selectedGame.eventID,
                     leagueID: selectedGame.leagueID,
                     gameTime: selectedGame.start_time,
@@ -622,12 +620,10 @@ export default function HomeScreen() {
                     teamName: team === 'home' ? selectedGame.home_team.name : selectedGame.away_team.name,
                     betType: betType,
                     betTypeLabel: getBetTypeLabel(),
-                    selection: betType === 'total' ? (selection as 'over' | 'under') : team,
+                    selection: team,
                     odds: getOdds(),
-                    line: betType === 'spread' || betType === 'total' ?
-                      (betType === 'spread' ?
-                        (team === 'home' ? selectedGame.markets?.spread?.home?.point : selectedGame.markets?.spread?.away?.point) :
-                        selectedGame.markets?.total?.line) :
+                    line: betType === 'spread' ?
+                      (team === 'home' ? selectedGame.markets?.spread?.home?.point : selectedGame.markets?.spread?.away?.point) :
                       null,
                     game: selectedGame,
                   };

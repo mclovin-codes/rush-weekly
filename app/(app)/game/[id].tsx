@@ -20,6 +20,7 @@ import BetSlipBottomSheet from '@/app/modal';
 import { useCurrentUser } from '@/hooks/useUser';
 import { useMyPool } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
+import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
 
 const { width } = Dimensions.get('window');
 
@@ -117,16 +118,11 @@ export default function GameDetailsScreen() {
   const [gameData, setGameData] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [betSlipVisible, setBetSlipVisible] = useState(false);
-  const [selectedBet, setSelectedBet] = useState<{
-    game: MarketGame;
-    betType: 'spread' | 'total' | 'moneyline';
-    team: 'home' | 'away';
-    selection?: 'over' | 'under';
-  } | null>(null);
   const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Bet slip context
+  const { addSelection } = useBetSlip();
 
   const { data: session } = authClient.useSession();
 
@@ -333,22 +329,12 @@ export default function GameDetailsScreen() {
   // Check if we have the necessary game data
   const hasGameData = event_summary && teams_data;
 
-
-
-  const handleCloseBetSlip = () => {
-
-    setBetSlipVisible(false);
-    setSelectedBet(null);
-  };
-
   const handleBetPlaced = async () => {
-
     // Refresh user credits and pool data after bet placement
     await Promise.all([
       refetchUser(),
       refetchMyPool(),
     ]);
-
   };
   const coreGame = extractEventCore(gameData);
   console.log('----->>>>', JSON.stringify(gameData?.player_props))
@@ -589,10 +575,51 @@ export default function GameDetailsScreen() {
           <View style={styles.marketGameSection}>
             <MarketGameCard
               game={marketGame}
-              onSelectBet={(selectedGame, betType, team, selection) => {
+              onSelectBet={(selectedGame, betType, team) => {
+                // Disable total bets (will be enabled in v2)
+                if (betType === 'total') {
+                  return;
+                }
 
-                setSelectedBet({ game: selectedGame, betType, team, selection });
-                setBetSlipVisible(true);
+                // Create bet selection for multi-bet slip
+                const getBetTypeLabel = () => {
+                  if (betType === 'spread') {
+                    const spread = selectedGame.markets?.spread;
+                    const spreadSide = team === 'home' ? spread?.home : spread?.away;
+                    return `Spread ${spreadSide?.point && spreadSide.point > 0 ? '+' : ''}${spreadSide?.point || '--'}`;
+                  }
+                  return 'Moneyline';
+                };
+
+                const getOdds = () => {
+                  if (betType === 'spread') {
+                    const spread = selectedGame.markets?.spread;
+                    const spreadSide = team === 'home' ? spread?.home : spread?.away;
+                    return spreadSide?.payout || 0;
+                  }
+                  const teamObj = team === 'home' ? selectedGame.home_team : selectedGame.away_team;
+                  return teamObj.moneyline || 0;
+                };
+
+                const betSelection: BetSelection = {
+                  // ID based on eventID only, so only one bet per event is allowed
+                  id: selectedGame.eventID,
+                  eventID: selectedGame.eventID,
+                  leagueID: selectedGame.leagueID,
+                  gameTime: selectedGame.start_time,
+                  matchup: `${selectedGame.away_team.abbreviation} @ ${selectedGame.home_team.abbreviation}`,
+                  teamName: team === 'home' ? selectedGame.home_team.name : selectedGame.away_team.name,
+                  betType: betType,
+                  betTypeLabel: getBetTypeLabel(),
+                  selection: team,
+                  odds: getOdds(),
+                  line: betType === 'spread' ?
+                    (team === 'home' ? selectedGame.markets?.spread?.home?.point : selectedGame.markets?.spread?.away?.point) :
+                    null,
+                  game: selectedGame,
+                };
+
+                addSelection(betSelection);
               }}
               onPress={() => {}} // Already on game details page
             />
