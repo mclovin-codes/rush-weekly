@@ -65,7 +65,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
 
   const getOddsColor = (odds: number | null | undefined) => {
     if (!odds) return Colors.dark.textSecondary;
-    return odds > 0 ? Colors.dark.success : Colors.dark.text;
+    return '#007BFF'; // Always blue for odds
   };
 
   const spread = game.markets?.spread;
@@ -145,7 +145,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
             <View style={styles.betCell}>
               {spread?.away ? (
                 <>
-                  <Text style={[styles.betValue, { color: spread.away.point > 0 ? Colors.dark.success : Colors.dark.text }]}>
+                  <Text style={styles.betValue}>
                     {formatPoint(spread.away.point)}
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.away.payout) }]}>
@@ -209,7 +209,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
             <View style={styles.betCell}>
               {spread?.home ? (
                 <>
-                  <Text style={[styles.betValue, { color: spread.home.point > 0 ? Colors.dark.success : Colors.dark.text }]}>
+                  <Text style={styles.betValue}>
                     {formatPoint(spread.home.point)}
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.home.payout) }]}>

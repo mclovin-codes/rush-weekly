@@ -110,7 +110,7 @@ const extractEventCore = (gameData: any) => {
 export default function GameDetailsScreen() {
 
   const { id } = useLocalSearchParams<{ id: string }>();
-  
+  console.log('😊😊😊😊😊😊', id)
 
   const router = useRouter();
 
@@ -125,6 +125,7 @@ export default function GameDetailsScreen() {
     selection?: 'over' | 'under';
   } | null>(null);
   const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
 
   const { data: session } = authClient.useSession();
@@ -148,46 +149,105 @@ export default function GameDetailsScreen() {
 
 
   useEffect(() => {
-
-
     const fetchGameDetails = async () => {
       try {
-
         setLoading(true);
-
         const url = `${API_BASE_URL}/api/events/show-more/${id}`;
-
-
         const response = await fetch(url);
 
-
         if (!response.ok) {
-
           throw new Error(`Failed to fetch game details: ${response.status}`);
         }
 
-
         const data = await response.json();
-        
         setGameData(data);
-
         setError(null);
-
       } catch (err) {
        setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
         setLoading(false);
-
       }
     };
 
     if (id) {
-
       fetchGameDetails();
     } else {
       console.warn('[GameDetailsScreen] ⚠️ No ID provided, skipping fetch!');
     }
   }, [id]);
+
+  // Helper functions for player props
+  const formatPropsOdds = (odds: number | null | undefined): string => {
+    if (odds === null || odds === undefined) return '-';
+    return odds > 0 ? `+${odds}` : String(odds);
+  };
+
+  const isOverUnderProp = (prop: Prop): boolean => {
+    return prop.line !== undefined;
+  };
+
+  const propHasOdds = (prop: Prop): boolean => {
+    if (isOverUnderProp(prop)) {
+      return prop.over_payout !== null || prop.under_payout !== null;
+    }
+    return prop.yes_payout !== null || prop.no_payout !== null;
+  };
+
+  // Filter players with available odds - must be before early returns
+  const playersWithOdds = React.useMemo(() => {
+    return gameData?.player_props
+      ?.map(player => ({
+        ...player,
+        props: player.props.filter(propHasOdds),
+      }))
+      .filter(player => player.props.length > 0);
+  }, [gameData?.player_props]);
+
+  // Group props by category - must be before early returns
+  const propsByCategory = React.useMemo(() => {
+    if (!playersWithOdds) return {};
+
+    const grouped: Record<string, Array<{ player: PlayerProp; prop: Prop }>> = {};
+
+    playersWithOdds.forEach(player => {
+      player.props.forEach(prop => {
+        if (!grouped[prop.category]) {
+          grouped[prop.category] = [];
+        }
+        grouped[prop.category].push({ player, prop });
+      });
+    });
+
+    return grouped;
+  }, [playersWithOdds]);
+
+  // Category display names
+  const categoryDisplayNames: Record<string, string> = {
+    scoring: 'Scoring',
+    rebounding: 'Rebounding',
+    playmaking: 'Playmaking',
+    shooting: 'Shooting',
+    passing: 'Passing',
+    rushing: 'Rushing',
+    receiving: 'Receiving',
+    batting: 'Batting',
+    pitching: 'Pitching',
+    overall: 'Overall',
+    defense: 'Defense',
+    goaltending: 'Goaltending',
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(category)) {
+        newSet.delete(category);
+      } else {
+        newSet.add(category);
+      }
+      return newSet;
+    });
+  };
 
   // const formatOdds = (odds: string | undefined) => {
   //   if (!odds) return '--';
@@ -264,42 +324,14 @@ export default function GameDetailsScreen() {
 
 
   const { event_summary, teams_data, inning_results, betting_markets, player_props } = gameData;
- 
 
   // Only calculate winner if we have teams_data
   const winner = teams_data?.away_team && teams_data?.home_team
     ? (teams_data.away_team.score > teams_data.home_team.score ? 'away' : 'home')
     : null;
 
-
   // Check if we have the necessary game data
   const hasGameData = event_summary && teams_data;
-
-
-  // Helper functions for player props
-  const formatPropsOdds = (odds: number | null | undefined): string => {
-    if (odds === null || odds === undefined) return '-';
-    return odds > 0 ? `+${odds}` : String(odds);
-  };
-
-  const isOverUnderProp = (prop: Prop): boolean => {
-    return prop.line !== undefined;
-  };
-
-  const propHasOdds = (prop: Prop): boolean => {
-    if (isOverUnderProp(prop)) {
-      return prop.over_payout !== null || prop.under_payout !== null;
-    }
-    return prop.yes_payout !== null || prop.no_payout !== null;
-  };
-
-  // Filter players with available odds
-  const playersWithOdds = player_props
-    ?.map(player => ({
-      ...player,
-      props: player.props.filter(propHasOdds),
-    }))
-    .filter(player => player.props.length > 0);
 
 
 
@@ -319,6 +351,7 @@ export default function GameDetailsScreen() {
 
   };
   const coreGame = extractEventCore(gameData);
+  console.log('----->>>>', JSON.stringify(gameData?.player_props))
 
   return (
     <View style={styles.container}>
@@ -459,78 +492,95 @@ export default function GameDetailsScreen() {
           </View>
         )}
 
-        {/* Player Props Section */}
-        {player_props && playersWithOdds && playersWithOdds.length > 0 && (
+        {/* Player Props Section - Organized by Category */}
+        {player_props && Object.keys(propsByCategory).length > 0 && (
           <View style={styles.playerPropsSection}>
             <Text style={styles.sectionTitle}>Player Props</Text>
             <Text style={styles.sectionSubtitle}>
-              {playersWithOdds.length} player{playersWithOdds.length !== 1 ? 's' : ''} • {
-                playersWithOdds.reduce((acc, p) => acc + p.props.length, 0)
-              } prop{playersWithOdds.reduce((acc, p) => acc + p.props.length, 0) !== 1 ? 's' : ''}
+              {playersWithOdds?.length || 0} player{(playersWithOdds?.length || 0) !== 1 ? 's' : ''} • {
+                Object.values(propsByCategory).reduce((acc, items) => acc + items.length, 0)
+              } prop{Object.values(propsByCategory).reduce((acc, items) => acc + items.length, 0) !== 1 ? 's' : ''}
             </Text>
-            {(playerPropsExpanded ? playersWithOdds : playersWithOdds.slice(0, 5)).map((player) => (
-              <View key={player.player_id} style={styles.playerCard}>
-                <Text style={styles.playerName}>{player.player_name}</Text>
-                {player.props.map((prop, idx) => (
-                  <View key={`${player.player_id}-${prop.stat_type}-${idx}`} style={styles.propRow}>
-                    <View style={styles.propHeader}>
-                      <Text style={styles.propName}>{prop.display_name}</Text>
-                      {isOverUnderProp(prop) && prop.line !== undefined && (
-                        <Text style={styles.propLine}>{prop.line}</Text>
-                      )}
-                    </View>
-                    <View style={styles.propOdds}>
-                      {isOverUnderProp(prop) ? (
-                        <>
-                          <View style={[styles.oddButton, styles.overButton]}>
-                            <Text style={styles.oddLabel}>OVER</Text>
-                            <Text style={styles.oddValue}>{formatPropsOdds(prop.over_payout)}</Text>
-                          </View>
-                          <View style={[styles.oddButton, styles.underButton]}>
-                            <Text style={styles.oddLabel}>UNDER</Text>
-                            <Text style={styles.oddValue}>{formatPropsOdds(prop.under_payout)}</Text>
-                          </View>
-                        </>
-                      ) : (
-                        <>
-                          <View style={[styles.oddButton, styles.yesButton]}>
-                            <Text style={styles.oddLabel}>YES</Text>
-                            <Text style={styles.oddValue}>{formatPropsOdds(prop.yes_payout)}</Text>
-                          </View>
-                          {prop.no_payout !== null && (
-                            <View style={[styles.oddButton, styles.noButton]}>
-                              <Text style={styles.oddLabel}>NO</Text>
-                              <Text style={styles.oddValue}>{formatPropsOdds(prop.no_payout)}</Text>
-                            </View>
-                          )}
-                        </>
-                      )}
-                    </View>
-                  </View>
-                ))}
-              </View>
-            ))}
-            {playersWithOdds.length > 5 && (
-              <TouchableOpacity
-                style={styles.expandButton}
-                onPress={() => {
 
-                  setPlayerPropsExpanded(!playerPropsExpanded);
-                }}
-              >
-                <Text style={styles.expandButtonText}>
-                  {playerPropsExpanded
-                    ? 'Show less'
-                    : `+${playersWithOdds.length - 5} more players available`
-                  }
-                </Text>
-                <Ionicons
-                  name={playerPropsExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={18}
-                  color={Colors.dark.tint}
-                />
-              </TouchableOpacity>
-            )}
+            {Object.entries(propsByCategory).map(([category, items]) => {
+              const isExpanded = expandedCategories.has(category);
+              const displayName = categoryDisplayNames[category] || category;
+
+              return (
+                <View key={category} style={styles.categorySection}>
+                  {/* Category Header - Clickable */}
+                  <TouchableOpacity
+                    style={styles.categoryHeader}
+                    onPress={() => toggleCategory(category)}
+                  >
+                    <View style={styles.categoryHeaderLeft}>
+                      <Text style={styles.categoryTitle}>{displayName}</Text>
+                      <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryBadgeText}>{items.length}</Text>
+                      </View>
+                    </View>
+                    <Ionicons
+                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={20}
+                      color={Colors.dark.textSecondary}
+                    />
+                  </TouchableOpacity>
+
+                  {/* Category Content - Collapsible */}
+                  {isExpanded && (
+                    <View style={styles.categoryContent}>
+                      {items.map(({ player, prop }, idx) => (
+                        <View key={`${player.player_id}-${prop.stat_type}-${idx}`} style={styles.propItemCard}>
+                          {/* Player Name & Stat */}
+                          <View style={styles.propItemHeader}>
+                            <View style={styles.propItemInfo}>
+                              <Text style={styles.propItemPlayerName}>{player.player_name}</Text>
+                              <View style={styles.propItemStatRow}>
+                                <Text style={styles.propItemStatName}>{prop.display_name}</Text>
+                                {isOverUnderProp(prop) && prop.line !== undefined && (
+                                  <View style={styles.propItemLineChip}>
+                                    <Text style={styles.propItemLineText}>{prop.line}</Text>
+                                  </View>
+                                )}
+                              </View>
+                            </View>
+                          </View>
+
+                          {/* Odds Buttons */}
+                          <View style={styles.propItemOdds}>
+                            {isOverUnderProp(prop) ? (
+                              <>
+                                <View style={[styles.oddButton, styles.overButton]}>
+                                  <Text style={styles.oddLabel}>O</Text>
+                                  <Text style={styles.oddValue}>{formatPropsOdds(prop.over_payout)}</Text>
+                                </View>
+                                <View style={[styles.oddButton, styles.underButton]}>
+                                  <Text style={styles.oddLabel}>U</Text>
+                                  <Text style={styles.oddValue}>{formatPropsOdds(prop.under_payout)}</Text>
+                                </View>
+                              </>
+                            ) : (
+                              <>
+                                <View style={[styles.oddButton, styles.yesButton]}>
+                                  <Text style={styles.oddLabel}>YES</Text>
+                                  <Text style={styles.oddValue}>{formatPropsOdds(prop.yes_payout)}</Text>
+                                </View>
+                                {prop.no_payout !== null && (
+                                  <View style={[styles.oddButton, styles.noButton]}>
+                                    <Text style={styles.oddLabel}>NO</Text>
+                                    <Text style={styles.oddValue}>{formatPropsOdds(prop.no_payout)}</Text>
+                                  </View>
+                                )}
+                              </>
+                            )}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -949,12 +999,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   oddButton: {
-    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 8,
+    minWidth: 65,
   },
   overButton: {
     backgroundColor: Colors.dark.success + '20',
@@ -985,7 +1036,7 @@ const styles = StyleSheet.create({
   },
   oddValue: {
     ...Typography.emphasis.medium,
-    color: Colors.dark.text,
+    color: '#007BFF', // Blue for odds values
     fontFamily: Fonts.display,
     fontSize: 14,
   },
@@ -1014,5 +1065,105 @@ const styles = StyleSheet.create({
     color: Colors.dark.tint,
     fontSize: 14,
     fontFamily: Fonts.medium,
+  },
+
+  // Category-based Player Props Styles
+  categorySection: {
+    marginBottom: 12,
+    backgroundColor: Colors.dark.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border + '40',
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.dark.cardElevated + '60',
+  },
+  categoryHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categoryTitle: {
+    ...Typography.title.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    letterSpacing: 0.3,
+  },
+  categoryBadge: {
+    backgroundColor: Colors.dark.tint + '20',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '40',
+  },
+  categoryBadgeText: {
+    ...Typography.meta.small,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+    fontSize: 11,
+  },
+  categoryContent: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  propItemCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.background,
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.border + '30',
+  },
+  propItemHeader: {
+    flex: 1,
+    marginRight: 12,
+  },
+  propItemInfo: {
+    gap: 4,
+  },
+  propItemPlayerName: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    fontSize: 14,
+  },
+  propItemStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  propItemStatName: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+  },
+  propItemLineChip: {
+    backgroundColor: Colors.dark.cardElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  propItemLineText: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text, // White for line values
+    fontFamily: Fonts.display,
+    fontSize: 12,
+  },
+  propItemOdds: {
+    flexDirection: 'row',
+    gap: 6,
   },
 });
