@@ -11,13 +11,21 @@ export interface BetSelection {
   gameTime: string;
   matchup: string;
   teamName: string;
-  betType: 'spread' | 'total' | 'moneyline';
+  betType: 'spread' | 'total' | 'moneyline' | 'player_prop';
   betTypeLabel: string;
-  selection: 'home' | 'away' | 'over' | 'under';
+  selection: 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
   odds: number;
   line?: number | null;
   // Keep reference to full game data for bet placement
   game: MarketGame;
+  // Player prop specific fields (only present when betType is 'player_prop')
+  playerPropData?: {
+    playerId: string;
+    playerName: string;
+    statType: string;
+    displayName: string;
+    category: string;
+  };
 }
 
 interface BetSlipState {

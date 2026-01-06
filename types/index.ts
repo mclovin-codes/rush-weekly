@@ -94,13 +94,21 @@ export interface Bet extends BaseDocument {
   user: string | User;
   pool: string | Pool;
   game: string | Game;
-  betType: 'moneyline' | 'spread' | 'total';
-  selection: 'home' | 'away' | 'over' | 'under';
+  betType: 'moneyline' | 'spread' | 'total' | 'player_prop';
+  selection: 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
   stake: number;
   oddsAtPlacement: number;
   lineAtPlacement?: number;
   status: 'pending' | 'won' | 'lost' | 'push';
   payout: number;
+  // Player prop specific fields (only present when betType is 'player_prop')
+  playerPropData?: {
+    playerId: string;
+    playerName: string;
+    statType: string;
+    displayName: string;
+    category: string;
+  };
 }
 
 // ==================== POPULATED TYPES ====================
@@ -180,6 +188,12 @@ export interface PlaceBetRequest {
   game?: string;             // Deprecated: use eventID
   oddsAtPlacement?: number;  // Optional: backend fetches latest odds
   lineAtPlacement?: number;  // Optional: for spread/total bets
+  // Player prop specific fields (required when betType is 'player_prop')
+  playerId?: string;         // Player ID (e.g., "PATRICK_MAHOMES_1_NFL")
+  playerName?: string;       // Player display name
+  statType?: string;         // Stat ID (e.g., "passing_yards", "points")
+  displayName?: string;      // Human-readable stat (e.g., "Passing Yards")
+  category?: string;         // Stat category (e.g., "passing", "scoring")
 }
 
 export interface PlaceBetResponse {

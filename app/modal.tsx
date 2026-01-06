@@ -164,17 +164,37 @@ export default function BetSlipBottomSheet({
             betType: selection.betType,
             selection: selection.selection,
             stake: stakePerBet,
+            // Add player prop specific fields if this is a player prop bet
+            ...(selection.betType === 'player_prop' && selection.playerPropData ? {
+              playerId: selection.playerPropData.playerId,
+              playerName: selection.playerPropData.playerName,
+              statType: selection.playerPropData.statType,
+              displayName: selection.playerPropData.displayName,
+              category: selection.playerPropData.category,
+            } : {}),
           };
+
+          // Log bet data for debugging
+          if (selection.betType === 'player_prop') {
+            console.log('[Player Prop Bet] Placing bet:', JSON.stringify(betData, null, 2));
+          }
 
           const response = await betService.placeBet(betData);
 
           if (response.success) {
+            console.log(`[Bet Success] ${selection.betType === 'player_prop' ? 'Player Prop' : 'Game'} bet placed:`, selection.teamName);
             successfulBets.push(selection.teamName);
           } else {
+            console.error(`[Bet Failed] Response indicates failure for ${selection.teamName}:`, response.error || 'Unknown error');
             failedBets.push(selection.teamName);
           }
         } catch (error) {
-          console.error(`Failed to place bet on ${selection.teamName}:`, error);
+          console.error(`[Bet Error] Failed to place bet on ${selection.teamName}:`, error);
+          console.error('[Bet Error] Selection data:', JSON.stringify(selection, null, 2));
+          if (error instanceof Error) {
+            console.error('[Bet Error] Error message:', error.message);
+            console.error('[Bet Error] Error stack:', error.stack);
+          }
           failedBets.push(selection.teamName);
         }
       }

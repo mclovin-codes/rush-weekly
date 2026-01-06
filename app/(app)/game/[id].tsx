@@ -144,6 +144,17 @@ export default function GameDetailsScreen() {
   // Find the specific game from market data
   const marketGame = marketGames?.find(game => game.eventID === id);
 
+  // Debug logging for player props
+  useEffect(() => {
+    if (gameData?.event_summary) {
+      console.log('[Debug] event_summary.leagueID:', gameData.event_summary.leagueID);
+    }
+    if (marketGame) {
+      console.log('[Debug] marketGame.leagueID:', marketGame.leagueID);
+    } else {
+      console.log('[Debug] marketGame is undefined/null');
+    }
+  }, [gameData, marketGame]);
 
   useEffect(() => {
     const fetchGameDetails = async () => {
@@ -338,7 +349,6 @@ export default function GameDetailsScreen() {
     ]);
   };
   const coreGame = extractEventCore(gameData);
-  console.log('----->>>>', JSON.stringify(gameData?.player_props))
 
   return (
     <View style={styles.container}>
@@ -537,26 +547,156 @@ export default function GameDetailsScreen() {
                           <View style={styles.propItemOdds}>
                             {isOverUnderProp(prop) ? (
                               <>
-                                <View style={[styles.oddButton, styles.overButton]}>
+                                <TouchableOpacity
+                                  style={[styles.oddButton, styles.overButton]}
+                                  onPress={() => {
+                                    if (prop.over_payout === null || prop.over_payout === undefined) return;
+                                    console.log(`[Player Prop] Selected OVER for ${player.player_name} - ${prop.display_name} O${prop.line} (${prop.over_payout})`);
+                                    // Extract leagueID from playerId as fallback (e.g., "PLAYER_NAME_1_NFL" -> "NFL")
+                                    const leagueFromPlayerId = player.player_id.split('_').pop() || '';
+                                    const betSelection: BetSelection = {
+                                      id: `${id}-${player.player_id}-${prop.stat_type}`,
+                                      eventID: id,
+                                      leagueID: marketGame?.leagueID || event_summary?.leagueID || leagueFromPlayerId,
+                                      gameTime: marketGame?.start_time || event_summary?.startTime_UTC || '',
+                                      matchup: `${teams_data?.away_team?.name_short || ''} @ ${teams_data?.home_team?.name_short || ''}`,
+                                      teamName: player.player_name,
+                                      betType: 'player_prop',
+                                      betTypeLabel: `${prop.display_name} O${prop.line}`,
+                                      selection: 'over',
+                                      odds: prop.over_payout,
+                                      line: prop.line || null,
+                                      game: marketGame!,
+                                      playerPropData: {
+                                        playerId: player.player_id,
+                                        playerName: player.player_name,
+                                        statType: prop.stat_type,
+                                        displayName: prop.display_name,
+                                        category: prop.category,
+                                      },
+                                    };
+                                    const leagueSource = marketGame?.leagueID ? 'marketGame' : (event_summary?.leagueID ? 'event_summary' : 'playerId');
+                                    console.log(`[Player Prop] BetSelection created with leagueID: "${betSelection.leagueID}" (from ${leagueSource})`);
+                                    addSelection(betSelection);
+                                  }}
+                                  activeOpacity={0.7}
+                                  disabled={prop.over_payout === null || prop.over_payout === undefined}
+                                >
                                   <Text style={styles.oddLabel}>O</Text>
                                   <Text style={styles.oddValue}>{formatPropsOdds(prop.over_payout)}</Text>
-                                </View>
-                                <View style={[styles.oddButton, styles.underButton]}>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={[styles.oddButton, styles.underButton]}
+                                  onPress={() => {
+                                    if (prop.under_payout === null || prop.under_payout === undefined) return;
+                                    console.log(`[Player Prop] Selected UNDER for ${player.player_name} - ${prop.display_name} U${prop.line} (${prop.under_payout})`);
+                                    // Extract leagueID from playerId as fallback (e.g., "PLAYER_NAME_1_NFL" -> "NFL")
+                                    const leagueFromPlayerId = player.player_id.split('_').pop() || '';
+                                    const betSelection: BetSelection = {
+                                      id: `${id}-${player.player_id}-${prop.stat_type}`,
+                                      eventID: id,
+                                      leagueID: marketGame?.leagueID || event_summary?.leagueID || leagueFromPlayerId,
+                                      gameTime: marketGame?.start_time || event_summary?.startTime_UTC || '',
+                                      matchup: `${teams_data?.away_team?.name_short || ''} @ ${teams_data?.home_team?.name_short || ''}`,
+                                      teamName: player.player_name,
+                                      betType: 'player_prop',
+                                      betTypeLabel: `${prop.display_name} U${prop.line}`,
+                                      selection: 'under',
+                                      odds: prop.under_payout,
+                                      line: prop.line || null,
+                                      game: marketGame!,
+                                      playerPropData: {
+                                        playerId: player.player_id,
+                                        playerName: player.player_name,
+                                        statType: prop.stat_type,
+                                        displayName: prop.display_name,
+                                        category: prop.category,
+                                      },
+                                    };
+                                    addSelection(betSelection);
+                                  }}
+                                  activeOpacity={0.7}
+                                  disabled={prop.under_payout === null || prop.under_payout === undefined}
+                                >
                                   <Text style={styles.oddLabel}>U</Text>
                                   <Text style={styles.oddValue}>{formatPropsOdds(prop.under_payout)}</Text>
-                                </View>
+                                </TouchableOpacity>
                               </>
                             ) : (
                               <>
-                                <View style={[styles.oddButton, styles.yesButton]}>
+                                <TouchableOpacity
+                                  style={[styles.oddButton, styles.yesButton]}
+                                  onPress={() => {
+                                    if (prop.yes_payout === null || prop.yes_payout === undefined) return;
+                                    console.log(`[Player Prop] Selected YES for ${player.player_name} - ${prop.display_name} (${prop.yes_payout})`);
+                                    // Extract leagueID from playerId as fallback (e.g., "PLAYER_NAME_1_NFL" -> "NFL")
+                                    const leagueFromPlayerId = player.player_id.split('_').pop() || '';
+                                    const betSelection: BetSelection = {
+                                      id: `${id}-${player.player_id}-${prop.stat_type}`,
+                                      eventID: id,
+                                      leagueID: marketGame?.leagueID || event_summary?.leagueID || leagueFromPlayerId,
+                                      gameTime: marketGame?.start_time || event_summary?.startTime_UTC || '',
+                                      matchup: `${teams_data?.away_team?.name_short || ''} @ ${teams_data?.home_team?.name_short || ''}`,
+                                      teamName: player.player_name,
+                                      betType: 'player_prop',
+                                      betTypeLabel: `${prop.display_name} Yes`,
+                                      selection: 'yes',
+                                      odds: prop.yes_payout,
+                                      line: null,
+                                      game: marketGame!,
+                                      playerPropData: {
+                                        playerId: player.player_id,
+                                        playerName: player.player_name,
+                                        statType: prop.stat_type,
+                                        displayName: prop.display_name,
+                                        category: prop.category,
+                                      },
+                                    };
+                                    addSelection(betSelection);
+                                  }}
+                                  activeOpacity={0.7}
+                                  disabled={prop.yes_payout === null || prop.yes_payout === undefined}
+                                >
                                   <Text style={styles.oddLabel}>YES</Text>
                                   <Text style={styles.oddValue}>{formatPropsOdds(prop.yes_payout)}</Text>
-                                </View>
-                                {prop.no_payout !== null && (
-                                  <View style={[styles.oddButton, styles.noButton]}>
+                                </TouchableOpacity>
+                                {prop.no_payout !== null && prop.no_payout !== undefined && (
+                                  <TouchableOpacity
+                                    style={[styles.oddButton, styles.noButton]}
+                                    onPress={() => {
+                                      if (prop.no_payout === null || prop.no_payout === undefined) return;
+                                      console.log(`[Player Prop] Selected NO for ${player.player_name} - ${prop.display_name} (${prop.no_payout})`);
+                                      // Extract leagueID from playerId as fallback (e.g., "PLAYER_NAME_1_NFL" -> "NFL")
+                                      const leagueFromPlayerId = player.player_id.split('_').pop() || '';
+                                      const betSelection: BetSelection = {
+                                        id: `${id}-${player.player_id}-${prop.stat_type}`,
+                                        eventID: id,
+                                        leagueID: marketGame?.leagueID || event_summary?.leagueID || leagueFromPlayerId,
+                                        gameTime: marketGame?.start_time || event_summary?.startTime_UTC || '',
+                                        matchup: `${teams_data?.away_team?.name_short || ''} @ ${teams_data?.home_team?.name_short || ''}`,
+                                        teamName: player.player_name,
+                                        betType: 'player_prop',
+                                        betTypeLabel: `${prop.display_name} No`,
+                                        selection: 'no',
+                                        odds: prop.no_payout,
+                                        line: null,
+                                        game: marketGame!,
+                                        playerPropData: {
+                                          playerId: player.player_id,
+                                          playerName: player.player_name,
+                                          statType: prop.stat_type,
+                                          displayName: prop.display_name,
+                                          category: prop.category,
+                                        },
+                                      };
+                                      addSelection(betSelection);
+                                    }}
+                                    activeOpacity={0.7}
+                                    disabled={prop.no_payout === null || prop.no_payout === undefined}
+                                  >
                                     <Text style={styles.oddLabel}>NO</Text>
                                     <Text style={styles.oddValue}>{formatPropsOdds(prop.no_payout)}</Text>
-                                  </View>
+                                  </TouchableOpacity>
                                 )}
                               </>
                             )}
