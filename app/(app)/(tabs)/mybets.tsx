@@ -103,6 +103,13 @@ export default function MyBetsScreen() {
         return bet.selection === 'home'
           ? homeTeam?.abbreviation || 'HOME'
           : awayTeam?.abbreviation || 'AWAY';
+      case 'player_prop':
+        if (bet.playerPropData) {
+          const { playerName, displayName } = bet.playerPropData;
+          const selection = bet.selection === 'over' ? 'O' : 'U';
+          return `${playerName} ${displayName} ${selection}${bet.lineAtPlacement || ''}`;
+        }
+        return 'Player Prop';
       default:
         return '';
     }
@@ -138,17 +145,24 @@ export default function MyBetsScreen() {
     const game = bet.game;
     const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
     const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
+    const isPlayerProp = bet.betType === 'player_prop';
 
     return (
-      <TouchableOpacity style={styles.betCard}>
+      <TouchableOpacity style={[styles.betCard, isPlayerProp && styles.playerPropCard]}>
         {/* Header */}
         <View style={styles.betHeader}>
           <View style={styles.betHeaderLeft}>
-            <View style={styles.betTypeTag}>
-              <Text style={styles.betTypeText}>{bet.betType.toUpperCase()}</Text>
+            <View style={[styles.betTypeTag, isPlayerProp && styles.playerPropTag]}>
+              <Text style={[styles.betTypeText, isPlayerProp && styles.playerPropTagText]}>
+                {isPlayerProp ? 'PLAYER PROP' : bet.betType.toUpperCase()}
+              </Text>
             </View>
-            <Text style={styles.betDescription}>{getBetDescription(bet)}</Text>
-            <Text style={styles.betOdds}>{formatOdds(bet.oddsAtPlacement)}</Text>
+            {!isPlayerProp && (
+              <>
+                <Text style={styles.betDescription}>{getBetDescription(bet)}</Text>
+                <Text style={styles.betOdds}>{formatOdds(bet.oddsAtPlacement)}</Text>
+              </>
+            )}
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
             <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
@@ -156,6 +170,27 @@ export default function MyBetsScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Player Prop Special Header */}
+        {isPlayerProp && bet.playerPropData && (
+          <View style={styles.playerPropHeader}>
+            <View style={styles.playerInfoSection}>
+              <Text style={styles.playerName}>{bet.playerPropData.playerName}</Text>
+              <Text style={styles.statDisplayName}>{bet.playerPropData.displayName}</Text>
+            </View>
+            <View style={styles.propSelectionSection}>
+              <Text style={styles.propSelectionText}>
+                {bet.selection === 'over' ? 'OVER' : 'UNDER'}
+              </Text>
+              <Text style={styles.propLineText}>
+                {bet.lineAtPlacement !== undefined && bet.lineAtPlacement > 0 ? '+' : ''}{bet.lineAtPlacement ?? 0}
+              </Text>
+            </View>
+            <View style={styles.propOddsSection}>
+              <Text style={styles.propOddsText}>{formatOdds(bet.oddsAtPlacement)}</Text>
+            </View>
+          </View>
+        )}
 
         {/* Game Info */}
         <View style={styles.gameInfo}>
@@ -546,5 +581,81 @@ const styles = StyleSheet.create({
 
   bottomSpacing: {
     height: 40,
+  },
+
+  // Player Prop Card Styles
+  playerPropCard: {
+    borderWidth: 1.5,
+    borderColor: Colors.dark.tint + '30',
+    backgroundColor: Colors.dark.card + 'FE',
+  },
+  playerPropTag: {
+    backgroundColor: Colors.dark.tint + '30',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '50',
+  },
+  playerPropTagText: {
+    color: Colors.dark.tint,
+    fontSize: 9,
+    letterSpacing: 1,
+  },
+  playerPropHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.tint + '10',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '20',
+  },
+  playerInfoSection: {
+    flex: 1,
+  },
+  playerName: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    marginBottom: 2,
+  },
+  statDisplayName: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
+  },
+  propSelectionSection: {
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  propSelectionText: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.display,
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  propLineText: {
+    ...Typography.title.large,
+    color: Colors.dark.text,
+    fontFamily: Fonts.mono,
+    fontSize: 18,
+    marginTop: 2,
+  },
+  propOddsSection: {
+    backgroundColor: Colors.dark.card,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minWidth: 60,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  propOddsText: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.mono,
+    fontSize: 14,
   },
 });

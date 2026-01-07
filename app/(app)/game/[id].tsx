@@ -14,7 +14,7 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 import { CaretLeft, TrendUp } from 'phosphor-react-native';
 import { API_BASE_URL } from '@/constants/api';
 import MarketGameCard from '@/components/MarketGameCard';
-import { MarketGame } from '@/types';
+// import { MarketGame } from '@/types';
 import { useMarketGames } from '@/hooks/useMarketGames';
 import BetSlipBottomSheet from '@/app/modal';
 import { useCurrentUser } from '@/hooks/useUser';
