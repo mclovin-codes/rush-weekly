@@ -146,8 +146,8 @@ export default function BetSlipBottomSheet({
     }
 
     setIsPlacingBets(true);
-    const successfulBets: string[] = [];
-    const failedBets: string[] = [];
+    const successfulBets: Array<{ name: string; id: string }> = [];
+    const failedBets: Array<{ name: string; error: string }> = [];
 
     try {
       // Place each bet individually (backend doesn't support batch placing)
@@ -171,28 +171,22 @@ export default function BetSlipBottomSheet({
             } : {}),
           };
 
-          // Log bet data for debugging
-          if (selection.betType === 'player_prop') {
-            console.log('[Player Prop Bet] Placing bet:', JSON.stringify(betData, null, 2));
-          }
-
           const response = await betService.placeBet(betData);
 
           if (response.success) {
-            console.log(`[Bet Success] ${selection.betType === 'player_prop' ? 'Player Prop' : 'Game'} bet placed:`, selection.teamName);
-            successfulBets.push(selection.teamName);
+            successfulBets.push({ name: selection.teamName, id: selection.id });
           } else {
-            console.error(`[Bet Failed] Response indicates failure for ${selection.teamName}:`, response.error || 'Unknown error');
-            failedBets.push(selection.teamName);
+            failedBets.push({
+              name: selection.teamName,
+              error: response.error || 'Unknown error',
+            });
           }
-        } catch (error) {
-          console.error(`[Bet Error] Failed to place bet on ${selection.teamName}:`, error);
-          console.error('[Bet Error] Selection data:', JSON.stringify(selection, null, 2));
-          if (error instanceof Error) {
-            console.error('[Bet Error] Error message:', error.message);
-            console.error('[Bet Error] Error stack:', error.stack);
-          }
-          failedBets.push(selection.teamName);
+        } catch (error: any) {
+          const errorMsg = error?.response?.data?.error || error?.message || 'Failed to place bet';
+          failedBets.push({
+            name: selection.teamName,
+            error: errorMsg,
+          });
         }
       }
 
@@ -216,20 +210,18 @@ export default function BetSlipBottomSheet({
           ]
         );
       } else if (successfulBets.length > 0 && failedBets.length > 0) {
-        // Some bets succeeded, some failed
+        // Some bets succeeded, some failed - show detailed error
+        const failedList = failedBets.map(f => `• ${f.name}: ${f.error}`).join('\n');
         Alert.alert(
           'Partial Success',
-          `${successfulBets.length} bet(s) placed successfully.\n${failedBets.length} bet(s) failed.`,
+          `${successfulBets.length} bet(s) placed successfully.\n\n${failedBets.length} bet(s) failed:\n${failedList}`,
           [
             {
               text: 'OK',
               onPress: () => {
                 // Remove successful bets from slip
-                successfulBets.forEach(betName => {
-                  const selection = selections.find(s => s.teamName === betName);
-                  if (selection) {
-                    removeSelection(selection.id);
-                  }
+                successfulBets.forEach(bet => {
+                  removeSelection(bet.id);
                 });
                 if (onBetPlaced) {
                   onBetPlaced();
@@ -238,9 +230,14 @@ export default function BetSlipBottomSheet({
             },
           ]
         );
-      } else {
-        // All bets failed
-        Alert.alert('Error', 'All bets failed to place. Please try again.');
+      } else if (failedBets.length > 0) {
+        // All bets failed - show detailed error
+        const failedList = failedBets.map(f => `• ${f.name}: ${f.error}`).join('\n');
+        Alert.alert(
+          'Bets Failed',
+          `Failed to place ${failedBets.length} bet(s):\n\n${failedList}`,
+          [{ text: 'OK' }]
+        );
       }
     } catch (error: any) {
       const errorMsg = error?.response?.data?.error || error?.message || 'An error occurred';
