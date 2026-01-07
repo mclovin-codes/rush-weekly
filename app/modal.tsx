@@ -451,8 +451,8 @@ export default function BetSlipBottomSheet({
                 >
                   {isPlacingBets ? (
                     <View style={styles.loadingButton}>
-                      <ActivityIndicator size="large" color="#FFFFFF" />
-                      <Text style={styles.placeBetButtonText}>Placing Bets...</Text>
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <Text style={[styles.placeBetButtonText, {color: isPlacingBets ? '#fff': Colors.dark.background}]}>Placing Bets...</Text>
                     </View>
                   ) : (
                     <Text style={styles.placeBetButtonText}>
@@ -761,6 +761,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.dark.tint,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -783,6 +784,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 10,
+    width: '100%',
   },
 });
