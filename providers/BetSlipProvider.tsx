@@ -16,6 +16,8 @@ export interface BetSelection {
   selection: 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
   odds: number;
   line?: number | null;
+  // Individual stake for this bet
+  stake?: number;
   // Keep reference to full game data for bet placement
   game: MarketGame;
   // Player prop specific fields (only present when betType is 'player_prop')
@@ -30,7 +32,6 @@ export interface BetSelection {
 
 interface BetSlipState {
   selections: BetSelection[];
-  stakePerBet: number;
   isVisible: boolean;
 }
 
@@ -38,7 +39,7 @@ interface BetSlipContextType extends BetSlipState {
   addSelection: (selection: BetSelection) => void;
   removeSelection: (id: string) => void;
   clearSelections: () => void;
-  setStakePerBet: (amount: number) => void;
+  setStakeForBet: (id: string, amount: number) => void;
   openBetSlip: () => void;
   closeBetSlip: () => void;
   hasSelection: (id: string) => boolean;
@@ -48,7 +49,6 @@ const BetSlipContext = createContext<BetSlipContextType | undefined>(undefined);
 
 const initialState: BetSlipState = {
   selections: [],
-  stakePerBet: 10,
   isVisible: false,
 };
 
@@ -60,12 +60,12 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     loadBetSlip();
   }, []);
 
-  // Save bet slip to storage whenever selections or stake changes
+  // Save bet slip to storage whenever selections change
   useEffect(() => {
-    if (state.selections.length > 0 || state.stakePerBet !== initialState.stakePerBet) {
+    if (state.selections.length > 0) {
       saveBetSlip();
     }
-  }, [state.selections, state.stakePerBet]);
+  }, [state.selections]);
 
   const loadBetSlip = async () => {
     try {
@@ -83,7 +83,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         setState(prev => ({
           ...prev,
           selections: validSelections,
-          stakePerBet: parsed.stakePerBet || initialState.stakePerBet,
         }));
 
         // If we filtered out any bets, update storage
@@ -92,7 +91,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
             BET_SLIP_STORAGE_KEY,
             JSON.stringify({
               selections: validSelections,
-              stakePerBet: parsed.stakePerBet || initialState.stakePerBet,
             })
           );
         }
@@ -108,7 +106,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         BET_SLIP_STORAGE_KEY,
         JSON.stringify({
           selections: state.selections,
-          stakePerBet: state.stakePerBet,
         })
       );
     } catch (error) {
@@ -136,8 +133,9 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Different bet (different betType OR different team), replace it
+        // Preserve existing stake if it exists
         const newSelections = [...prev.selections];
-        newSelections[existingIndex] = selection;
+        newSelections[existingIndex] = { ...selection, stake: existing.stake };
         return {
           ...prev,
           selections: newSelections,
@@ -145,10 +143,10 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         };
       }
 
-      // Add new selection
+      // Add new selection with default stake of 10
       return {
         ...prev,
-        selections: [...prev.selections, selection],
+        selections: [...prev.selections, { ...selection, stake: 10 }],
         isVisible: true, // Auto-open bet slip when adding
       };
     });
@@ -165,7 +163,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     setState(prev => ({
       ...prev,
       selections: [],
-      stakePerBet: initialState.stakePerBet,
     }));
 
     // Also clear from AsyncStorage
@@ -176,8 +173,13 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const setStakePerBet = (amount: number) => {
-    setState(prev => ({ ...prev, stakePerBet: amount }));
+  const setStakeForBet = (id: string, amount: number) => {
+    setState(prev => ({
+      ...prev,
+      selections: prev.selections.map(s =>
+        s.id === id ? { ...s, stake: amount } : s
+      ),
+    }));
   };
 
   const openBetSlip = () => {
@@ -196,12 +198,11 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     <BetSlipContext.Provider
       value={{
         selections: state.selections,
-        stakePerBet: state.stakePerBet,
         isVisible: state.isVisible,
         addSelection,
         removeSelection,
         clearSelections,
-        setStakePerBet,
+        setStakeForBet,
         openBetSlip,
         closeBetSlip,
         hasSelection,

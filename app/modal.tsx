@@ -51,20 +51,19 @@ export default function BetSlipBottomSheet({
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const {
     selections,
-    stakePerBet,
     isVisible,
     removeSelection,
     clearSelections,
-    setStakePerBet,
+    setStakeForBet,
     closeBetSlip,
   } = useBetSlip();
 
   const [isPlacingBets, setIsPlacingBets] = useState(false);
 
-  // Calculate totals for straight bets
-  const totalStake = stakePerBet * selections.length;
+  // Calculate totals using individual stakes
+  const totalStake = selections.reduce((total, selection) => total + (selection.stake || 0), 0);
   const potentialWinnings = selections.reduce((total, selection) => {
-    return total + calculatePayout(stakePerBet, selection.odds);
+    return total + calculatePayout(selection.stake || 0, selection.odds);
   }, 0);
   const totalProfit = potentialWinnings - totalStake;
 
@@ -115,18 +114,16 @@ export default function BetSlipBottomSheet({
     });
   };
 
-  const handleQuickAmount = (amount: number) => {
-    setStakePerBet(amount);
-  };
-
   const handlePlaceBets = async () => {
     if (selections.length === 0) {
       Alert.alert('No Selections', 'Please add bets to your slip');
       return;
     }
 
-    if (stakePerBet <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid bet amount');
+    // Check if any bet has no stake or invalid stake
+    const hasInvalidStake = selections.some(s => !s.stake || s.stake <= 0);
+    if (hasInvalidStake) {
+      Alert.alert('Invalid Amount', 'Please enter a valid bet amount for each bet');
       return;
     }
 
@@ -163,7 +160,7 @@ export default function BetSlipBottomSheet({
             leagueID: selection.leagueID,
             betType: selection.betType,
             selection: selection.selection,
-            stake: stakePerBet,
+            stake: selection.stake || 0,
             // Add player prop specific fields if this is a player prop bet
             ...(selection.betType === 'player_prop' && selection.playerPropData ? {
               playerId: selection.playerPropData.playerId,
@@ -319,79 +316,93 @@ export default function BetSlipBottomSheet({
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
               >
-                {/* Selections List */}
+                {/* Selections List with Individual Stakes */}
                 <View style={styles.selectionsSection}>
                   <Text style={styles.sectionTitle}>
                     YOUR PICKS ({selections.length})
                   </Text>
-                  {selections.map((selection) => (
-                    <View key={selection.id} style={styles.selectionCard}>
-                      <View style={styles.selectionHeader}>
-                        <View style={styles.selectionInfo}>
-                          <Text style={styles.matchupText}>{selection.matchup}</Text>
-                          <Text style={styles.betTypeText}>{selection.betTypeLabel}</Text>
+                  {selections.map((selection) => {
+                    const betStake = selection.stake || 0;
+                    const betPayout = calculatePayout(betStake, selection.odds);
+                    const betProfit = betPayout - betStake;
+
+                    return (
+                      <View key={selection.id} style={styles.selectionCard}>
+                        <View style={styles.selectionHeader}>
+                          <View style={styles.selectionInfo}>
+                            <Text style={styles.matchupText}>{selection.matchup}</Text>
+                            <Text style={styles.betTypeText}>{selection.betTypeLabel}</Text>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => removeSelection(selection.id)}
+                            style={styles.removeButton}
+                            activeOpacity={0.7}
+                          >
+                            <Ionicons name="close-circle" size={24} color={Colors.dark.danger} />
+                          </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                          onPress={() => removeSelection(selection.id)}
-                          style={styles.removeButton}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="close-circle" size={24} color={Colors.dark.danger} />
-                        </TouchableOpacity>
-                      </View>
-                      <View style={styles.selectionDetails}>
-                        <Text style={styles.teamName}>{selection.teamName}</Text>
-                        <View style={styles.oddsChip}>
-                          <Text style={styles.oddsText}>
-                            {selection.odds > 0 ? `+${selection.odds}` : selection.odds}
+
+                        <View style={styles.selectionDetails}>
+                          <View style={styles.selectionLeft}>
+                            <Text style={styles.teamName}>{selection.teamName}</Text>
+                            <View style={styles.oddsChip}>
+                              <Text style={styles.oddsText}>
+                                {selection.odds > 0 ? `+${selection.odds}` : selection.odds}
+                              </Text>
+                            </View>
+                          </View>
+                          <Text style={styles.toWinText}>
+                            To Win: {betProfit > 0 ? '+' : ''}{betProfit.toFixed(0)}
                           </Text>
                         </View>
+
+                        {/* Individual Stake Input */}
+                        <View style={styles.stakeInputRow}>
+                          <Text style={styles.stakeLabel}>Amount</Text>
+                          <View style={styles.stakeInputWrapper}>
+                            <TextInput
+                              style={styles.stakeInput}
+                              value={betStake > 0 ? betStake.toString() : ''}
+                              onChangeText={(val) => setStakeForBet(selection.id, Number(val) || 0)}
+                              placeholder="0"
+                              placeholderTextColor={Colors.dark.border}
+                              keyboardType="numeric"
+                            />
+                            <Text style={styles.stakeUnit}>cr</Text>
+                          </View>
+                        </View>
+
+                        {/* Quick Amount Buttons per card */}
+                        <View style={styles.quickAmountsRow}>
+                          {[10, 25, 50, 100].map((amount) => (
+                            <TouchableOpacity
+                              key={amount}
+                              style={[
+                                styles.quickAmountChip,
+                                betStake === amount && styles.quickAmountChipActive,
+                              ]}
+                              onPress={() => setStakeForBet(selection.id, amount)}
+                              activeOpacity={0.7}
+                            >
+                              <Text style={[
+                                styles.quickAmountChipText,
+                                betStake === amount && styles.quickAmountChipTextActive,
+                              ]}>
+                                {amount}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
 
-                {/* Bet Amount Section */}
-                <View style={styles.betAmountSection}>
-                  <Text style={styles.sectionTitle}>BET AMOUNT (PER BET)</Text>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      style={styles.input}
-                      value={stakePerBet.toString()}
-                      onChangeText={(val) => setStakePerBet(Number(val) || 0)}
-                      placeholder="0"
-                      placeholderTextColor={Colors.dark.border}
-                      keyboardType="numeric"
-                    />
-                    <Text style={styles.inputUnit}>credits</Text>
-                  </View>
+                {/* Balance Info */}
+                <View style={styles.balanceSection}>
                   <Text style={styles.balanceText}>
                     Available: {userUnits.toFixed(2)} credits
                   </Text>
-
-                  {/* Quick Amount Buttons */}
-                  <View style={styles.quickAmounts}>
-                    {[10, 25, 50, 100].map((amount) => (
-                      <TouchableOpacity
-                        key={amount}
-                        style={[
-                          styles.quickButton,
-                          stakePerBet === amount && styles.quickButtonActive,
-                        ]}
-                        onPress={() => handleQuickAmount(amount)}
-                        activeOpacity={0.7}
-                      >
-                        <Text
-                          style={[
-                            styles.quickButtonText,
-                            stakePerBet === amount && styles.quickButtonTextActive,
-                          ]}
-                        >
-                          {amount}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
                 </View>
 
                 {/* Summary */}
@@ -399,7 +410,7 @@ export default function BetSlipBottomSheet({
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Total Stake</Text>
                     <Text style={styles.summaryValue}>
-                      {stakePerBet} × {selections.length} = {totalStake.toFixed(2)} credits
+                      {totalStake.toFixed(2)} credits
                     </Text>
                   </View>
                   <View style={styles.divider} />
@@ -424,11 +435,11 @@ export default function BetSlipBottomSheet({
                 <TouchableOpacity
                   style={[
                     styles.placeBetButton,
-                    (isPlacingBets || stakePerBet <= 0 || totalStake > userUnits) &&
+                    (isPlacingBets || totalStake <= 0 || totalStake > userUnits) &&
                       styles.placeBetButtonDisabled,
                   ]}
                   onPress={handlePlaceBets}
-                  disabled={isPlacingBets || stakePerBet <= 0 || totalStake > userUnits}
+                  disabled={isPlacingBets || totalStake <= 0 || totalStake > userUnits}
                   activeOpacity={0.7}
                 >
                   {isPlacingBets ? (
@@ -438,7 +449,7 @@ export default function BetSlipBottomSheet({
                     </View>
                   ) : (
                     <Text style={styles.placeBetButtonText}>
-                      Place {selections.length} Bet{selections.length > 1 ? 's' : ''} - {totalStake.toFixed(2)} credits
+                      Place {selections.length} Bet{selections.length > 1 ? 's' : ''} - {totalStake.toFixed(0)} credits
                     </Text>
                   )}
                 </TouchableOpacity>
@@ -578,6 +589,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  selectionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  toWinText: {
+    ...Typography.body.small,
+    color: Colors.dark.success,
+    fontFamily: Fonts.medium,
+    fontSize: 13,
+  },
   teamName: {
     ...Typography.title.small,
     color: Colors.dark.text,
@@ -598,65 +620,85 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.display,
     fontSize: 15,
   },
-  betAmountSection: {
-    paddingHorizontal: 20,
-    marginTop: 24,
+  // Individual stake input styles
+  stakeInputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.dark.border + '40',
   },
-  inputContainer: {
+  stakeLabel: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
+  },
+  stakeInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.dark.card,
-    borderRadius: 12,
-    borderWidth: 2,
+    backgroundColor: Colors.dark.background,
+    borderRadius: 8,
+    borderWidth: 1,
     borderColor: Colors.dark.border + '60',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    marginBottom: 8,
+    minWidth: 80,
   },
-  input: {
-    flex: 1,
-    ...Typography.title.medium,
+  stakeInput: {
+    ...Typography.body.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.display,
-    fontSize: 28,
-    paddingVertical: 12,
+    fontSize: 16,
+    flex: 1,
+    textAlign: 'right',
+    paddingVertical: 4,
   },
-  inputUnit: {
-    ...Typography.body.medium,
+  stakeUnit: {
+    ...Typography.body.small,
     color: Colors.dark.textSecondary,
-    fontFamily: Fonts.medium,
+    fontSize: 11,
+    marginLeft: 4,
+  },
+  balanceSection: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    alignItems: 'flex-end',
   },
   balanceText: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
     fontSize: 12,
-    marginBottom: 16,
   },
-  quickAmounts: {
+  // Per-card quick amounts
+  quickAmountsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
+    marginTop: 12,
   },
-  quickButton: {
+  quickAmountChip: {
     flex: 1,
-    backgroundColor: Colors.dark.card,
-    paddingVertical: 10,
-    borderRadius: 8,
+    backgroundColor: Colors.dark.background,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 6,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.dark.border + '60',
   },
-  quickButtonActive: {
+  quickAmountChipActive: {
     backgroundColor: Colors.dark.tint + '20',
     borderColor: Colors.dark.tint,
   },
-  quickButtonText: {
-    ...Typography.body.medium,
-    color: Colors.dark.text,
+  quickAmountChipText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 12,
     fontFamily: Fonts.medium,
   },
-  quickButtonTextActive: {
+  quickAmountChipTextActive: {
     color: Colors.dark.tint,
-    fontFamily: Fonts.display,
   },
   summaryCard: {
     backgroundColor: Colors.dark.card,
