@@ -58,6 +58,7 @@ export default function BetSlipFloatingButton() {
 
   return (
     <Animated.View
+      pointerEvents="box-none"
       style={[
         styles.container,
         {
