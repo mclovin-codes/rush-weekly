@@ -69,6 +69,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
   };
 
   const spread = game.markets?.spread;
+  const total = game.markets?.total;
 
   return (
     <View style={styles.gameCard}>
@@ -120,6 +121,9 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
             <Text style={styles.betTypeLabel}>SPREAD</Text>
           </View>
           <View style={styles.betColumn}>
+            <Text style={styles.betTypeLabel}>TOTAL</Text>
+          </View>
+          <View style={styles.betColumn}>
             <Text style={styles.betTypeLabel}>ML</Text>
           </View>
         </View>
@@ -146,6 +150,28 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.away.payout) }]}>
                     {formatOdds(spread.away.payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Total - Over */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => total && onSelectBet(game, 'total', 'away', 'over')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              {total ? (
+                <>
+                  <Text style={styles.betValue}>
+                    O{total.line ? formatPoint(total.line) : '--'}
+                  </Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(total.over_payout) }]}>
+                    {formatOdds(total.over_payout)}
                   </Text>
                 </>
               ) : (
@@ -190,6 +216,28 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(spread.home.payout) }]}>
                     {formatOdds(spread.home.payout)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.unavailableText}>--</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+
+          {/* Total - Under */}
+          <TouchableOpacity
+            style={styles.betColumn}
+            onPress={() => total && onSelectBet(game, 'total', 'home', 'under')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.betCell}>
+              {total ? (
+                <>
+                  <Text style={styles.betValue}>
+                    U{total.line ? formatPoint(total.line) : '--'}
+                  </Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(total.under_payout) }]}>
+                    {formatOdds(total.under_payout)}
                   </Text>
                 </>
               ) : (
@@ -351,7 +399,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   teamLabelColumn: {
-    width: 50,
+    width: 45,
     alignItems: 'center',
   },
   teamLabelText: {
@@ -364,11 +412,11 @@ const styles = StyleSheet.create({
   teamBadge: {
     backgroundColor: Colors.dark.cardElevated,
     borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 6,
     borderWidth: 1,
     borderColor: Colors.dark.border,
-    minWidth: 46,
+    minWidth: 40,
     alignItems: 'center',
   },
   homeBadge: {
