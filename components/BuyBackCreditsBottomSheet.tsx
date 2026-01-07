@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { BottomSheetModal, BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Typography } from '@/constants/theme';
+import type { BuyBackEligibility } from '@/types';
 
 export interface BuyBackCreditsBottomSheetRef {
   open: () => void;
@@ -10,55 +11,30 @@ export interface BuyBackCreditsBottomSheetRef {
 }
 
 interface BuyBackCreditsBottomSheetProps {
-  onPurchase: (amount: number) => void;
+  onPurchase: () => Promise<void> | void;
   isLoading?: boolean;
-  currentCredits?: number;
-  lastBuybackDate?: string | null;
+  eligibility: BuyBackEligibility | null;
+  checking?: boolean;
 }
 
 const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBackCreditsBottomSheetProps>(
-  ({ onPurchase, isLoading = false, currentCredits = 0, lastBuybackDate = null }, ref) => {
+  ({ onPurchase, isLoading = false, eligibility, checking = false }, ref) => {
     const bottomSheetRef = useRef<BottomSheetModal>(null);
     const snapPoints = useMemo(() => ['75%'], []);
 
-    // Calculate if buy-back is allowed
-    const canBuyBack = useMemo(() => {
-      // Check 1: Balance must be 0
-      if (currentCredits !== 0) {
-        return {
-          allowed: false,
-          reason: 'balance',
-          message: 'You can only buy-back when your balance is 0',
-          daysRemaining: 0,
-        };
-      }
-
-      // Check 2: Must wait 7 days since last buyback
-      if (lastBuybackDate) {
-        const lastBuyback = new Date(lastBuybackDate);
-        const now = new Date();
-        const daysSinceLastBuyback = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
-
-        if (daysSinceLastBuyback < 7) {
-          const daysRemaining = Math.ceil(7 - daysSinceLastBuyback);
-          return {
-            allowed: false,
-            reason: 'cooldown',
-            message: `You can buy-back again in ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''}`,
-            daysRemaining,
-          };
-        }
-      }
-
-      return {
-        allowed: true,
-        reason: null,
-        message: 'Buy-back available',
-        daysRemaining: 0,
-      };
-    }, [currentCredits, lastBuybackDate]);
-
     console.log('[BuyBackCreditsBottomSheet] Component rendering');
+    console.log('[BuyBackCreditsBottomSheet] Props:', {
+      isLoading,
+      checking,
+      eligibility: eligibility ? {
+        eligible: eligibility.eligible,
+        pl: eligibility.pl,
+        message: eligibility.message,
+        reason: eligibility.reason,
+        amount: eligibility.amount,
+        daysRemaining: eligibility.daysRemaining,
+      } : null,
+    });
     console.log('[BuyBackCreditsBottomSheet] Snap points:', snapPoints);
 
     useImperativeHandle(ref, () => ({
@@ -98,7 +74,17 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
     );
 
     const CREDIT_AMOUNT = 1000;
-    const CREDIT_PRICE = '$4.99';
+
+    // Determine if user can buy back
+    const canBuyBack = useMemo(() => {
+      if (!eligibility || checking) {
+        return { allowed: false, reason: 'Checking eligibility...' };
+      }
+      if (!eligibility.eligible) {
+        return { allowed: false, reason: eligibility.message };
+      }
+      return { allowed: true, reason: 'Eligible' };
+    }, [eligibility, checking]);
 
     return (
       <BottomSheetModal
@@ -126,33 +112,52 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
             </Text>
           </View>
 
-          {/* Current Balance */}
-          <View style={styles.balanceCard}>
-            <View style={styles.balanceIcon}>
-              <Ionicons name="wallet" size={32} color={Colors.dark.tint} />
-            </View>
-            <View style={styles.balanceInfo}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceValue}>{currentCredits.toFixed(2)} credits</Text>
-            </View>
-          </View>
-
-          {/* Status Alert */}
-          {!canBuyBack.allowed && (
-            <View style={[
-              styles.statusAlert,
-              canBuyBack.reason === 'balance' ? styles.statusAlertWarning : styles.statusAlertInfo
-            ]}>
-              <Ionicons
-                name={canBuyBack.reason === 'balance' ? 'alert-circle' : 'time'}
-                size={20}
-                color={canBuyBack.reason === 'balance' ? '#FFA500' : Colors.dark.tint}
-              />
-              <Text style={styles.statusAlertText}>{canBuyBack.message}</Text>
+          {/* P/L Display */}
+          {!checking && eligibility && (
+            <View style={styles.balanceCard}>
+              <View style={styles.balanceIcon}>
+                <Ionicons
+                  name="trending-down"
+                  size={32}
+                  color={(eligibility.pl ?? 0) < 0 ? Colors.dark.danger : Colors.dark.success}
+                />
+              </View>
+              <View style={styles.balanceInfo}>
+                <Text style={styles.balanceLabel}>Profit/Loss (Settled Bets)</Text>
+                <Text style={[
+                  styles.balanceValue,
+                  { color: (eligibility.pl ?? 0) < 0 ? Colors.dark.danger : Colors.dark.success }
+                ]}>
+                  {(eligibility.pl ?? 0) >= 0 ? '+' : ''}{(eligibility.pl ?? 0).toFixed(2)} credits
+                </Text>
+              </View>
             </View>
           )}
 
-          {canBuyBack.allowed && (
+          {/* Loading State */}
+          {checking && (
+            <View style={styles.balanceCard}>
+              <ActivityIndicator size="small" color={Colors.dark.tint} />
+              <Text style={styles.balanceLabel}>Checking eligibility...</Text>
+            </View>
+          )}
+
+          {/* Status Alert */}
+          {!checking && eligibility && !eligibility.eligible && (
+            <View style={[
+              styles.statusAlert,
+              eligibility.reason === 'pl_threshold' ? styles.statusAlertWarning : styles.statusAlertInfo
+            ]}>
+              <Ionicons
+                name={eligibility.reason === 'pl_threshold' ? 'alert-circle' : 'time'}
+                size={20}
+                color={eligibility.reason === 'pl_threshold' ? '#FFA500' : Colors.dark.tint}
+              />
+              <Text style={styles.statusAlertText}>{eligibility.message}</Text>
+            </View>
+          )}
+
+          {!checking && eligibility?.eligible && (
             <View style={styles.statusAlert}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.dark.success} />
               <Text style={[styles.statusAlertText, { color: Colors.dark.success }]}>
@@ -170,16 +175,12 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
             <Text style={styles.creditsAmount}>{CREDIT_AMOUNT.toLocaleString()}</Text>
             <Text style={styles.creditsLabel}>Virtual Credits</Text>
 
-            <View style={styles.priceContainer}>
-              <Text style={styles.price}>{CREDIT_PRICE}</Text>
-            </View>
-
             <TouchableOpacity
               style={[
                 styles.purchaseButton,
                 (!canBuyBack.allowed || isLoading) && styles.purchaseButtonDisabled
               ]}
-              onPress={() => !isLoading && canBuyBack.allowed && onPurchase(CREDIT_AMOUNT)}
+              onPress={() => !isLoading && canBuyBack.allowed && onPurchase()}
               disabled={isLoading || !canBuyBack.allowed}
             >
               {isLoading ? (
@@ -208,7 +209,7 @@ const BuyBackCreditsBottomSheet = forwardRef<BuyBackCreditsBottomSheetRef, BuyBa
               <Ionicons name="information-circle" size={16} color={Colors.dark.textSecondary} />
             </View>
             <Text style={styles.footerText}>
-              Virtual credits have no cash value. Buy-back is only available when your balance is 0, once every 7 days.
+              Virtual credits have no cash value. Buy-back is available when your P/L is -1000 or worse, once every 7 days.
             </Text>
           </View>
         </BottomSheetScrollView>
@@ -311,19 +312,6 @@ const styles = StyleSheet.create({
     ...Typography.body.medium,
     color: Colors.dark.textSecondary,
     marginBottom: 24,
-  },
-  priceContainer: {
-    backgroundColor: Colors.dark.tint + '15',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  price: {
-    ...Typography.title.medium,
-    color: Colors.dark.tint,
-    fontFamily: Fonts.display,
-    fontSize: 32,
   },
   purchaseButton: {
     flexDirection: 'row',

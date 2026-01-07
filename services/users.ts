@@ -1,6 +1,6 @@
 import { apiHelpers } from '@/config/api';
 import { API_ROUTES } from '@/constants/api-routes';
-import { User } from '@/types';
+import { User, BuyBackEligibility, BuyBackCreditsResponse } from '@/types';
 
 export const userService = {
   getMe: async (): Promise<User> => {
@@ -28,5 +28,19 @@ export const userService = {
 
   update: async (id: string, data: Partial<User>): Promise<User> => {
     return apiHelpers.patch(API_ROUTES.USERS.UPDATE(id), data);
+  },
+
+  checkBuyBackEligibility: async (): Promise<BuyBackEligibility> => {
+    console.log('[userService] Checking buy-back eligibility...');
+    const response = await apiHelpers.get(API_ROUTES.USERS.BUY_BACK_ELIGIBILITY);
+    console.log('[userService] Eligibility response:', JSON.stringify(response, null, 2));
+    return response;
+  },
+
+  buyBackCredits: async (): Promise<BuyBackCreditsResponse> => {
+    console.log('[userService] Buying back credits...');
+    const response = await apiHelpers.post(API_ROUTES.USERS.BUY_BACK_CREDITS);
+    console.log('[userService] Buy-back response:', JSON.stringify(response, null, 2));
+    return response;
   },
 };

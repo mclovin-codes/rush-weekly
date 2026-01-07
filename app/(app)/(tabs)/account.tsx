@@ -9,6 +9,7 @@ import { apiHelpers } from "@/config/api";
 import { API_ROUTES } from "@/constants/api-routes";
 import { useCurrentUser } from '@/hooks/useUser';
 import { useActivePool, useMyPool } from '@/hooks/usePools';
+import { useBuyBack } from '@/hooks/use-buy-back';
 import MembershipBottomSheet, { MembershipBottomSheetRef } from '@/components/MembershipBottomSheet';
 import BuyBackCreditsBottomSheet, { BuyBackCreditsBottomSheetRef } from '@/components/BuyBackCreditsBottomSheet';
 
@@ -20,6 +21,7 @@ export default function AccountScreen() {
   const { data: currentUser, isLoading: isLoadingUser, refetch: refetchUser } = useCurrentUser();
   const { refetch: refetchActivePool } = useActivePool();
   const { refetch: refetchMyPool } = useMyPool();
+  const { eligibility, checking, buying, buyBack } = useBuyBack();
   const membershipBottomSheetRef = useRef<MembershipBottomSheetRef>(null);
   const buyBackCreditsBottomSheetRef = useRef<BuyBackCreditsBottomSheetRef>(null);
 
@@ -32,7 +34,6 @@ export default function AccountScreen() {
 
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isActivatingMembership, setIsActivatingMembership] = useState(false);
-  const [isPurchasingCredits, setIsPurchasingCredits] = useState(false);
 
   // Check if subscription is active
   const isSubscriptionActive = currentUser?.is_paid_member &&
@@ -274,78 +275,36 @@ export default function AccountScreen() {
   };
 
   const handlePurchaseCredits = async () => {
-    if (!currentUser?.id) {
-      Alert.alert('Error', 'User ID not found');
-      return;
-    }
+    try {
+      const result = await buyBack();
 
-    const currentCredits = currentUser.current_credits || currentUser.credits || 0;
-    const creditsToAdd = 1000; // Fixed amount for buy-back
+      if (result.success) {
+        // Close bottom sheet
+        buyBackCreditsBottomSheetRef.current?.close();
 
-    // Restriction 1: Can only buy back if balance is 0
-    if (currentCredits !== 0) {
-      Alert.alert(
-        'Credits Remaining',
-        'You can only buy-back credits when your balance is 0. Please use your remaining credits first.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
+        // Refresh user data
+        await refetchUser();
 
-    // Restriction 2: Can only buy back once per week
-    const lastBuybackDate = currentUser.last_buyback_date;
-    if (lastBuybackDate) {
-      const lastBuyback = new Date(lastBuybackDate);
-      const now = new Date();
-      const daysSinceLastBuyback = (now.getTime() - lastBuyback.getTime()) / (1000 * 60 * 60 * 24);
-
-      if (daysSinceLastBuyback < 7) {
-        const daysRemaining = Math.ceil(7 - daysSinceLastBuyback);
+        // Show success message
         Alert.alert(
-          'Buy-Back Limit Reached',
-          `You can only buy-back credits once per week.\n\nPlease wait ${daysRemaining} more day${daysRemaining !== 1 ? 's' : ''} before purchasing again.`,
+          'Buy-Back Successful!',
+          `+${(result.current_credits - (currentUser?.current_credits || 0)).toLocaleString()} credits added.\n\nNew balance: ${result.current_credits.toLocaleString()} credits`,
           [{ text: 'OK' }]
         );
-        return;
+      } else {
+        Alert.alert(
+          'Buy-Back Failed',
+          result.error || 'Something went wrong. Please try again.',
+          [{ text: 'OK' }]
+        );
       }
-    }
-
-    setIsPurchasingCredits(true);
-
-    try {
-      const newCredits = creditsToAdd; // Starting from 0
-
-      console.log('[AccountScreen] Adding credits:', creditsToAdd);
-      console.log('[AccountScreen] Current balance:', currentCredits);
-      console.log('[AccountScreen] New balance:', newCredits);
-
-      // Call API to add credits and update last buyback date
-      await apiHelpers.patch(`/api/users/${currentUser.id}`, {
-        current_credits: newCredits,
-        last_buyback_date: new Date().toISOString(),
-      });
-
-      // Close bottom sheet
-      buyBackCreditsBottomSheetRef.current?.close();
-
-      // Refresh user data
-      await refetchUser();
-
-      // Show success message
-      Alert.alert(
-        'Credits Added!',
-        `+${creditsToAdd.toLocaleString()} credits added.\n\nNew balance: ${newCredits.toLocaleString()} credits\n\nRemember: You can buy-back again in 7 days when your balance reaches 0.`,
-        [{ text: 'OK' }]
-      );
     } catch (error: any) {
-      console.error('Credits purchase error:', error);
+      console.error('Buy-back error:', error);
       Alert.alert(
-        'Purchase Failed',
+        'Buy-Back Failed',
         error?.message || 'Something went wrong. Please try again.',
         [{ text: 'OK' }]
       );
-    } finally {
-      setIsPurchasingCredits(false);
     }
   };
 
@@ -647,9 +606,9 @@ export default function AccountScreen() {
       <BuyBackCreditsBottomSheet
         ref={buyBackCreditsBottomSheetRef}
         onPurchase={handlePurchaseCredits}
-        isLoading={isPurchasingCredits}
-        currentCredits={currentUser?.current_credits || 0}
-        lastBuybackDate={currentUser?.last_buyback_date || null}
+        isLoading={buying}
+        eligibility={eligibility}
+        checking={checking}
       />
     </>
   );

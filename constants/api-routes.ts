@@ -82,6 +82,8 @@ export const API_ROUTES = {
       UPDATE: (id: string) => `/api/users/${id}`,
       DELETE: (id: string) => `/api/users/${id}`,
       ACTIVATE_MEMBERSHIP: '/api/users/activate-membership',
+      BUY_BACK_ELIGIBILITY: '/api/users/buy-back-eligibility',
+      BUY_BACK_CREDITS: '/api/users/buy-back-credits',
     },
 
     // ==================== CUSTOM ENDPOINTS ====================

@@ -22,10 +22,10 @@ api.interceptors.request.use(
       config.headers = config.headers ?? {};
       config.headers.Cookie = cookies;
 
-      if (__DEV__ && config.url?.includes('activate-membership')) {
+      if (__DEV__ && (config.url?.includes('activate-membership') || config.url?.includes('buy-back'))) {
         console.log(`[API] 🔐 Auth cookies for ${config.url}:`, cookies.substring(0, 50) + '...');
       }
-    } else if (__DEV__ && config.url?.includes('activate-membership')) {
+    } else if (__DEV__ && (config.url?.includes('activate-membership') || config.url?.includes('buy-back'))) {
       console.warn(`[API] ⚠️ No cookies found for ${config.url}!`);
     }
 

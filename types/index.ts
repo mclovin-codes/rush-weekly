@@ -280,3 +280,24 @@ export interface MarketGamesFilters {
   limit?: number;
 }
 
+// ==================== BUY-BACK TYPES ====================
+
+export interface BuyBackEligibility {
+  eligible: boolean;
+  pl: number;
+  message: string;
+  reason?: 'pl_threshold' | 'cooldown' | 'no_pool';
+  amount?: number;
+  threshold?: number;
+  daysRemaining?: number;
+}
+
+export interface BuyBackCreditsResponse {
+  success: boolean;
+  current_credits: number;
+  pl: number;
+  message: string;
+  error?: string;
+  daysRemaining?: number;
+}
+
