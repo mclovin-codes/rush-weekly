@@ -155,12 +155,6 @@ export default function AccountScreen() {
   };
 
   const handleActivateMembership = async (duration: 'week' | 'month' | 'year') => {
-    console.log('========================================');
-    console.log('[AccountScreen] MEMBERSHIP ACTIVATION STARTED');
-    console.log('[AccountScreen] Duration:', duration);
-    console.log('[AccountScreen] User ID:', currentUser?.id);
-    console.log('========================================');
-
     if (!session?.user?.id) {
       Alert.alert('Error', 'You must be logged in to activate membership');
       return;
@@ -176,29 +170,13 @@ export default function AccountScreen() {
     try {
       const currentCredits = currentUser.current_credits || currentUser.credits || 0;
 
-      // Step 1: Activate membership and add credits
-      console.log('[AccountScreen] Step 1: Activating membership...');
-      console.log('[AccountScreen] Current credits:', currentCredits);
-
       const activationResponse = await apiHelpers.post(API_ROUTES.USERS.ACTIVATE_MEMBERSHIP, {
         duration,
         credits_to_add: 1000,
       });
 
-      console.log('[AccountScreen] ✅ Membership activated');
-      console.log('[AccountScreen] New credits:', activationResponse?.current_credits);
-
-      // Step 2: Join current week's pool (or create if needed)
-      console.log('[AccountScreen] Step 2: Joining current week pool...');
 
       const poolResponse = await apiHelpers.post('/api/pools/join-current-week');
-
-      console.log('[AccountScreen] ✅ Pool joined/created');
-      console.log('[AccountScreen] Pool ID:', poolResponse?.pool?.id);
-      console.log('[AccountScreen] Message:', poolResponse?.message);
-
-      // Step 3: Refresh all data
-      console.log('[AccountScreen] Step 3: Refreshing data...');
 
       await Promise.all([
         refetchUser(),
@@ -206,7 +184,7 @@ export default function AccountScreen() {
         refetchMyPool(),
       ]);
 
-      console.log('[AccountScreen] ✅ Data refreshed');
+    
 
       // Close bottom sheet
       membershipBottomSheetRef.current?.close();
@@ -230,12 +208,7 @@ export default function AccountScreen() {
         successMessage = `Welcome to RUSH!\n\nYou've joined: ${poolName}\n\n+${creditsAdded.toLocaleString()} credits added!\nNew balance: ${finalCredits.toLocaleString()} credits\n\nGood luck!`;
       }
 
-      console.log('========================================');
-      console.log('[AccountScreen] ✅ SUCCESS! MEMBERSHIP ACTIVATED');
-      console.log('[AccountScreen] Final credits:', finalCredits);
-      console.log('[AccountScreen] Pool:', poolName);
-      console.log('[AccountScreen] Message:', poolResponse?.message);
-      console.log('========================================');
+     
 
       Alert.alert(
         'Membership Activated! 🎉',
@@ -411,7 +384,8 @@ export default function AccountScreen() {
 
                 // Check if balance is 0
                 if (currentCredits !== 0) {
-                  return 'Available when balance is 0';
+                  
+                  return eligibility?.message || 'You need about -1000 P/L to qualify';
                 }
 
                 // Check cooldown
