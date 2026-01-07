@@ -139,7 +139,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         return {
           ...prev,
           selections: newSelections,
-          isVisible: true,
         };
       }
 
@@ -147,7 +146,6 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
       return {
         ...prev,
         selections: [...prev.selections, { ...selection, stake: 10 }],
-        isVisible: true, // Auto-open bet slip when adding
       };
     });
   };
