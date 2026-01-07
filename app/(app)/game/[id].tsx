@@ -119,7 +119,7 @@ export default function GameDetailsScreen() {
   const [gameData, setGameData] = useState<GameDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
+  // const [playerPropsExpanded, setPlayerPropsExpanded] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Bet slip context
