@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatLis
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon, Clock } from "phosphor-react-native";
-import { MarketGame } from '@/types';
+// import { MarketGame } from '@/types';
 
 import BetSlipBottomSheet from '@/app/modal';
 import DevToolsModal from '@/components/DevToolsModal';
