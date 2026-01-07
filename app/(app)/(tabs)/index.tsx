@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon, Clock } from "phosphor-react-native";
 // import { MarketGame } from '@/types';
@@ -11,7 +11,7 @@ import { useMarketGames } from '@/hooks/useMarketGames';
 import { useCurrentUser } from '@/hooks/useUser';
 import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import MarketGameCard from '@/components/MarketGameCard';
 import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
 import BetSlipFloatingButton from '@/components/BetSlipFloatingButton';
@@ -149,7 +149,19 @@ export default function HomeScreen() {
   const spinAnim = useRef(new Animated.Value(0)).current;
 
   // Bet slip context
-  const { addSelection } = useBetSlip();
+  const { addSelection, closeBetSlip } = useBetSlip();
+
+  // Close bet slip when navigating away from this screen to prevent overlay conflicts
+  useFocusEffect(
+    useCallback(() => {
+      // Screen is focused - nothing to do on focus
+      return () => {
+        // Cleanup when screen loses focus (navigate away)
+        // This prevents the modal overlay from causing freezing
+        closeBetSlip();
+      };
+    }, [closeBetSlip])
+  );
 
   // Fetch user and pool data
   const { data: session } = authClient.useSession();

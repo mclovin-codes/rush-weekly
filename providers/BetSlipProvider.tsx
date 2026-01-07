@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MarketGame } from '@/types';
 
@@ -100,7 +100,7 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const saveBetSlip = async () => {
+  const saveBetSlip = useCallback(async () => {
     try {
       await AsyncStorage.setItem(
         BET_SLIP_STORAGE_KEY,
@@ -111,9 +111,9 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Failed to save bet slip:', error);
     }
-  };
+  }, [state.selections]);
 
-  const addSelection = (selection: BetSelection) => {
+  const addSelection = useCallback((selection: BetSelection) => {
     setState(prev => {
       // Check if a bet already exists for this event (same ID)
       const existingIndex = prev.selections.findIndex(s => s.id === selection.id);
@@ -148,16 +148,16 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         selections: [...prev.selections, { ...selection, stake: 10 }],
       };
     });
-  };
+  }, []);
 
-  const removeSelection = (id: string) => {
+  const removeSelection = useCallback((id: string) => {
     setState(prev => ({
       ...prev,
       selections: prev.selections.filter(s => s.id !== id),
     }));
-  };
+  }, []);
 
-  const clearSelections = async () => {
+  const clearSelections = useCallback(async () => {
     setState(prev => ({
       ...prev,
       selections: [],
@@ -169,43 +169,54 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Failed to clear bet slip from storage:', error);
     }
-  };
+  }, []);
 
-  const setStakeForBet = (id: string, amount: number) => {
+  const setStakeForBet = useCallback((id: string, amount: number) => {
     setState(prev => ({
       ...prev,
       selections: prev.selections.map(s =>
         s.id === id ? { ...s, stake: amount } : s
       ),
     }));
-  };
+  }, []);
 
-  const openBetSlip = () => {
+  const openBetSlip = useCallback(() => {
     setState(prev => ({ ...prev, isVisible: true }));
-  };
+  }, []);
 
-  const closeBetSlip = () => {
+  const closeBetSlip = useCallback(() => {
     setState(prev => ({ ...prev, isVisible: false }));
-  };
+  }, []);
 
-  const hasSelection = (id: string): boolean => {
+  const hasSelection = useCallback((id: string): boolean => {
     return state.selections.some(s => s.id === id);
-  };
+  }, [state.selections]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    selections: state.selections,
+    isVisible: state.isVisible,
+    addSelection,
+    removeSelection,
+    clearSelections,
+    setStakeForBet,
+    openBetSlip,
+    closeBetSlip,
+    hasSelection,
+  }), [
+    state.selections,
+    state.isVisible,
+    addSelection,
+    removeSelection,
+    clearSelections,
+    setStakeForBet,
+    openBetSlip,
+    closeBetSlip,
+    hasSelection,
+  ]);
 
   return (
-    <BetSlipContext.Provider
-      value={{
-        selections: state.selections,
-        isVisible: state.isVisible,
-        addSelection,
-        removeSelection,
-        clearSelections,
-        setStakeForBet,
-        openBetSlip,
-        closeBetSlip,
-        hasSelection,
-      }}
-    >
+    <BetSlipContext.Provider value={contextValue}>
       {children}
     </BetSlipContext.Provider>
   );

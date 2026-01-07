@@ -102,6 +102,11 @@ export default function BetSlipBottomSheet({
     } else {
       translateY.setValue(SHEET_HEIGHT);
     }
+
+    // Cleanup: reset position when component unmounts to prevent overlay issues
+    return () => {
+      translateY.setValue(SHEET_HEIGHT);
+    };
   }, [isVisible]);
 
   const closeSheet = () => {
@@ -247,9 +252,14 @@ export default function BetSlipBottomSheet({
     }
   };
 
+  // Don't render anything if not visible - prevents overlay conflicts when navigating
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <Modal
-      visible={isVisible}
+      visible={true}
       transparent
       animationType="none"
       onRequestClose={closeSheet}
@@ -441,7 +451,7 @@ export default function BetSlipBottomSheet({
                 >
                   {isPlacingBets ? (
                     <View style={styles.loadingButton}>
-                      <ActivityIndicator size="small" color={Colors.dark.background} />
+                      <ActivityIndicator size="large" color="#FFFFFF" />
                       <Text style={styles.placeBetButtonText}>Placing Bets...</Text>
                     </View>
                   ) : (
@@ -772,6 +782,7 @@ const styles = StyleSheet.create({
   loadingButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 12,
   },
 });
