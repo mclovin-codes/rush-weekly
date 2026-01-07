@@ -371,7 +371,56 @@ export default function GameDetailsScreen() {
 <MarketGameCard
       key={coreGame.eventID}
       game={coreGame}
-      onSelectBet={() => null}
+      onSelectBet={(selectedGame, betType, team, selection) => {
+        // Create bet selection for multi-bet slip
+        const getBetTypeLabel = () => {
+          if (betType === 'spread') {
+            const spread = selectedGame.markets?.spread;
+            const spreadSide = team === 'home' ? spread?.home : spread?.away;
+            return `Spread ${spreadSide?.point && spreadSide.point > 0 ? '+' : ''}${spreadSide?.point || '--'}`;
+          }
+          if (betType === 'total') {
+            const total = selectedGame.markets?.total;
+            return `Total ${total?.line ? `O/U ${total.line}` : '--'} ${selection === 'over' ? 'O' : 'U'}`;
+          }
+          return 'Moneyline';
+        };
+
+        const getOdds = () => {
+          if (betType === 'spread') {
+            const spread = selectedGame.markets?.spread;
+            const spreadSide = team === 'home' ? spread?.home : spread?.away;
+            return spreadSide?.payout || 0;
+          }
+          if (betType === 'total') {
+            const total = selectedGame.markets?.total;
+            return selection === 'over' ? total?.over_payout || 0 : total?.under_payout || 0;
+          }
+          const teamObj = team === 'home' ? selectedGame.home_team : selectedGame.away_team;
+          return teamObj.moneyline || 0;
+        };
+
+        const betSelection: BetSelection = {
+          id: selectedGame.eventID,
+          eventID: selectedGame.eventID,
+          leagueID: selectedGame.leagueID,
+          gameTime: selectedGame.start_time,
+          matchup: `${selectedGame.away_team.abbreviation} @ ${selectedGame.home_team.abbreviation}`,
+          teamName: team === 'home' ? selectedGame.home_team.name : selectedGame.away_team.name,
+          betType: betType,
+          betTypeLabel: getBetTypeLabel(),
+          selection: betType === 'total' ? (selection || 'over') : team,
+          odds: getOdds(),
+          line: betType === 'spread' ?
+            (team === 'home' ? selectedGame.markets?.spread?.home?.point : selectedGame.markets?.spread?.away?.point) :
+            betType === 'total' ?
+            selectedGame.markets?.total?.line :
+            null,
+          game: selectedGame,
+        };
+
+        addSelection(betSelection);
+      }}
       onPress={() => null}
       shouldNavigate={false}
     />
