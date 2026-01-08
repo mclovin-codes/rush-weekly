@@ -11,7 +11,7 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { ArrowLeft } from 'phosphor-react-native';
+import { ArrowLeft, Clock } from 'phosphor-react-native';
 import { API_BASE_URL } from '@/constants/api';
 import BetSlipBottomSheet from '@/app/modal';
 import { useCurrentUser } from '@/hooks/useUser';
@@ -130,8 +130,44 @@ export default function GameDetailsScreen() {
 
   // Helper functions
   const formatOdds = (odds: number | null | undefined): string => {
-    if (odds === null || odds === undefined) return '-';
+    if (odds === null || odds === undefined) return '--';
     return odds > 0 ? `+${odds}` : String(odds);
+  };
+
+  const formatPoint = (point: number | null | undefined): string => {
+    if (point === null || point === undefined) return '--';
+    return point > 0 ? `+${point}` : String(point);
+  };
+
+  const getOddsColor = (odds: number | null | undefined) => {
+    if (!odds) return Colors.dark.textSecondary;
+    return '#007BFF';
+  };
+
+  // Smart time formatting
+  const getStartTimeInfo = () => {
+    if (!gameData) return { label: '', time: '', isToday: false };
+
+    const now = new Date();
+    const startDate = new Date(gameData.start_time);
+
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const gameDay = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+
+    const timeString = startDate.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    if (gameDay.getTime() === today.getTime()) {
+      return { label: 'Today', time: timeString, isToday: true };
+    } else if (gameDay.getTime() === tomorrow.getTime()) {
+      return { label: 'Tomorrow', time: timeString, isTomorrow: true };
+    }
+    return { label: startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }), time: timeString };
   };
 
   const isOverUnderProp = (prop: Prop): boolean => prop.line !== undefined && prop.line !== null;
@@ -361,6 +397,8 @@ export default function GameDetailsScreen() {
     ? (gameData.teams_data.away_team.score > gameData.teams_data.home_team.score ? 'away' : 'home')
     : null;
 
+  const startTimeInfo = getStartTimeInfo();
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -372,90 +410,10 @@ export default function GameDetailsScreen() {
         <Text style={styles.headerTitle}>Game Details</Text>
         <View style={styles.backButton} />
       </View>
-
+    <View style={{height: 20}}/>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        {/* Betting Markets Card */}
-        <View style={styles.bettingMarketsCard}>
-          <Text style={styles.sectionTitle}>Betting Markets</Text>
-
-          {/* Moneyline */}
-          <View style={styles.marketSection}>
-            <Text style={styles.marketTitle}>Moneyline</Text>
-            <View style={styles.marketRow}>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('moneyline', 'away')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketTeamName}>{gameData.away_team.name}</Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.away_team.moneyline)}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('moneyline', 'home')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketTeamName}>{gameData.home_team.name}</Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.home_team.moneyline)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Spread */}
-          <View style={styles.marketSection}>
-            <Text style={styles.marketTitle}>Point Spread</Text>
-            <View style={styles.marketRow}>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('spread', 'away')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketTeamName}>{gameData.away_team.name}</Text>
-                <Text style={styles.marketSpread}>
-                  {gameData.markets.spread.away.point > 0 ? '+' : ''}{gameData.markets.spread.away.point}
-                </Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.markets.spread.away.payout)}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('spread', 'home')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketTeamName}>{gameData.home_team.name}</Text>
-                <Text style={styles.marketSpread}>
-                  {gameData.markets.spread.home.point > 0 ? '+' : ''}{gameData.markets.spread.home.point}
-                </Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.markets.spread.home.payout)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Total */}
-          <View style={styles.marketSection}>
-            <Text style={styles.marketTitle}>Total ({gameData.markets.total.line})</Text>
-            <View style={styles.marketRow}>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('total', 'over')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketBetLabel}>Over</Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.markets.total.over_payout)}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.marketButton}
-                onPress={() => handleMarketBet('total', 'under')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.marketBetLabel}>Under</Text>
-                <Text style={styles.marketOdds}>{formatOdds(gameData.markets.total.under_payout)}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-
-        {/* Game Info */}
-        <View style={styles.gameInfoSection}>
+         {/* Game Info */}
+         <View style={[styles.gameInfoSection, {paddingVertical: 35}]}>
           <Text style={styles.sectionTitle}>Game Info</Text>
           <View style={styles.gameInfoRow}>
             <Text style={styles.leagueText}>{gameData.leagueID}</Text>
@@ -465,6 +423,166 @@ export default function GameDetailsScreen() {
           </View>
           <Text style={styles.gameTime}>{formatDate(gameData.start_time)}</Text>
         </View>
+        {/* Betting Markets Card - Matching MarketGameCard Design */}
+        <View style={styles.bettingMarketsCard}>
+          {/* Header with Matchup */}
+          <View style={styles.cardHeader}>
+            <View style={styles.matchupContainer}>
+              <Text style={styles.awayTeam}>{gameData.away_team.abbreviation}</Text>
+              <Text style={styles.atSymbol}>@</Text>
+              <Text style={styles.homeTeam}>{gameData.home_team.abbreviation}</Text>
+            </View>
+          </View>
+
+          {/* Start Time Badge */}
+          <View style={[
+            styles.startTimeBadge,
+            startTimeInfo.isToday && styles.startTimeBadgeToday,
+            startTimeInfo.isTomorrow && styles.startTimeBadgeTomorrow,
+          ]}>
+            <Clock
+              size={14}
+              color={startTimeInfo.isToday ? Colors.dark.success : startTimeInfo.isTomorrow ? Colors.dark.tint : Colors.dark.textSecondary}
+              weight="bold"
+            />
+            <Text style={[
+              styles.startTimeLabel,
+              startTimeInfo.isToday && styles.startTimeLabelToday,
+              startTimeInfo.isTomorrow && styles.startTimeLabelTomorrow,
+            ]}>
+              {startTimeInfo.label}
+            </Text>
+            <Text style={styles.startTimeDot}>•</Text>
+            <Text style={[
+              styles.startTimeText,
+              startTimeInfo.isToday && styles.startTimeTextToday,
+              startTimeInfo.isTomorrow && styles.startTimeTextTomorrow,
+            ]}>
+              {startTimeInfo.time}
+            </Text>
+          </View>
+
+          {/* Betting Options Grid */}
+          <View style={styles.bettingGrid}>
+            {/* Column Headers */}
+            <View style={styles.betTypeRow}>
+              <View style={styles.teamLabelColumn}>
+                <Text style={styles.teamLabelText}>TEAM</Text>
+              </View>
+              <View style={styles.betColumn}>
+                <Text style={styles.betTypeLabel}>SPREAD</Text>
+              </View>
+              <View style={styles.betColumn}>
+                <Text style={styles.betTypeLabel}>TOTAL</Text>
+              </View>
+              <View style={styles.betColumn}>
+                <Text style={styles.betTypeLabel}>ML</Text>
+              </View>
+            </View>
+
+            {/* Away Team Bets */}
+            <View style={styles.teamBetsRow}>
+              <View style={styles.teamLabelColumn}>
+                <View style={styles.teamBadge}>
+                  <Text style={styles.teamBadgeText}>{gameData.away_team.abbreviation}</Text>
+                </View>
+              </View>
+
+              {/* Spread */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('spread', 'away')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={styles.betValue}>{formatPoint(gameData.markets.spread.away.point)}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.spread.away.payout) }]}>
+                    {formatOdds(gameData.markets.spread.away.payout)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Total - Over */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('total', 'over')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={styles.betValue}>O{formatPoint(gameData.markets.total.line)}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.total.over_payout) }]}>
+                    {formatOdds(gameData.markets.total.over_payout)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Moneyline */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('moneyline', 'away')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={[styles.moneylineValue, { color: getOddsColor(gameData.away_team.moneyline) }]}>
+                    {formatOdds(gameData.away_team.moneyline)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Home Team Bets */}
+            <View style={[styles.teamBetsRow, styles.lastRow]}>
+              <View style={styles.teamLabelColumn}>
+                <View style={[styles.teamBadge, styles.homeBadge]}>
+                  <Text style={styles.teamBadgeText}>{gameData.home_team.abbreviation}</Text>
+                </View>
+              </View>
+
+              {/* Spread */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('spread', 'home')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={styles.betValue}>{formatPoint(gameData.markets.spread.home.point)}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.spread.home.payout) }]}>
+                    {formatOdds(gameData.markets.spread.home.payout)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Total - Under */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('total', 'under')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={styles.betValue}>U{formatPoint(gameData.markets.total.line)}</Text>
+                  <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.total.under_payout) }]}>
+                    {formatOdds(gameData.markets.total.under_payout)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Moneyline */}
+              <TouchableOpacity
+                style={styles.betColumn}
+                onPress={() => handleMarketBet('moneyline', 'home')}
+                activeOpacity={0.7}
+              >
+                <View style={styles.betCell}>
+                  <Text style={[styles.moneylineValue, { color: getOddsColor(gameData.home_team.moneyline) }]}>
+                    {formatOdds(gameData.home_team.moneyline)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+       
 
         {/* Score Display */}
         {gameData.teams_data && (
@@ -550,7 +668,7 @@ export default function GameDetailsScreen() {
             </ScrollView>
           </View>
         )}
-
+<View style={{height: 20}}/>
         {/* Player Props */}
         {gameData.player_props && Object.keys(propsByCategory).length > 0 && (
           <View style={styles.playerPropsSection}>
@@ -757,62 +875,198 @@ const styles = StyleSheet.create({
     height: 80,
   },
 
-  // Betting Markets Card
+  // Betting Markets Card - Matching MarketGameCard Design
   bettingMarketsCard: {
     marginHorizontal: 20,
     marginTop: 20,
     marginBottom: 12,
     backgroundColor: Colors.dark.card,
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: Colors.dark.border + '40',
+    borderColor: Colors.dark.border,
   },
-  marketSection: {
-    marginBottom: 16,
-  },
-  marketTitle: {
-    ...Typography.meta.medium,
-    color: Colors.dark.textSecondary,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  matchupContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  awayTeam: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  atSymbol: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
     fontSize: 11,
   },
-  marketRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  marketButton: {
-    flex: 1,
-    backgroundColor: Colors.dark.cardElevated + '80',
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.dark.border + '30',
-  },
-  marketTeamName: {
-    ...Typography.body.small,
+  homeTeam: {
+    ...Typography.body.medium,
     color: Colors.dark.text,
-    marginBottom: 4,
-    fontSize: 13,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
-  marketSpread: {
+  startTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.cardElevated,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    gap: 6,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    alignSelf: 'flex-start',
+  },
+  startTimeBadgeToday: {
+    backgroundColor: Colors.dark.success + '15',
+    borderColor: Colors.dark.success + '40',
+  },
+  startTimeBadgeTomorrow: {
+    backgroundColor: Colors.dark.tint + '15',
+    borderColor: Colors.dark.tint + '40',
+  },
+  startTimeLabel: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
-    marginBottom: 4,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.3,
   },
-  marketBetLabel: {
+  startTimeLabelToday: {
+    color: Colors.dark.success,
+  },
+  startTimeLabelTomorrow: {
+    color: Colors.dark.tint,
+  },
+  startTimeDot: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+  },
+  startTimeText: {
     ...Typography.body.small,
     color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 11,
+    letterSpacing: 0.3,
+  },
+  startTimeTextToday: {
+    color: Colors.dark.success,
+    fontFamily: Fonts.medium,
+  },
+  startTimeTextTomorrow: {
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+  },
+  bettingGrid: {
+    gap: 8,
+  },
+  betTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
-  marketOdds: {
-    ...Typography.emphasis.medium,
-    color: Colors.dark.tint,
+  teamBetsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  lastRow: {
+    marginBottom: 0,
+  },
+  teamLabelColumn: {
+    width: 45,
+    alignItems: 'center',
+  },
+  teamLabelText: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.5,
+  },
+  teamBadge: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  homeBadge: {
+    borderColor: Colors.dark.tint + '30',
+  },
+  teamBadgeText: {
+    ...Typography.body.small,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  betColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  betTypeLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
+    fontFamily: Fonts.medium,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  betCell: {
+    backgroundColor: Colors.dark.cardElevated,
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  betValue: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    fontSize: 14,
+    marginBottom: 3,
+  },
+  betOdds: {
+    ...Typography.body.small,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+  },
+  moneylineValue: {
+    ...Typography.body.medium,
     fontFamily: Fonts.display,
     fontSize: 15,
+  },
+  unavailableText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 13,
   },
 
   // Game Info
