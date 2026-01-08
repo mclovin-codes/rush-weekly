@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MarketGame } from '@/types';
 
 const BET_SLIP_STORAGE_KEY = '@rush_bet_slip';
 
@@ -18,8 +17,8 @@ export interface BetSelection {
   line?: number | null;
   // Individual stake for this bet
   stake?: number;
-  // Keep reference to full game data for bet placement
-  game: MarketGame;
+  // Keep reference to full game data for bet placement (any game-like object)
+  game?: any;
   // Player prop specific fields (only present when betType is 'player_prop')
   playerPropData?: {
     playerId: string;
