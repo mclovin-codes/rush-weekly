@@ -554,7 +554,7 @@ export default function AccountScreen() {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.deleteButton, isDeletingAccount && styles.deleteButtonDisabled]}
           onPress={handleDeleteAccount}
           disabled={isDeletingAccount}
@@ -563,7 +563,7 @@ export default function AccountScreen() {
           <Text style={styles.deleteText}>
             {isDeletingAccount ? 'Deleting Account...' : 'Delete Account'}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
         <View style={styles.bottomPadding} />
