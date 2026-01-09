@@ -134,9 +134,9 @@ export default function GameDetailsScreen() {
     return odds > 0 ? `+${odds}` : String(odds);
   };
 
-  const formatPoint = (point: number | null | undefined): string => {
+  const formatPoint = (point: number | null | undefined, includePlus = true): string => {
     if (point === null || point === undefined) return '--';
-    return point > 0 ? `+${point}` : String(point);
+    return (point > 0 && includePlus) ? `+${point}` : String(point);
   };
 
   const getOddsColor = (odds: number | null | undefined) => {
@@ -509,7 +509,7 @@ export default function GameDetailsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.betCell}>
-                  <Text style={styles.betValue}>O{formatPoint(gameData.markets.total.line)}</Text>
+                  <Text style={styles.betValue}>O {formatPoint(gameData.markets.total.line, false)}</Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.total.over_payout) }]}>
                     {formatOdds(gameData.markets.total.over_payout)}
                   </Text>
@@ -559,7 +559,7 @@ export default function GameDetailsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={styles.betCell}>
-                  <Text style={styles.betValue}>U{formatPoint(gameData.markets.total.line)}</Text>
+                  <Text style={styles.betValue}>U {formatPoint(gameData.markets.total.line, false)}</Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(gameData.markets.total.under_payout) }]}>
                     {formatOdds(gameData.markets.total.under_payout)}
                   </Text>

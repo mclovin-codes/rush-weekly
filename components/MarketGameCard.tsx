@@ -58,9 +58,9 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
     return oddsValue > 0 ? `+${oddsValue}` : `${oddsValue}`;
   };
 
-  const formatPoint = (point: number | null | undefined) => {
+  const formatPoint = (point: number | null | undefined, includePlus = true) => {
     if (!point) return '--';
-    return point > 0 ? `+${point}` : `${point}`;
+    return (point > 0 && includePlus) ? `+${point}` : `${point}`;
   };
 
   const getOddsColor = (odds: number | null | undefined) => {
@@ -168,7 +168,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
               {total ? (
                 <>
                   <Text style={styles.betValue}>
-                    O{total.line ? formatPoint(total.line) : '--'}
+                    O {total.line ? formatPoint(total.line, false) : '--'}
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(total.over_payout) }]}>
                     {formatOdds(total.over_payout)}
@@ -234,7 +234,7 @@ export default function MarketGameCard({ game, onSelectBet, onPress, shouldNavig
               {total ? (
                 <>
                   <Text style={styles.betValue}>
-                    U{total.line ? formatPoint(total.line) : '--'}
+                    U {total.line ? formatPoint(total.line, false) : '--'}
                   </Text>
                   <Text style={[styles.betOdds, { color: getOddsColor(total.under_payout) }]}>
                     {formatOdds(total.under_payout)}
