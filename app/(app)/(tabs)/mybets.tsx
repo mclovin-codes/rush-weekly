@@ -106,8 +106,13 @@ export default function MyBetsScreen() {
       case 'player_prop':
         if (bet.playerPropData) {
           const { playerName, displayName } = bet.playerPropData;
-          const selection = bet.selection === 'over' ? 'O' : 'U';
-          return `${playerName} ${displayName} ${selection}${bet.lineAtPlacement || ''}`;
+          // Yes/No type bets (like TD props)
+          if (bet.selection === 'yes' || bet.selection === 'no') {
+            return `${playerName} ${displayName} ${bet.selection.toUpperCase()}`;
+          }
+          // Over/Under type bets
+          const selection = bet.selection === 'over' ? 'Over' : 'Under';
+          return `${playerName} ${displayName} ${selection} ${bet.lineAtPlacement || ''}`;
         }
         return 'Player Prop';
       default:
@@ -185,7 +190,7 @@ export default function MyBetsScreen() {
               {/* Only show line for over/under bets (not yes/no) */}
               {(bet.selection === 'over' || bet.selection === 'under') && (
                 <Text style={styles.propLineText}>
-                  {bet.lineAtPlacement !== undefined && bet.lineAtPlacement > 0 ? '+' : ''}{bet.lineAtPlacement ?? 0}
+                  {bet.lineAtPlacement ?? 0}
                 </Text>
               )}
             </View>
