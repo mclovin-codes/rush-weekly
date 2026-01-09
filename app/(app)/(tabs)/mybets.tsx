@@ -180,11 +180,14 @@ export default function MyBetsScreen() {
             </View>
             <View style={styles.propSelectionSection}>
               <Text style={styles.propSelectionText}>
-                {bet.selection === 'over' ? 'OVER' : 'UNDER'}
+                {bet.selection === 'yes' ? 'YES' : bet.selection === 'no' ? 'NO' : bet.selection === 'over' ? 'OVER' : 'UNDER'}
               </Text>
-              <Text style={styles.propLineText}>
-                {bet.lineAtPlacement !== undefined && bet.lineAtPlacement > 0 ? '+' : ''}{bet.lineAtPlacement ?? 0}
-              </Text>
+              {/* Only show line for over/under bets (not yes/no) */}
+              {(bet.selection === 'over' || bet.selection === 'under') && (
+                <Text style={styles.propLineText}>
+                  {bet.lineAtPlacement !== undefined && bet.lineAtPlacement > 0 ? '+' : ''}{bet.lineAtPlacement ?? 0}
+                </Text>
+              )}
             </View>
             <View style={styles.propOddsSection}>
               <Text style={styles.propOddsText}>{formatOdds(bet.oddsAtPlacement)}</Text>
