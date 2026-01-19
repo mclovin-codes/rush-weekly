@@ -1,10 +1,10 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, FlatList, ActivityIndicator, RefreshControl, Animated } from 'react-native';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
-import { PopulatedBet, Bet } from '@/types';
-import { ArrowClockwise } from 'phosphor-react-native';
+import { Bet, PopulatedBet } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
+import { ArrowClockwise } from 'phosphor-react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const filterOptions = ['All', 'Open', 'Won', 'Lost'];
 
@@ -15,6 +15,7 @@ export default function MyBetsScreen() {
 
   // Fetch user's bets from API
   const { data: bets = [], isLoading, error, refetch } = useMyBets();
+  console.log('------->>>', JSON.stringify(bets?.[0]))
 
   // Refetch data when tab is focused
   useFocusEffect(
@@ -92,6 +93,8 @@ export default function MyBetsScreen() {
     const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
 
     switch (bet.betType) {
+      case 'parlay':
+        return `${bet.parlayData?.legCount || 0} LEG PARLAY`;
       case 'spread':
         const team = bet.selection === 'home'
           ? homeTeam?.abbreviation || 'HOME'
@@ -133,6 +136,32 @@ export default function MyBetsScreen() {
     }
   };
 
+  const getLegStatusColor = (status: 'pending' | 'won' | 'lost' | 'push') => {
+    switch (status) {
+      case 'won':
+        return Colors.dark.success;
+      case 'lost':
+        return Colors.dark.danger;
+      case 'push':
+        return Colors.dark.textSecondary;
+      default:
+        return Colors.dark.tint;
+    }
+  };
+
+  const getLegStatusText = (status: 'pending' | 'won' | 'lost' | 'push') => {
+    switch (status) {
+      case 'won':
+        return 'WON';
+      case 'lost':
+        return 'LOST';
+      case 'push':
+        return 'PUSH';
+      default:
+        return 'PENDING';
+    }
+  };
+
   const getStatusText = (bet: PopulatedBet) => {
     const game = bet.game;
 
@@ -151,6 +180,82 @@ export default function MyBetsScreen() {
     const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
     const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
     const isPlayerProp = bet.betType === 'player_prop';
+    const isParlay = bet.betType === 'parlay';
+
+    // Render parlay bet card
+    if (isParlay && bet.parlayData) {
+      return (
+        <View style={[styles.betCard, styles.parlayCard]}>
+          {/* Parlay Header */}
+          <View style={styles.parlayMainHeader}>
+            <View style={styles.betHeaderLeft}>
+              <View style={styles.parlayTypeTag}>
+                <Text style={styles.parlayTypeText}>
+                  {bet.parlayData.legCount} LEG PARLAY
+                </Text>
+              </View>
+              <Text style={styles.parlayOdds}>{formatOdds(bet.parlayData.combinedOdds)}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
+                {getStatusText(bet)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Parlay Legs */}
+          <View style={styles.parlayLegsContainer}>
+            {bet.parlayData.legs.map((leg, index) => (
+              <View key={leg.id} style={styles.parlayLegCard}>
+                <View style={styles.parlayLegHeader}>
+                  <Text style={styles.parlayLegNumber}>LEG {index + 1}</Text>
+                  <View style={[styles.parlayLegStatusBadge, { backgroundColor: getLegStatusColor(leg.status) + '20' }]}>
+                    <Text style={[styles.parlayLegStatusText, { color: getLegStatusColor(leg.status) }]}>
+                      {getLegStatusText(leg.status)}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.parlayLegContent}>
+                  <View style={styles.parlayLegInfo}>
+                    <Text style={styles.parlayLegDescription}>{leg.description}</Text>
+                    <Text style={styles.parlayLegOdds}>{formatOdds(leg.oddsAtPlacement)}</Text>
+                  </View>
+                  {leg.playerName && (
+                    <Text style={styles.parlayLegPlayerName}>{leg.playerName}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Parlay Wager Info */}
+          <View style={styles.parlayWagerInfo}>
+            <View style={styles.wagerItem}>
+              <Text style={styles.wagerLabel}>Total Stake</Text>
+              <Text style={styles.wagerValue}>{bet.stake} units</Text>
+            </View>
+            {bet.status !== 'pending' && (
+              <View style={styles.wagerItem}>
+                <Text style={styles.wagerLabel}>
+                  {bet.status === 'won' ? 'Won' : bet.status === 'lost' ? 'Lost' : 'Push'}
+                </Text>
+                <Text style={[
+                  styles.wagerValue,
+                  bet.status === 'won' ? styles.wonText :
+                  bet.status === 'lost' ? styles.lostText : styles.pushText
+                ]}>
+                  {bet.status === 'won' ? `+${(bet.payout - bet.stake).toFixed(2)}` :
+                   bet.status === 'lost' ? `-${bet.stake}` : '0'} units
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Bet ID */}
+          <Text style={styles.betId}>Bet ID: {bet.id}</Text>
+        </View>
+      );
+    }
 
     return (
       <TouchableOpacity style={[styles.betCard, isPlayerProp && styles.playerPropCard]}>
@@ -665,5 +770,115 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontFamily: Fonts.mono,
     fontSize: 14,
+  },
+
+  // Parlay Card Styles
+  parlayCard: {
+    borderWidth: 1.5,
+    borderColor: Colors.dark.tint + '40',
+    backgroundColor: Colors.dark.card + 'FE',
+  },
+  parlayMainHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.dark.border,
+  },
+  parlayTypeTag: {
+    backgroundColor: Colors.dark.tint + '25',
+    borderWidth: 1,
+    borderColor: Colors.dark.tint + '50',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  parlayTypeText: {
+    ...Typography.meta.small,
+    color: Colors.dark.tint,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    fontFamily: Fonts.medium,
+    fontWeight: '600',
+  },
+  parlayOdds: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.mono,
+    fontSize: 14,
+    marginLeft: 10,
+  },
+  parlayLegsContainer: {
+    marginBottom: 12,
+  },
+  parlayLegCard: {
+    backgroundColor: Colors.dark.cardElevated + '80',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.dark.border,
+  },
+  parlayLegHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  parlayLegNumber: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    letterSpacing: 1,
+    fontFamily: Fonts.medium,
+  },
+  parlayLegStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  parlayLegStatusText: {
+    ...Typography.body.small,
+    fontFamily: Fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  parlayLegContent: {
+    gap: 4,
+  },
+  parlayLegInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  parlayLegDescription: {
+    ...Typography.body.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.medium,
+    fontSize: 14,
+    flex: 1,
+  },
+  parlayLegOdds: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.mono,
+    fontSize: 13,
+    marginLeft: 10,
+  },
+  parlayLegPlayerName: {
+    ...Typography.body.small,
+    color: Colors.dark.tint,
+    fontFamily: Fonts.medium,
+    fontSize: 12,
+  },
+  parlayWagerInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: Colors.dark.border,
+    marginBottom: 8,
   },
 });

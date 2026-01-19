@@ -94,7 +94,7 @@ export interface Bet extends BaseDocument {
   user: string | User;
   pool: string | Pool;
   game: string | Game;
-  betType: 'moneyline' | 'spread' | 'total' | 'player_prop';
+  betType: 'moneyline' | 'spread' | 'total' | 'player_prop' | 'parlay';
   selection: 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
   stake: number;
   oddsAtPlacement: number;
@@ -109,6 +109,30 @@ export interface Bet extends BaseDocument {
     displayName: string;
     category: string;
   };
+  // Parlay specific fields (only present when betType is 'parlay')
+  parlayData?: {
+    legCount: number;
+    combinedOdds: number;
+    legs: ParlayLegItem[];
+  };
+}
+
+// Individual leg within a parlay bet
+export interface ParlayLegItem {
+  id: string;
+  eventID: string;
+  leagueID: string;
+  betType: 'moneyline' | 'spread' | 'total' | 'player_prop';
+  selection: 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
+  oddsAtPlacement: number;
+  lineAtPlacement?: number;
+  status: 'pending' | 'won' | 'lost' | 'push';
+  description: string;
+  // Player prop fields for legs that are player props
+  playerId?: string;
+  playerName?: string;
+  statType?: string;
+  displayName?: string;
 }
 
 // ==================== POPULATED TYPES ====================
