@@ -2,7 +2,7 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
 import { Bet, PopulatedBet } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowClockwise } from 'phosphor-react-native';
+import { ArrowClockwise, CaretDown } from 'phosphor-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -12,6 +12,7 @@ export default function MyBetsScreen() {
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [refreshing, setRefreshing] = useState(false);
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const [expandedParlays, setExpandedParlays] = useState<Set<string>>(new Set());
 
   // Fetch user's bets from API
   const { data: bets = [], isLoading, error, refetch } = useMyBets();
@@ -175,17 +176,39 @@ export default function MyBetsScreen() {
     return '';
   };
 
+  const toggleParlayExpanded = (betId: string) => {
+    setExpandedParlays(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(betId)) {
+        newSet.delete(betId);
+      } else {
+        newSet.add(betId);
+      }
+      return newSet;
+    });
+  };
+
   const renderBetCard = ({ item: bet }: { item: PopulatedBet }) => {
     const game = bet.game;
     const homeTeam = typeof game.homeTeam === 'object' ? game.homeTeam : null;
     const awayTeam = typeof game.awayTeam === 'object' ? game.awayTeam : null;
     const isPlayerProp = bet.betType === 'player_prop';
     const isParlay = bet.betType === 'parlay';
+    const isExpanded = expandedParlays.has(bet.id);
 
     // Render parlay bet card
     if (isParlay && bet.parlayData) {
+      // Count leg statuses for summary
+      const wonCount = bet.parlayData.legs.filter(l => l.status === 'won').length;
+      const lostCount = bet.parlayData.legs.filter(l => l.status === 'lost').length;
+      const pendingCount = bet.parlayData.legs.filter(l => l.status === 'pending').length;
+
       return (
-        <View style={[styles.betCard, styles.parlayCard]}>
+        <TouchableOpacity
+          style={[styles.betCard, styles.parlayCard]}
+          onPress={() => toggleParlayExpanded(bet.id)}
+          activeOpacity={0.7}
+        >
           {/* Parlay Header */}
           <View style={styles.parlayMainHeader}>
             <View style={styles.betHeaderLeft}>
@@ -196,37 +219,70 @@ export default function MyBetsScreen() {
               </View>
               <Text style={styles.parlayOdds}>{formatOdds(bet.parlayData.combinedOdds)}</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
-              <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
-                {getStatusText(bet)}
-              </Text>
+            <View style={styles.parlayHeaderRight}>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
+                <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
+                  {getStatusText(bet)}
+                </Text>
+              </View>
+              <CaretDown
+                size={20}
+                color={Colors.dark.textSecondary}
+                weight="bold"
+                style={[styles.chevron, isExpanded && styles.chevronRotated]}
+              />
             </View>
           </View>
 
-          {/* Parlay Legs */}
-          <View style={styles.parlayLegsContainer}>
-            {bet.parlayData.legs.map((leg, index) => (
-              <View key={leg.id} style={styles.parlayLegCard}>
-                <View style={styles.parlayLegHeader}>
-                  <Text style={styles.parlayLegNumber}>LEG {index + 1}</Text>
-                  <View style={[styles.parlayLegStatusBadge, { backgroundColor: getLegStatusColor(leg.status) + '20' }]}>
-                    <Text style={[styles.parlayLegStatusText, { color: getLegStatusColor(leg.status) }]}>
-                      {getLegStatusText(leg.status)}
-                    </Text>
+          {/* Collapsed Summary */}
+          {!isExpanded && (
+            <View style={styles.parlayCollapsedSummary}>
+              <View style={styles.parlayStatusRow}>
+                {wonCount > 0 && (
+                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.success + '30' }]}>
+                    <Text style={[styles.miniStatusText, { color: Colors.dark.success }]}>{wonCount} Won</Text>
                   </View>
-                </View>
-                <View style={styles.parlayLegContent}>
-                  <View style={styles.parlayLegInfo}>
-                    <Text style={styles.parlayLegDescription}>{leg.description}</Text>
-                    <Text style={styles.parlayLegOdds}>{formatOdds(leg.oddsAtPlacement)}</Text>
+                )}
+                {lostCount > 0 && (
+                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.danger + '30' }]}>
+                    <Text style={[styles.miniStatusText, { color: Colors.dark.danger }]}>{lostCount} Lost</Text>
                   </View>
-                  {leg.playerName && (
-                    <Text style={styles.parlayLegPlayerName}>{leg.playerName}</Text>
-                  )}
-                </View>
+                )}
+                {pendingCount > 0 && (
+                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.tint + '30' }]}>
+                    <Text style={[styles.miniStatusText, { color: Colors.dark.tint }]}>{pendingCount} Pending</Text>
+                  </View>
+                )}
               </View>
-            ))}
-          </View>
+            </View>
+          )}
+
+          {/* Expanded Legs */}
+          {isExpanded && (
+            <View style={styles.parlayLegsContainer}>
+              {bet.parlayData.legs.map((leg, index) => (
+                <View key={leg.id} style={styles.parlayLegCard}>
+                  <View style={styles.parlayLegHeader}>
+                    <Text style={styles.parlayLegNumber}>LEG {index + 1}</Text>
+                    <View style={[styles.parlayLegStatusBadge, { backgroundColor: getLegStatusColor(leg.status) + '20' }]}>
+                      <Text style={[styles.parlayLegStatusText, { color: getLegStatusColor(leg.status) }]}>
+                        {getLegStatusText(leg.status)}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.parlayLegContent}>
+                    <View style={styles.parlayLegInfo}>
+                      <Text style={styles.parlayLegDescription}>{leg.description}</Text>
+                      <Text style={styles.parlayLegOdds}>{formatOdds(leg.oddsAtPlacement)}</Text>
+                    </View>
+                    {leg.playerName && (
+                      <Text style={styles.parlayLegPlayerName}>{leg.playerName}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Parlay Wager Info */}
           <View style={styles.parlayWagerInfo}>
@@ -253,7 +309,7 @@ export default function MyBetsScreen() {
 
           {/* Bet ID */}
           <Text style={styles.betId}>Bet ID: {bet.id}</Text>
-        </View>
+        </TouchableOpacity>
       );
     }
 
@@ -880,5 +936,36 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.dark.border,
     marginBottom: 8,
+  },
+  parlayHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chevron: {
+    width: 20,
+    height: 20,
+  },
+  chevronRotated: {
+    transform: [{ rotate: '180deg' }],
+  },
+  parlayCollapsedSummary: {
+    paddingVertical: 8,
+  },
+  parlayStatusRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  miniStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  miniStatusText: {
+    ...Typography.body.small,
+    fontSize: 11,
+    fontFamily: Fonts.medium,
+    fontWeight: '600',
   },
 });
