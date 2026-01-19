@@ -2,7 +2,7 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
 import { Bet, PopulatedBet } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowClockwise, CaretDown } from 'phosphor-react-native';
+import { ArrowClockwise, CaretDown, Check, X, SoccerBall, Football, Basketball, Baseball } from 'phosphor-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -137,29 +137,36 @@ export default function MyBetsScreen() {
     }
   };
 
-  const getLegStatusColor = (status: 'pending' | 'won' | 'lost' | 'push') => {
-    switch (status) {
-      case 'won':
-        return Colors.dark.success;
-      case 'lost':
-        return Colors.dark.danger;
-      case 'push':
-        return Colors.dark.textSecondary;
-      default:
-        return Colors.dark.tint;
-    }
+  const getLeagueIcon = (leagueId: string) => {
+    const upperId = leagueId.toUpperCase();
+    if (upperId.includes('NFL') || upperId.includes('NCAAF')) return Football;
+    if (upperId.includes('NBA') || upperId.includes('NCAAB')) return Basketball;
+    if (upperId.includes('MLB')) return Baseball;
+    return SoccerBall;
   };
 
-  const getLegStatusText = (status: 'pending' | 'won' | 'lost' | 'push') => {
-    switch (status) {
-      case 'won':
-        return 'WON';
-      case 'lost':
-        return 'LOST';
-      case 'push':
-        return 'PUSH';
+  const getLeagueColor = (leagueId: string) => {
+    const upperId = leagueId.toUpperCase();
+    if (upperId.includes('NFL')) return '#D43F3D'; // NFL red
+    if (upperId.includes('NBA')) return '#E85D04'; // NBA orange
+    if (upperId.includes('MLB')) return '#1D4ED8'; // MLB blue
+    if (upperId.includes('NHL')) return '#06B6D4'; // NHL cyan
+    return Colors.dark.tint;
+  };
+
+  const getBetTypeLabel = (betType: string, selection: string, line?: number) => {
+    switch (betType) {
+      case 'spread':
+        const spreadVal = line !== undefined && line > 0 ? `+${line}` : `${line ?? 0}`;
+        return `SPREAD ${spreadVal}`;
+      case 'total':
+        return selection === 'over' ? 'OVER' : 'UNDER';
+      case 'moneyline':
+        return 'MONEYLINE';
+      case 'player_prop':
+        return 'PROP';
       default:
-        return 'PENDING';
+        return betType.toUpperCase();
     }
   };
 
@@ -198,10 +205,10 @@ export default function MyBetsScreen() {
 
     // Render parlay bet card
     if (isParlay && bet.parlayData) {
-      // Count leg statuses for summary
-      const wonCount = bet.parlayData.legs.filter(l => l.status === 'won').length;
-      const lostCount = bet.parlayData.legs.filter(l => l.status === 'lost').length;
-      const pendingCount = bet.parlayData.legs.filter(l => l.status === 'pending').length;
+      const LeagueIcon = getLeagueIcon(bet.parlayData.legs[0]?.leagueID || '');
+      const leagueColor = getLeagueColor(bet.parlayData.legs[0]?.leagueID || '');
+      const isWon = bet.status === 'won';
+      const profit = isWon ? bet.payout - bet.stake : 0;
 
       return (
         <TouchableOpacity
@@ -209,24 +216,42 @@ export default function MyBetsScreen() {
           onPress={() => toggleParlayExpanded(bet.id)}
           activeOpacity={0.7}
         >
-          {/* Parlay Header */}
-          <View style={styles.parlayMainHeader}>
-            <View style={styles.betHeaderLeft}>
-              <View style={styles.parlayTypeTag}>
-                <Text style={styles.parlayTypeText}>
-                  {bet.parlayData.legCount} LEG PARLAY
-                </Text>
+          {/* Parlay Header - Cleaner Design */}
+          <View style={styles.parlayHeader}>
+            <View style={styles.parlayHeaderLeft}>
+              {/* League Icon with parlay badge */}
+              <View style={[styles.parlayIconBadge, { backgroundColor: leagueColor + '30' }]}>
+                <LeagueIcon size={20} color={leagueColor} weight="fill" />
               </View>
-              <Text style={styles.parlayOdds}>{formatOdds(bet.parlayData.combinedOdds)}</Text>
+
+              <View style={styles.parlayTitleSection}>
+                <Text style={styles.parlayTitle}>{bet.parlayData.legCount} LEG PARLAY</Text>
+                <View style={styles.parlayOddsRow}>
+                  <Text style={styles.parlayLegCount}>{bet.parlayData.legCount}</Text>
+                  <Text style={styles.parlayAt}>@</Text>
+                  <Text style={[styles.parlayCombinedOdds, { color: leagueColor }]}>
+                    {formatOdds(bet.parlayData.combinedOdds)}
+                  </Text>
+                </View>
+              </View>
             </View>
+
+            {/* Status Badge with Icon */}
             <View style={styles.parlayHeaderRight}>
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
-                <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
-                  {getStatusText(bet)}
-                </Text>
-              </View>
+              {isWon && (
+                <View style={styles.parlayWonBadge}>
+                  <Check size={16} color={Colors.dark.success} weight="bold" />
+                  <Text style={styles.parlayWonText}>WON</Text>
+                </View>
+              )}
+              {!isWon && bet.status !== 'pending' && (
+                <View style={[styles.parlayLostBadge]}>
+                  <X size={14} color={Colors.dark.danger} weight="bold" />
+                  <Text style={[styles.parlayLostText, { color: Colors.dark.danger }]}>{bet.status.toUpperCase()}</Text>
+                </View>
+              )}
               <CaretDown
-                size={20}
+                size={18}
                 color={Colors.dark.textSecondary}
                 weight="bold"
                 style={[styles.chevron, isExpanded && styles.chevronRotated]}
@@ -234,77 +259,90 @@ export default function MyBetsScreen() {
             </View>
           </View>
 
-          {/* Collapsed Summary */}
-          {!isExpanded && (
-            <View style={styles.parlayCollapsedSummary}>
-              <View style={styles.parlayStatusRow}>
-                {wonCount > 0 && (
-                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.success + '30' }]}>
-                    <Text style={[styles.miniStatusText, { color: Colors.dark.success }]}>{wonCount} Won</Text>
-                  </View>
-                )}
-                {lostCount > 0 && (
-                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.danger + '30' }]}>
-                    <Text style={[styles.miniStatusText, { color: Colors.dark.danger }]}>{lostCount} Lost</Text>
-                  </View>
-                )}
-                {pendingCount > 0 && (
-                  <View style={[styles.miniStatusBadge, { backgroundColor: Colors.dark.tint + '30' }]}>
-                    <Text style={[styles.miniStatusText, { color: Colors.dark.tint }]}>{pendingCount} Pending</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          )}
-
           {/* Expanded Legs */}
           {isExpanded && (
             <View style={styles.parlayLegsContainer}>
-              {bet.parlayData.legs.map((leg, index) => (
-                <View key={leg.id} style={styles.parlayLegCard}>
-                  <View style={styles.parlayLegHeader}>
-                    <Text style={styles.parlayLegNumber}>LEG {index + 1}</Text>
-                    <View style={[styles.parlayLegStatusBadge, { backgroundColor: getLegStatusColor(leg.status) + '20' }]}>
-                      <Text style={[styles.parlayLegStatusText, { color: getLegStatusColor(leg.status) }]}>
-                        {getLegStatusText(leg.status)}
+              {bet.parlayData.legs.map((leg, index) => {
+                const LegLeagueIcon = getLeagueIcon(leg.leagueID);
+                const legLeagueColor = getLeagueColor(leg.leagueID);
+                const legWon = leg.status === 'won';
+                const legLost = leg.status === 'lost';
+
+                return (
+                  <View key={leg.id} style={styles.parlayLegCard}>
+                    {/* Leg Header with League and Status */}
+                    <View style={styles.parlayLegTopRow}>
+                      <View style={[styles.parlayLegLeagueBadge, { backgroundColor: legLeagueColor + '25' }]}>
+                        <LegLeagueIcon size={14} color={legLeagueColor} weight="fill" />
+                        <Text style={[styles.parlayLegLeagueText, { color: legLeagueColor }]}>
+                          {leg.leagueID}
+                        </Text>
+                      </View>
+
+                      {/* Leg Status Icon */}
+                      <View style={[styles.parlayLegStatusIcon, {
+                        backgroundColor: legWon ? Colors.dark.success + '20' :
+                                          legLost ? Colors.dark.danger + '20' :
+                                          Colors.dark.tint + '20'
+                      }]}>
+                        {legWon && <Check size={12} color={Colors.dark.success} weight="bold" />}
+                        {legLost && <X size={12} color={Colors.dark.danger} weight="bold" />}
+                        {!legWon && !legLost && (
+                          <View style={styles.parlayPendingDot} />
+                        )}
+                      </View>
+                    </View>
+
+                    {/* Leg Description */}
+                    <View style={styles.parlayLegDescriptionSection}>
+                      <Text style={styles.parlayLegDescription} numberOfLines={2}>
+                        {leg.description}
+                      </Text>
+
+                      {/* Bet Type Badge */}
+                      <View style={[styles.parlayBetTypeBadge, {
+                        borderColor: legLeagueColor + '50',
+                        backgroundColor: legLeagueColor + '15'
+                      }]}>
+                        <Text style={[styles.parlayBetTypeText, { color: legLeagueColor }]}>
+                          {getBetTypeLabel(leg.betType, leg.selection, leg.lineAtPlacement)}
+                        </Text>
+                      </View>
+                    </View>
+
+                    {/* Leg Odds */}
+                    <View style={styles.parlayLegOddsRow}>
+                      <Text style={styles.parlayLegOddsLabel}>ODDS</Text>
+                      <Text style={[styles.parlayLegOddsValue, { color: legLeagueColor }]}>
+                        {formatOdds(leg.oddsAtPlacement)}
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.parlayLegContent}>
-                    <View style={styles.parlayLegInfo}>
-                      <Text style={styles.parlayLegDescription}>{leg.description}</Text>
-                      <Text style={styles.parlayLegOdds}>{formatOdds(leg.oddsAtPlacement)}</Text>
-                    </View>
-                    {leg.playerName && (
-                      <Text style={styles.parlayLegPlayerName}>{leg.playerName}</Text>
-                    )}
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
 
-          {/* Parlay Wager Info */}
-          <View style={styles.parlayWagerInfo}>
-            <View style={styles.wagerItem}>
-              <Text style={styles.wagerLabel}>Total Stake</Text>
-              <Text style={styles.wagerValue}>{bet.stake} units</Text>
-            </View>
-            {bet.status !== 'pending' && (
-              <View style={styles.wagerItem}>
-                <Text style={styles.wagerLabel}>
-                  {bet.status === 'won' ? 'Won' : bet.status === 'lost' ? 'Lost' : 'Push'}
-                </Text>
-                <Text style={[
-                  styles.wagerValue,
-                  bet.status === 'won' ? styles.wonText :
-                  bet.status === 'lost' ? styles.lostText : styles.pushText
-                ]}>
-                  {bet.status === 'won' ? `+${(bet.payout - bet.stake).toFixed(2)}` :
-                   bet.status === 'lost' ? `-${bet.stake}` : '0'} units
+          {/* Bottom Section - To Win / Stake */}
+          <View style={styles.parlayBottomSection}>
+            <View style={styles.parlayBottomRow}>
+              <View style={styles.parlayStakeSection}>
+                <Text style={styles.parlayBottomLabel}>RISKING</Text>
+                <Text style={styles.parlayStakeAmount}>{bet.stake.toFixed(2)}</Text>
+              </View>
+
+              <View style={styles.parlayDivider} />
+
+              <View style={[styles.parlayWinSection, isWon && styles.parlayWinSectionWon]}>
+                <Text style={styles.parlayBottomLabel}>TO WIN</Text>
+                <Text style={[styles.parlayWinAmount, isWon && styles.parlayWinAmountWon]}>
+                  {isWon ? `+${profit.toFixed(2)}` : profit.toFixed(2)}
                 </Text>
               </View>
-            )}
+            </View>
+
+            {/* Units label */}
+            <Text style={styles.parlayUnitsLabel}>UNITS</Text>
           </View>
 
           {/* Bet ID */}
@@ -828,144 +866,255 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  // Parlay Card Styles
+  // Parlay Card Styles - Redesigned
   parlayCard: {
-    borderWidth: 1.5,
-    borderColor: Colors.dark.tint + '40',
-    backgroundColor: Colors.dark.card + 'FE',
+    borderWidth: 1,
+    borderColor: Colors.dark.border + '80',
+    backgroundColor: Colors.dark.card,
+    overflow: 'hidden',
   },
-  parlayMainHeader: {
+  parlayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.dark.border,
+    alignItems: 'center',
+    padding: 14,
+    backgroundColor: Colors.dark.cardElevated + '40',
   },
-  parlayTypeTag: {
-    backgroundColor: Colors.dark.tint + '25',
-    borderWidth: 1,
-    borderColor: Colors.dark.tint + '50',
+  parlayHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  parlayIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  parlayTitleSection: {
+    flex: 1,
+  },
+  parlayTitle: {
+    ...Typography.emphasis.medium,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+  parlayOddsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  parlayLegCount: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.mono,
+    fontSize: 12,
+    marginRight: 4,
+  },
+  parlayAt: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 11,
+    marginRight: 4,
+  },
+  parlayCombinedOdds: {
+    ...Typography.emphasis.medium,
+    fontFamily: Fonts.mono,
+    fontSize: 15,
+  },
+  parlayHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  parlayWonBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.success + '25',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 14,
+    gap: 4,
   },
-  parlayTypeText: {
-    ...Typography.meta.small,
-    color: Colors.dark.tint,
-    fontSize: 10,
-    letterSpacing: 1.5,
+  parlayWonText: {
+    ...Typography.body.small,
+    color: Colors.dark.success,
     fontFamily: Fonts.medium,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
-  parlayOdds: {
-    ...Typography.body.medium,
-    color: Colors.dark.text,
-    fontFamily: Fonts.mono,
-    fontSize: 14,
-    marginLeft: 10,
+  parlayLostBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.dark.danger + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 3,
+  },
+  parlayLostText: {
+    ...Typography.body.small,
+    fontFamily: Fonts.medium,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  chevron: {
+    width: 18,
+    height: 18,
+  },
+  chevronRotated: {
+    transform: [{ rotate: '180deg' }],
   },
   parlayLegsContainer: {
-    marginBottom: 12,
+    padding: 12,
+    gap: 8,
   },
   parlayLegCard: {
-    backgroundColor: Colors.dark.cardElevated + '80',
-    borderRadius: 10,
+    backgroundColor: Colors.dark.cardElevated + '60',
+    borderRadius: 12,
     padding: 12,
-    marginBottom: 10,
     borderWidth: 1,
-    borderColor: Colors.dark.border,
+    borderColor: Colors.dark.border + '60',
   },
-  parlayLegHeader: {
+  parlayLegTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
   },
-  parlayLegNumber: {
-    ...Typography.meta.small,
-    color: Colors.dark.textSecondary,
-    fontSize: 10,
-    letterSpacing: 1,
-    fontFamily: Fonts.medium,
-  },
-  parlayLegStatusBadge: {
+  parlayLegLeagueBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 6,
   },
-  parlayLegStatusText: {
-    ...Typography.body.small,
+  parlayLegLeagueText: {
+    ...Typography.meta.small,
     fontFamily: Fonts.medium,
     fontSize: 10,
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
-  parlayLegContent: {
-    gap: 4,
-  },
-  parlayLegInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  parlayLegStatusIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  parlayPendingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.dark.tint,
+  },
+  parlayLegDescriptionSection: {
+    gap: 8,
+    marginBottom: 10,
   },
   parlayLegDescription: {
     ...Typography.body.medium,
     color: Colors.dark.text,
     fontFamily: Fonts.medium,
     fontSize: 14,
-    flex: 1,
+    lineHeight: 20,
   },
-  parlayLegOdds: {
-    ...Typography.body.small,
-    color: Colors.dark.textSecondary,
-    fontFamily: Fonts.mono,
-    fontSize: 13,
-    marginLeft: 10,
+  parlayBetTypeBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  parlayLegPlayerName: {
-    ...Typography.body.small,
-    color: Colors.dark.tint,
+  parlayBetTypeText: {
+    ...Typography.meta.small,
     fontFamily: Fonts.medium,
-    fontSize: 12,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
-  parlayWagerInfo: {
+  parlayLegOddsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingTop: 12,
+    alignItems: 'center',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.dark.border + '40',
+  },
+  parlayLegOddsLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
+  parlayLegOddsValue: {
+    ...Typography.emphasis.medium,
+    fontFamily: Fonts.mono,
+    fontSize: 14,
+  },
+  parlayBottomSection: {
+    padding: 14,
+    backgroundColor: Colors.dark.cardElevated + '40',
     borderTopWidth: 1,
     borderTopColor: Colors.dark.border,
-    marginBottom: 8,
   },
-  parlayHeaderRight: {
+  parlayBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
   },
-  chevron: {
-    width: 20,
-    height: 20,
+  parlayStakeSection: {
+    flex: 1,
   },
-  chevronRotated: {
-    transform: [{ rotate: '180deg' }],
+  parlayBottomLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 4,
   },
-  parlayCollapsedSummary: {
-    paddingVertical: 8,
+  parlayStakeAmount: {
+    ...Typography.title.large,
+    color: Colors.dark.text,
+    fontFamily: Fonts.display,
+    fontSize: 20,
   },
-  parlayStatusRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
+  parlayDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: Colors.dark.border + '60',
+    marginHorizontal: 16,
   },
-  miniStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  parlayWinSection: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  miniStatusText: {
-    ...Typography.body.small,
-    fontSize: 11,
-    fontFamily: Fonts.medium,
-    fontWeight: '600',
+  parlayWinSectionWon: {
+    // Additional styles for won state
+  },
+  parlayWinAmount: {
+    ...Typography.title.large,
+    color: Colors.dark.textSecondary,
+    fontFamily: Fonts.display,
+    fontSize: 20,
+  },
+  parlayWinAmountWon: {
+    color: Colors.dark.success,
+  },
+  parlayUnitsLabel: {
+    ...Typography.meta.small,
+    color: Colors.dark.textSecondary,
+    fontSize: 9,
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginTop: 4,
   },
 });
