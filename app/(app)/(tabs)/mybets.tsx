@@ -2,7 +2,7 @@ import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
 import { Bet, PopulatedBet } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
-import { ArrowClockwise, CaretDown, Check, X, SoccerBall, Football, Basketball, Baseball } from 'phosphor-react-native';
+import { ArrowClockwise, Baseball, Basketball, CaretDown, Check, Football, SoccerBall, X } from 'phosphor-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -16,7 +16,7 @@ export default function MyBetsScreen() {
 
   // Fetch user's bets from API
   const { data: bets = [], isLoading, error, refetch } = useMyBets();
-  console.log('------->>>', JSON.stringify(bets?.[0]))
+
 
   // Refetch data when tab is focused
   useFocusEffect(
@@ -220,9 +220,9 @@ export default function MyBetsScreen() {
           <View style={styles.parlayHeader}>
             <View style={styles.parlayHeaderLeft}>
               {/* League Icon with parlay badge */}
-              <View style={[styles.parlayIconBadge, { backgroundColor: leagueColor + '30' }]}>
+              {/* <View style={[styles.parlayIconBadge, { backgroundColor: leagueColor + '30' }]}>
                 <LeagueIcon size={20} color={leagueColor} weight="fill" />
-              </View>
+              </View> */}
 
               <View style={styles.parlayTitleSection}>
                 <Text style={styles.parlayTitle}>{bet.parlayData.legCount} LEG PARLAY</Text>
