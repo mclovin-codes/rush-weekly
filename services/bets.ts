@@ -1,6 +1,15 @@
 import { apiHelpers } from '@/config/api';
 import { API_ROUTES } from '@/constants/api-routes';
-import { PaginatedResponse, Bet, BetFilters, PopulatedBet, PlaceBetRequest, PlaceBetResponse } from '@/types';
+import {
+  PaginatedResponse,
+  Bet,
+  BetFilters,
+  PopulatedBet,
+  PlaceBetRequest,
+  PlaceBetResponse,
+  PlaceParlayRequest,
+  PlaceParlayResponse
+} from '@/types';
 import * as qs from 'qs-esm';
 
 export const betService = {
@@ -64,5 +73,14 @@ export const betService = {
       console.error('Error fetching my bets:', error);
       return [];
     }
+  },
+
+  placeParlay: async (data: PlaceParlayRequest): Promise<PlaceParlayResponse> => {
+    console.log('=== placeParlay SERVICE ===');
+    console.log('API URL:', API_ROUTES.BETS.PARLAY);
+    console.log('Request data:', JSON.stringify(data, null, 2));
+    const response = await apiHelpers.post(API_ROUTES.BETS.PARLAY, data);
+    console.log('Raw response from apiHelpers.post:', response);
+    return response;
   },
 };

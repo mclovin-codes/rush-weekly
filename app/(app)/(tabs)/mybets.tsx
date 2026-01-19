@@ -241,7 +241,7 @@ export default function MyBetsScreen() {
                 bet.status === 'won' ? styles.wonText :
                 bet.status === 'lost' ? styles.lostText : styles.pushText
               ]}>
-                {bet.status === 'won' ? `+${bet.payout.toFixed(2)}` :
+                {bet.status === 'won' ? `+${(bet.payout - bet.stake).toFixed(2)}` :
                  bet.status === 'lost' ? `-${bet.stake}` : '0'} units
               </Text>
             </View>

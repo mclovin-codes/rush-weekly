@@ -69,6 +69,7 @@ export const API_ROUTES = {
       GET: '/api/bets',
       CREATE: '/api/bets',
       PLACE: '/api/bets/place',
+      PARLAY: '/api/bets/parlay',
       GET_BY_ID: (id: string) => `/api/bets/${id}`,
       UPDATE: (id: string) => `/api/bets/${id}`,
       DELETE: (id: string) => `/api/bets/${id}`,

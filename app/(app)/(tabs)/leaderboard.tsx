@@ -86,6 +86,19 @@ export default function LeaderboardScreen() {
   // Calculate ranks on the frontend based on score (descending)
   const leaderboard: LeaderboardEntryWithRank[] = useMemo(() => {
     const memberships = leaderboardData?.docs || [];
+    
+    memberships.forEach((entry, index) => {
+      const user = typeof entry.user === 'object' ? entry.user : null;
+      console.log(`Entry ${index + 1}:`, {
+        rank: index + 1,
+        userId: user?.id || entry.user,
+        username: user?.username || 'Unknown',
+        score: entry.score,
+        initialCredits: entry.initial_credits_at_start,
+      });
+    });
+    
+
     return memberships
       .sort((a, b) => b.score - a.score)
       .map((entry, index) => ({
@@ -110,6 +123,8 @@ export default function LeaderboardScreen() {
     return user?.id === currentUserId;
   });
   const currentUserRank = currentUserEntry?.rank || 0;
+
+  
 
   const isTopTier = (rank: number) => rank <= 3;
 

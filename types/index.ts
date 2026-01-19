@@ -301,3 +301,45 @@ export interface BuyBackCreditsResponse {
   daysRemaining?: number;
 }
 
+// ==================== PARLAY TYPES ====================
+
+export type ParlayBetType = 'moneyline' | 'spread' | 'total' | 'player_prop';
+export type ParlaySelection = 'home' | 'away' | 'over' | 'under' | 'yes' | 'no';
+
+export interface ParlayLeg {
+  eventID: string;
+  leagueID: string;
+  betType: ParlayBetType;
+  selection: ParlaySelection;
+  // Player prop specific fields (only present when betType is 'player_prop')
+  playerId?: string;
+  playerName?: string;
+  statType?: string;
+  displayName?: string;
+}
+
+export interface PlaceParlayRequest {
+  user: string;
+  pool: string;
+  stake: number;
+  legs: ParlayLeg[];
+}
+
+export interface ParlayInfo {
+  legCount: number;
+  combinedAmericanOdds: number;
+  combinedDecimalOdds: number;
+  impliedProbability: number;
+  potentialPayout: number;
+  potentialProfit: number;
+  legs: ParlayLeg[];
+}
+
+export interface PlaceParlayResponse {
+  success: boolean;
+  bet?: Bet;
+  parlayInfo?: ParlayInfo;
+  error?: string;
+  message?: string;
+}
+

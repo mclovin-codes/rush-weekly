@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BET_SLIP_STORAGE_KEY = '@rush_bet_slip';
 
+export type BetTypeMode = 'straight' | 'parlay';
+
 export interface BetSelection {
   id: string;
   eventID: string;
@@ -32,6 +34,8 @@ export interface BetSelection {
 interface BetSlipState {
   selections: BetSelection[];
   isVisible: boolean;
+  betType: BetTypeMode;
+  parlayStake?: number; // Single stake for parlay bets
 }
 
 interface BetSlipContextType extends BetSlipState {
@@ -39,6 +43,8 @@ interface BetSlipContextType extends BetSlipState {
   removeSelection: (id: string) => void;
   clearSelections: () => void;
   setStakeForBet: (id: string, amount: number) => void;
+  setParlayStake: (amount: number) => void;
+  setBetType: (betType: BetTypeMode) => void;
   openBetSlip: () => void;
   closeBetSlip: () => void;
   hasSelection: (id: string) => boolean;
@@ -49,6 +55,8 @@ const BetSlipContext = createContext<BetSlipContextType | undefined>(undefined);
 const initialState: BetSlipState = {
   selections: [],
   isVisible: false,
+  betType: 'straight',
+  parlayStake: 10,
 };
 
 export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
@@ -82,6 +90,8 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         setState(prev => ({
           ...prev,
           selections: validSelections,
+          betType: parsed.betType || 'straight',
+          parlayStake: parsed.parlayStake || 10,
         }));
 
         // If we filtered out any bets, update storage
@@ -90,6 +100,8 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
             BET_SLIP_STORAGE_KEY,
             JSON.stringify({
               selections: validSelections,
+              betType: parsed.betType || 'straight',
+              parlayStake: parsed.parlayStake || 10,
             })
           );
         }
@@ -105,12 +117,14 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
         BET_SLIP_STORAGE_KEY,
         JSON.stringify({
           selections: state.selections,
+          betType: state.betType,
+          parlayStake: state.parlayStake,
         })
       );
     } catch (error) {
       console.error('Failed to save bet slip:', error);
     }
-  }, [state.selections]);
+  }, [state.selections, state.betType, state.parlayStake]);
 
   const addSelection = useCallback((selection: BetSelection) => {
     setState(prev => {
@@ -179,6 +193,20 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     }));
   }, []);
 
+  const setParlayStake = useCallback((amount: number) => {
+    setState(prev => ({
+      ...prev,
+      parlayStake: amount,
+    }));
+  }, []);
+
+  const setBetType = useCallback((betType: BetTypeMode) => {
+    setState(prev => ({
+      ...prev,
+      betType,
+    }));
+  }, []);
+
   const openBetSlip = useCallback(() => {
     setState(prev => ({ ...prev, isVisible: true }));
   }, []);
@@ -195,20 +223,28 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
   const contextValue = useMemo(() => ({
     selections: state.selections,
     isVisible: state.isVisible,
+    betType: state.betType,
+    parlayStake: state.parlayStake,
     addSelection,
     removeSelection,
     clearSelections,
     setStakeForBet,
+    setParlayStake,
+    setBetType,
     openBetSlip,
     closeBetSlip,
     hasSelection,
   }), [
     state.selections,
     state.isVisible,
+    state.betType,
+    state.parlayStake,
     addSelection,
     removeSelection,
     clearSelections,
     setStakeForBet,
+    setParlayStake,
+    setBetType,
     openBetSlip,
     closeBetSlip,
     hasSelection,
