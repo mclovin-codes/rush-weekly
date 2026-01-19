@@ -250,12 +250,13 @@ export default function MyBetsScreen() {
                   <Text style={[styles.parlayLostText, { color: Colors.dark.danger }]}>{bet.status.toUpperCase()}</Text>
                 </View>
               )}
-              <CaretDown
-                size={18}
-                color={Colors.dark.textSecondary}
-                weight="bold"
-                style={[styles.chevron, isExpanded && styles.chevronRotated]}
-              />
+              <View style={[styles.chevron, isExpanded && styles.chevronRotated]}>
+                <CaretDown
+                  size={18}
+                  color={Colors.dark.textSecondary}
+                  weight="bold"
+                />
+              </View>
             </View>
           </View>
 
@@ -965,8 +966,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   chevron: {
-    width: 18,
-    height: 18,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chevronRotated: {
     transform: [{ rotate: '180deg' }],
