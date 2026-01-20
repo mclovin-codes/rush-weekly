@@ -174,6 +174,7 @@ export const BetSlipProvider = ({ children }: { children: ReactNode }) => {
     setState(prev => ({
       ...prev,
       selections: [],
+      betType: 'straight',
     }));
 
     // Also clear from AsyncStorage
