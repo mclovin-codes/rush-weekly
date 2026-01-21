@@ -113,6 +113,10 @@ export interface Bet extends BaseDocument {
   parlayData?: {
     legCount: number;
     combinedOdds: number;
+    combinedDecimalOdds?: number;
+    impliedProbability?: number;
+    potentialPayout?: number;
+    potentialProfit?: number;
     legs: ParlayLegItem[];
   };
 }

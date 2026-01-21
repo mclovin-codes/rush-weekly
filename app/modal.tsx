@@ -87,15 +87,8 @@ export default function BetSlipBottomSheet({
 
   const [isPlacingBets, setIsPlacingBets] = useState(false);
 
-  // Parlay validation: check for same game selections (not allowed for parlays)
-  const hasSameGameSelections = useMemo(() => {
-    const eventIds = selections.map(s => s.eventID);
-    const uniqueEventIds = new Set(eventIds);
-    return eventIds.length !== uniqueEventIds.size;
-  }, [selections]);
-
   // Parlay validation: minimum 2 legs required
-  const canParlay = selections.length >= 2 && !hasSameGameSelections;
+  const canParlay = selections.length >= 2;
 
   // Calculate combined parlay odds
   const parlayOdds = useMemo(() => {
@@ -186,10 +179,6 @@ export default function BetSlipBottomSheet({
     if (betType === 'parlay') {
       if (selections.length < 2) {
         Alert.alert('Not Enough Legs', 'Parlay bets require at least 2 selections');
-        return;
-      }
-      if (hasSameGameSelections) {
-        Alert.alert('Invalid Parlay', 'Cannot parlay bets from the same game');
         return;
       }
     }
@@ -598,16 +587,6 @@ export default function BetSlipBottomSheet({
                         )}
                       </TouchableOpacity>
                     </View>
-
-                    {/* Same game warning */}
-                    {hasSameGameSelections && (
-                      <View style={styles.warningBox}>
-                        <Ionicons name="warning" size={16} color={Colors.dark.warning} />
-                        <Text style={styles.warningText}>
-                          Cannot parlay bets from the same game
-                        </Text>
-                      </View>
-                    )}
                   </View>
                 )}
 

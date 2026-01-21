@@ -16,7 +16,7 @@ export default function MyBetsScreen() {
 
   // Fetch user's bets from API
   const { data: bets = [], isLoading, error, refetch } = useMyBets();
-
+  
 
   // Refetch data when tab is focused
   useFocusEffect(
@@ -137,6 +137,19 @@ export default function MyBetsScreen() {
     }
   };
 
+  const getStatusBadgeStyle = (status: Bet['status']) => {
+    switch (status) {
+      case 'won':
+        return { bg: Colors.dark.success + '25', color: Colors.dark.success, icon: <Check size={12} color={Colors.dark.success} weight="bold" /> };
+      case 'lost':
+        return { bg: Colors.dark.danger + '15', color: Colors.dark.danger, icon: <X size={11} color={Colors.dark.danger} weight="bold" /> };
+      case 'push':
+        return { bg: Colors.dark.textSecondary + '15', color: Colors.dark.textSecondary, icon: null };
+      default:
+        return { bg: Colors.dark.tint + '20', color: Colors.dark.tint, icon: null };
+    }
+  };
+
   const getLeagueIcon = (leagueId: string) => {
     const upperId = leagueId.toUpperCase();
     if (upperId.includes('NFL') || upperId.includes('NCAAF')) return Football;
@@ -208,7 +221,11 @@ export default function MyBetsScreen() {
       const LeagueIcon = getLeagueIcon(bet.parlayData.legs[0]?.leagueID || '');
       const leagueColor = getLeagueColor(bet.parlayData.legs[0]?.leagueID || '');
       const isWon = bet.status === 'won';
+      const isLost = bet.status === 'lost';
+      const isPush = bet.status === 'push';
+      const isPending = bet.status === 'pending';
       const profit = isWon ? bet.payout - bet.stake : 0;
+      const statusStyle = getStatusBadgeStyle(bet.status);
 
       return (
         <TouchableOpacity
@@ -238,18 +255,12 @@ export default function MyBetsScreen() {
 
             {/* Status Badge with Icon */}
             <View style={styles.parlayHeaderRight}>
-              {isWon && (
-                <View style={styles.parlayWonBadge}>
-                  <Check size={16} color={Colors.dark.success} weight="bold" />
-                  <Text style={styles.parlayWonText}>WON</Text>
-                </View>
-              )}
-              {!isWon && bet.status !== 'pending' && (
-                <View style={[styles.parlayLostBadge]}>
-                  <X size={14} color={Colors.dark.danger} weight="bold" />
-                  <Text style={[styles.parlayLostText, { color: Colors.dark.danger }]}>{bet.status.toUpperCase()}</Text>
-                </View>
-              )}
+              <View style={[styles.parlayStatusBadge, { backgroundColor: statusStyle.bg }]}>
+                {statusStyle.icon}
+                <Text style={[styles.parlayStatusText, { color: statusStyle.color }]}>
+                  {bet.status === 'pending' ? 'OPEN' : bet.status.toUpperCase()}
+                </Text>
+              </View>
               <View style={[styles.chevron, isExpanded && styles.chevronRotated]}>
                 <CaretDown
                   size={18}
@@ -335,9 +346,23 @@ export default function MyBetsScreen() {
               <View style={styles.parlayDivider} />
 
               <View style={[styles.parlayWinSection, isWon && styles.parlayWinSectionWon]}>
-                <Text style={styles.parlayBottomLabel}>TO WIN</Text>
-                <Text style={[styles.parlayWinAmount, isWon && styles.parlayWinAmountWon]}>
-                  {isWon ? `+${profit.toFixed(2)}` : profit.toFixed(2)}
+                <Text style={styles.parlayBottomLabel}>
+                  {isPending ? 'TO WIN' : isWon ? 'WON' : isLost ? 'LOST' : 'PUSH'}
+                </Text>
+                <Text style={[
+                  styles.parlayWinAmount,
+                  isWon && styles.parlayWinAmountWon,
+                  isLost && styles.parlayWinAmountLost,
+                  isPush && styles.parlayWinAmountPush
+                ]}>
+                  {isPending
+                    ? `+${(bet.parlayData?.potentialProfit || 0).toFixed(2)}`
+                    : isWon
+                      ? `+${profit.toFixed(2)}`
+                      : isPush
+                        ? '0.00'
+                        : `-${bet.stake.toFixed(2)}`
+                  }
                 </Text>
               </View>
             </View>
@@ -932,33 +957,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  parlayWonBadge: {
+  parlayStatusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.dark.success + '25',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    gap: 4,
-  },
-  parlayWonText: {
-    ...Typography.body.small,
-    color: Colors.dark.success,
-    fontFamily: Fonts.medium,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  parlayLostBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.dark.danger + '15',
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,
     gap: 3,
   },
-  parlayLostText: {
+  parlayStatusText: {
     ...Typography.body.small,
     fontFamily: Fonts.medium,
     fontSize: 11,
@@ -1111,6 +1118,12 @@ const styles = StyleSheet.create({
   },
   parlayWinAmountWon: {
     color: Colors.dark.success,
+  },
+  parlayWinAmountLost: {
+    color: Colors.dark.danger,
+  },
+  parlayWinAmountPush: {
+    color: Colors.dark.textSecondary,
   },
   parlayUnitsLabel: {
     ...Typography.meta.small,
