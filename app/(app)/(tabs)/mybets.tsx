@@ -1,6 +1,6 @@
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { useMyBets } from '@/hooks/useBets';
-import { Bet, PopulatedBet } from '@/types';
+import { Bet, Game, PopulatedBet } from '@/types';
 import { useFocusEffect } from '@react-navigation/native';
 import { ArrowClockwise, Baseball, Basketball, CaretDown, Check, Football, SoccerBall, X } from 'phosphor-react-native';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -150,6 +150,19 @@ export default function MyBetsScreen() {
     }
   };
 
+  const getGameStateBadge = (gameStatus: Game['status']) => {
+    switch (gameStatus) {
+      case 'live':
+        return { text: 'LIVE', bg: Colors.dark.danger + '25', color: Colors.dark.danger, dot: true };
+      case 'finalized':
+        return { text: 'FINAL', bg: Colors.dark.textSecondary + '15', color: Colors.dark.textSecondary, dot: false };
+      case 'canceled':
+        return { text: 'CANCELED', bg: Colors.dark.danger + '15', color: Colors.dark.danger, dot: false };
+      default:
+        return { text: 'UPCOMING', bg: Colors.dark.success + '15', color: Colors.dark.success, dot: false };
+    }
+  };
+
   const getLeagueIcon = (leagueId: string) => {
     const upperId = leagueId.toUpperCase();
     if (upperId.includes('NFL') || upperId.includes('NCAAF')) return Football;
@@ -226,6 +239,7 @@ export default function MyBetsScreen() {
       const isPending = bet.status === 'pending';
       const profit = isWon ? bet.payout - bet.stake : 0;
       const statusStyle = getStatusBadgeStyle(bet.status);
+      const gameState = getGameStateBadge(game.status);
 
       return (
         <TouchableOpacity
@@ -236,19 +250,22 @@ export default function MyBetsScreen() {
           {/* Parlay Header - Cleaner Design */}
           <View style={styles.parlayHeader}>
             <View style={styles.parlayHeaderLeft}>
-              {/* League Icon with parlay badge */}
-              {/* <View style={[styles.parlayIconBadge, { backgroundColor: leagueColor + '30' }]}>
-                <LeagueIcon size={20} color={leagueColor} weight="fill" />
-              </View> */}
-
+              
               <View style={styles.parlayTitleSection}>
                 <Text style={styles.parlayTitle}>{bet.parlayData.legCount} LEG PARLAY</Text>
-                <View style={styles.parlayOddsRow}>
-                  <Text style={styles.parlayLegCount}>{bet.parlayData.legCount}</Text>
-                  <Text style={styles.parlayAt}>@</Text>
-                  <Text style={[styles.parlayCombinedOdds, { color: leagueColor }]}>
-                    {formatOdds(bet.parlayData.combinedOdds)}
-                  </Text>
+                <View style={styles.parlayMetaRow}>
+                  <View style={styles.parlayOddsRow}>
+                    <Text style={styles.parlayLegCount}>{bet.parlayData.legCount}</Text>
+                    <Text style={styles.parlayAt}>@</Text>
+                    <Text style={[styles.parlayCombinedOdds, { color: leagueColor }]}>
+                      {formatOdds(bet.parlayData.combinedOdds)}
+                    </Text>
+                    <View style={[styles.gameStateBadge, { backgroundColor: gameState.bg }]}>
+                    {gameState.dot && <View style={[styles.gameStateDot, { backgroundColor: gameState.color }]} />}
+                    <Text style={[styles.gameStateText, { color: gameState.color }]}>{gameState.text}</Text>
+                  </View>
+                  </View>
+                  
                 </View>
               </View>
             </View>
@@ -394,10 +411,18 @@ export default function MyBetsScreen() {
               </>
             )}
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
-            <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
-              {getStatusText(bet)}
-            </Text>
+          <View style={styles.betHeaderRight}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(bet.status) + '20' }]}>
+              <Text style={[styles.statusText, { color: getStatusColor(bet.status) }]}>
+                {getStatusText(bet)}
+              </Text>
+            </View>
+            <View style={[styles.gameStateBadgeSmall, { backgroundColor: getGameStateBadge(game.status).bg }]}>
+              {getGameStateBadge(game.status).dot && <View style={[styles.gameStateDotSmall, { backgroundColor: getGameStateBadge(game.status).color }]} />}
+              <Text style={[styles.gameStateTextSmall, { color: getGameStateBadge(game.status).color }]}>
+                {getGameStateBadge(game.status).text}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -706,6 +731,31 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.medium,
     fontSize: 11,
   },
+  betHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  gameStateBadgeSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 3,
+  },
+  gameStateDotSmall: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  gameStateTextSmall: {
+    ...Typography.meta.small,
+    fontFamily: Fonts.medium,
+    fontSize: 8,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+  },
 
   // Game Info
   gameInfo: {
@@ -951,6 +1001,33 @@ const styles = StyleSheet.create({
     ...Typography.emphasis.medium,
     fontFamily: Fonts.mono,
     fontSize: 15,
+  },
+  parlayMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
+  },
+  gameStateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 4,
+    marginLeft: 12
+  },
+  gameStateDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  gameStateText: {
+    ...Typography.meta.small,
+    fontFamily: Fonts.medium,
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   parlayHeaderRight: {
     flexDirection: 'row',
