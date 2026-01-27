@@ -1,0 +1,8 @@
+[1:02 PM, 1/24/2026] Malcolm New: https://www.wealthbridgefg.com/ I already shared the current US agency am with. Obviously with exception to branding logo and colors that shall be impacted by final logo etc @Malcom Kastiro 
+[1:02 PM, 1/24/2026] Malcolm New: @all here is a sample find an agent vs find a solution (FAQs or Ask an Advisor) kind of intake form or directory feature https://branches.bankerslife.com/search
+[1:02 PM, 1/24/2026] Malcolm New: https://agents.bankerslife.com/match-results?query=&facetFilters=%7B%22c_gs_q1_composite%22%3A%5B%7B%22c_gs_q1_composite%22%3A%7B%22%24eq%22%3A%22New+York%22%7D%7D%5D%2C%22c_gs_q2_composite%22%3A%5B%7B%22c_gs_q2_composite%22%3A%7B%22%24eq%22%3A%22English%22%7D%7D%5D%2C%22c_gs_q4_b_composite%22%3A%5B%5D%2C%22c_licensedToSellFinancialProducts%22%3A%5B%7B%22c_licensedToSellFinancialProducts%22%3A%7B%22%24eq%22%3A%22401%28k%29+rollover+and+investment+products%22%7D%7D%5D%7D&referrerPageUrl=https%3A%2F%2Fagents.bankerslife.com%2Fmatch&filters=%7B%7D output
+[1:02 PM, 1/24/2026] Malcolm New: Looking forward to what others share.https://robinhood.com/us/en/ design wise something like this is best for mobile responsive design
+[1:02 PM, 1/24/2026] Malcolm New: https://fmgsuite.com/insights/the-50-best-financial-advisor-websites/ 
+ this company FMG is contracted to design most US advisors websites for compliance @all 
+[1:02 PM, 1/24/2026] Malcolm New: https://www.wealth.com/resources/articles/top-advisor-websites-for-2026/ another gem
+[1:02 PM, 1/24/2026] Malcolm New: Smart Stock Financial Services – Save Now For A Better Future https://share.google/WF7OkwxrgD9o7wfpn

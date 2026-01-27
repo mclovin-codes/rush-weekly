@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, Link } from 'expo-router';
+import { WebBrowser } from 'expo-web-browser';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { onboardingStorage } from '@/lib/onboarding-storage';
@@ -102,6 +103,10 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     router.replace('/(app)/(tabs)');
   };
 
+  const openLink = async (url: string) => {
+    await WebBrowser.openBrowserAsync(url);
+  };
+
   const currentStepData = onboardingSteps[currentStep];
   const isLastStep = currentStep === onboardingSteps.length - 1;
 
@@ -185,6 +190,15 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
       {/* Bottom Action */}
       <View style={styles.bottomContainer}>
+        <View style={styles.legalLinksContainer}>
+          <TouchableOpacity onPress={() => openLink('https://www.joinrush.app/privacy')}>
+            <Text style={styles.legalLinkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalLinkSeparator}>•</Text>
+          <TouchableOpacity onPress={() => openLink('https://www.joinrush.app/terms')}>
+            <Text style={styles.legalLinkText}>Terms of Service</Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
           <Text style={styles.nextButtonText}>
             {isLastStep ? 'GET STARTED' : 'NEXT'}
@@ -342,5 +356,21 @@ const styles = StyleSheet.create({
     color: Colors.dark.background,
     fontFamily: Fonts.bold,
     letterSpacing: 1,
+  },
+  legalLinksContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  legalLinkText: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
+    textDecorationLine: 'underline',
+  },
+  legalLinkSeparator: {
+    ...Typography.body.small,
+    color: Colors.dark.textSecondary,
   },
 });

@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View, Text, Switch, TouchableOpacity, Alert, Ac
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
@@ -281,6 +282,10 @@ export default function AccountScreen() {
     }
   };
 
+  const openLink = async (url: string) => {
+    await WebBrowser.openBrowserAsync(url);
+  };
+
   return (
     <>
       <ScrollView
@@ -509,7 +514,7 @@ export default function AccountScreen() {
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => router.push('/(app)/terms-of-service')}
+          onPress={() => openLink('https://www.joinrush.app/terms')}
         >
           <View style={styles.menuIcon}>
             <Ionicons name="document-text-outline" size={20} color={Colors.dark.tint} />
@@ -522,7 +527,7 @@ export default function AccountScreen() {
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => router.push('/(app)/privacy-policy')}
+          onPress={() => openLink('https://www.joinrush.app/privacy')}
         >
           <View style={styles.menuIcon}>
             <Ionicons name="shield-checkmark-outline" size={20} color={Colors.dark.tint} />
