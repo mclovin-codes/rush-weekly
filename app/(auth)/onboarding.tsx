@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, ActivityIndicator } from 'react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Link } from 'expo-router';
@@ -6,6 +6,7 @@ import { WebBrowser } from 'expo-web-browser';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { onboardingStorage } from '@/lib/onboarding-storage';
+import { useOnboarding } from '@/lib/api/hooks';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -14,6 +15,7 @@ interface OnboardingScreenProps {
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const fadeAnimation = useRef(new Animated.Value(0)).current;
+  const { mutate: completeOnboarding, isPending, error } = useOnboarding();
 
   const onboardingSteps = [
     {
@@ -87,20 +89,37 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         // Fade in will be triggered by useEffect
       });
     } else {
-      // Complete onboarding - mark as complete in storage
-      await onboardingStorage.markOnboardingComplete();
-
-      // Redirect to tabs index page
-      router.replace('/(app)/(tabs)');
+      // Complete onboarding - call API and mark as complete in storage
+      completeOnboarding(undefined, {
+        onSuccess: async () => {
+          await onboardingStorage.markOnboardingComplete();
+          router.replace('/(app)/(tabs)');
+        },
+        onError: (err) => {
+          console.error('Onboarding failed:', err);
+          // Still mark as complete and redirect on error for now
+          // so user isn't stuck
+          onboardingStorage.markOnboardingComplete();
+          router.replace('/(app)/(tabs)');
+        },
+      });
     }
   };
 
   const handleSkip = async () => {
-    // Mark onboarding as complete even if skipped
-    await onboardingStorage.markOnboardingComplete();
-
-    // Redirect to tabs index page
-    router.replace('/(app)/(tabs)');
+    // Call onboarding API even on skip (idempotent - safe to call multiple times)
+    completeOnboarding(undefined, {
+      onSuccess: async () => {
+        await onboardingStorage.markOnboardingComplete();
+        router.replace('/(app)/(tabs)');
+      },
+      onError: (err) => {
+        console.error('Onboarding failed:', err);
+        // Still mark as complete and redirect on error
+        onboardingStorage.markOnboardingComplete();
+        router.replace('/(app)/(tabs)');
+      },
+    });
   };
 
   const openLink = async (url: string) => {
@@ -199,15 +218,21 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             <Text style={styles.legalLinkText}>Terms of Service</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {isLastStep ? 'GET STARTED' : 'NEXT'}
-          </Text>
-          <Ionicons
-            name={isLastStep ? 'checkmark-circle' : 'arrow-forward'}
-            size={20}
-            color={Colors.dark.background}
-          />
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext} disabled={isPending}>
+          {isPending ? (
+            <ActivityIndicator color={Colors.dark.background} />
+          ) : (
+            <>
+              <Text style={styles.nextButtonText}>
+                {isLastStep ? 'GET STARTED' : 'NEXT'}
+              </Text>
+              <Ionicons
+                name={isLastStep ? 'checkmark-circle' : 'arrow-forward'}
+                size={20}
+                color={Colors.dark.background}
+              />
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>

@@ -127,3 +127,16 @@ export interface QueryParams {
   depth?: number;
   where?: Record<string, any>;
 }
+
+export interface OnboardingResponse {
+  message: string;
+  credits: number;
+  is_paid_member: boolean;
+  subscription_end_date: string;
+  pool_id: string;
+}
+
+export interface OnboardingErrorResponse {
+  error: string;
+  message: string;
+}

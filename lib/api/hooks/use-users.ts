@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../client';
-import type { User, PaginatedResponse, QueryParams } from '../types';
+import { apiHelpers } from '@/config/api';
+import type { User, PaginatedResponse, QueryParams, OnboardingResponse } from '../types';
 
 const fetchUsers = async (params?: QueryParams): Promise<PaginatedResponse<User>> => {
   const { data } = await apiClient.get('/users', { params });
@@ -68,6 +69,37 @@ export const useDeleteUser = () => {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+};
+
+// ==================== ONBOARDING ====================
+const completeOnboarding = async (): Promise<OnboardingResponse> => {
+  console.log('[ONBOARDING] Starting completeOnboarding request');
+  console.log('[ONBOARDING] Request path: /api/onboarding');
+  console.log('[ONBOARDING] HTTP Method: POST');
+
+  try {
+    const data = await apiHelpers.post<OnboardingResponse>('/api/onboarding');
+    console.log('[ONBOARDING] Response data:', data);
+    return data;
+  } catch (error: any) {
+    console.error('[ONBOARDING] Request failed with error:');
+    console.error('[ONBOARDING] Error message:', error.message);
+    console.error('[ONBOARDING] Error status:', error.status);
+    console.error('[ONBOARDING] Full error:', JSON.stringify(error, null, 2));
+    throw error;
+  }
+};
+
+export const useOnboarding = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: completeOnboarding,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['pools'] });
+      queryClient.invalidateQueries({ queryKey: ['poolMemberships'] });
     },
   });
 };

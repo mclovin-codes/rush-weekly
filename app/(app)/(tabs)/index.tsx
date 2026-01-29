@@ -1,20 +1,20 @@
-import { ScrollView, StyleSheet, View, Text, TouchableOpacity, Animated, FlatList, ActivityIndicator } from 'react-native';
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Colors, Fonts, Typography } from '@/constants/theme';
-import { Baseball, Basketball, Football, Hockey, SoccerBall, XCircle, ArrowsClockwise, Wrench, PlusIcon, Clock } from "phosphor-react-native";
+import { ArrowsClockwise, Baseball, Basketball, Clock, Football, Hockey, SoccerBall, XCircle } from "phosphor-react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 // import { MarketGame } from '@/types';
 
 import BetSlipBottomSheet from '@/app/modal';
+import BetSlipFloatingButton from '@/components/BetSlipFloatingButton';
 import DevToolsModal from '@/components/DevToolsModal';
+import MarketGameCard from '@/components/MarketGameCard';
 import { useLeagues } from '@/hooks/useLeagues';
 import { useMarketGames } from '@/hooks/useMarketGames';
+import { useActivePool, useLeaderboard, useMyPool } from '@/hooks/usePools';
 import { useCurrentUser } from '@/hooks/useUser';
-import { useMyPool, useActivePool, useLeaderboard } from '@/hooks/usePools';
 import { authClient } from '@/lib/auth-client';
-import { useRouter, useFocusEffect } from 'expo-router';
-import MarketGameCard from '@/components/MarketGameCard';
-import { useBetSlip, BetSelection } from '@/providers/BetSlipProvider';
-import BetSlipFloatingButton from '@/components/BetSlipFloatingButton';
+import { BetSelection, useBetSlip } from '@/providers/BetSlipProvider';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 // League data with text-based icon representations
 const getLeagueSymbol = (sportID: string) => {
@@ -523,7 +523,7 @@ export default function HomeScreen() {
         {/* Leaderboard Preview - Simplified */}
         <TouchableOpacity
           style={styles.leaderboardPreview}
-          onPress={() => router.push('/(app)/(tabs)/leaderboard')}
+          onPress={() => router.push('/(auth)/onboarding')} // (app)/(tabs)/leaderboard
         >
           <View style={styles.previewHeader}>
             <Text style={styles.previewTitle}>LEADERBOARD</Text>

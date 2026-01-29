@@ -87,6 +87,9 @@ export const API_ROUTES = {
       BUY_BACK_CREDITS: '/api/users/buy-back-credits',
     },
 
+    // ==================== ONBOARDING ====================
+    ONBOARDING: '/api/onboarding',
+
     // ==================== CUSTOM ENDPOINTS ====================
     CUSTOM: {
       PLACE_BET: '/api/custom/place-bet',

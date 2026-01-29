@@ -1,4 +1,3 @@
-import { API_ROUTES } from "@/constants/api-routes";
 import { authClient } from "@/lib/auth-client";
 import axios, { AxiosError, AxiosResponse } from "axios";
 
@@ -21,17 +20,7 @@ api.interceptors.request.use(
     if (cookies) {
       config.headers = config.headers ?? {};
       config.headers.Cookie = cookies;
-
-      if (__DEV__ && (config.url?.includes('activate-membership') || config.url?.includes('buy-back'))) {
-        console.log(`[API] 🔐 Auth cookies for ${config.url}:`, cookies.substring(0, 50) + '...');
-      }
-    } else if (__DEV__ && (config.url?.includes('activate-membership') || config.url?.includes('buy-back'))) {
-      console.warn(`[API] ⚠️ No cookies found for ${config.url}!`);
-    }
-
-    if (__DEV__) {
-      console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
-    }
+    } 
     return config;
   },
   (error) => Promise.reject(error)
@@ -40,20 +29,10 @@ api.interceptors.request.use(
 // ——— Response interceptor ———
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    if (__DEV__) {
-      console.log(
-        `✅ ${response.config.method?.toUpperCase()} ${response.config.url}`
-      );
-    }
     return response;
   },
   async (error: AxiosError) => {
-    if (__DEV__) {
-      console.error(
-        `❌ ${error.config?.method?.toUpperCase()} ${error.config?.url}`
-      );
-    }
-
+   
     const errorMessage =
       (error.response?.data as any)?.message ||
       error.message ||
