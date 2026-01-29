@@ -97,9 +97,11 @@ export const useOnboarding = () => {
   return useMutation({
     mutationFn: completeOnboarding,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['pools'] });
-      queryClient.invalidateQueries({ queryKey: ['poolMemberships'] });
+      // Invalidate with proper query keys that match the hooks
+      queryClient.invalidateQueries({ queryKey: ['current-user'] });
+      queryClient.invalidateQueries({ queryKey: ['active-pool'] });
+      queryClient.invalidateQueries({ queryKey: ['my-pool'] });
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] });
     },
   });
 };

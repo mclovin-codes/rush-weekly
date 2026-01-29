@@ -151,24 +151,32 @@ export default function HomeScreen() {
   // Bet slip context
   const { addSelection, closeBetSlip } = useBetSlip();
 
-  // Close bet slip when navigating away from this screen to prevent overlay conflicts
-  useFocusEffect(
-    useCallback(() => {
-      // Screen is focused - nothing to do on focus
-      return () => {
-        // Cleanup when screen loses focus (navigate away)
-        // This prevents the modal overlay from causing freezing
-        closeBetSlip();
-      };
-    }, [closeBetSlip])
-  );
-
   // Fetch user and pool data
   const { data: session } = authClient.useSession();
   const { data: currentUser, refetch: refetchUser } = useCurrentUser();
   const { data: activePool, refetch: refetchPool } = useActivePool();
   const { data: myPool, refetch: refetchMyPool } = useMyPool();
   const { data: leaderboardData, refetch: refetchLeaderboard } = useLeaderboard(activePool?.id, { limit: 100 });
+
+  // Close bet slip when navigating away and auto-refresh on focus
+  useFocusEffect(
+    useCallback(() => {
+      // Auto-refresh user and pool data when screen gains focus
+      // This ensures fresh data after onboarding or returning from other screens
+      refetchUser();
+      refetchPool();
+      refetchMyPool();
+      if (activePool?.id) {
+        refetchLeaderboard();
+      }
+
+      return () => {
+        // Cleanup when screen loses focus (navigate away)
+        // This prevents the modal overlay from causing freezing
+        closeBetSlip();
+      };
+    }, [closeBetSlip, refetchUser, refetchPool, refetchMyPool, refetchLeaderboard, activePool?.id])
+  );
 
 
   // Fetch leagues from API
@@ -523,7 +531,7 @@ export default function HomeScreen() {
         {/* Leaderboard Preview - Simplified */}
         <TouchableOpacity
           style={styles.leaderboardPreview}
-          onPress={() => router.push('/(auth)/onboarding')} // (app)/(tabs)/leaderboard
+          onPress={() => router.push('/(app)/(tabs)/leaderboard')}
         >
           <View style={styles.previewHeader}>
             <Text style={styles.previewTitle}>LEADERBOARD</Text>
