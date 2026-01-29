@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView,
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Colors, Fonts, Typography, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { authClient } from "@/lib/auth-client";
@@ -22,6 +23,10 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const { username, email, password } = formData;
+
+  const openLink = async (url: string) => {
+    await WebBrowser.openBrowserAsync(url);
+  };
 
   const handleSignup = async () => {
     if (!username || !email || !password) {
@@ -167,23 +172,37 @@ export default function SignupScreen({ onSignupComplete }: SignupScreenProps) {
           </View>
 
           {/* Terms Checkbox */}
-          <TouchableOpacity
-            style={styles.termsContainer}
-            onPress={() => setAgreedToTerms(!agreedToTerms)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
-              {agreedToTerms && (
-                <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
-              )}
+          <View style={styles.termsContainer}>
+            <TouchableOpacity
+              onPress={() => setAgreedToTerms(!agreedToTerms)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+                {agreedToTerms && (
+                  <Ionicons name="checkmark" size={14} color={Colors.dark.background} />
+                )}
+              </View>
+            </TouchableOpacity>
+            <View style={styles.termsTextContainer}>
+              <Text style={styles.termsText}>
+                I agree to the{' '}
+              </Text>
+              <TouchableOpacity
+                onPress={() => openLink('https://www.joinrush.app/terms')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.termsLink}>Terms of Service</Text>
+              </TouchableOpacity>
+              <Text style={styles.termsText}> and </Text>
+              <TouchableOpacity
+                onPress={() => openLink('https://www.joinrush.app/privacy')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.termsLink}>Privacy Policy</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.termsText}>
-              I agree to the{' '}
-              <Text style={styles.termsLink}>Terms of Service</Text>
-              {' '}and{' '}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
-            </Text>
-          </TouchableOpacity>
+          </View>
 
           {/* Signup Button */}
           <TouchableOpacity
@@ -300,6 +319,13 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
+  termsTextContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    lineHeight: 20,
+  },
   checkbox: {
     width: 20,
     height: 20,
@@ -317,7 +343,6 @@ const styles = StyleSheet.create({
   termsText: {
     ...Typography.body.small,
     color: Colors.dark.textSecondary,
-    flex: 1,
     lineHeight: 20,
   },
   termsLink: {

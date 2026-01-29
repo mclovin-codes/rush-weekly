@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Activit
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Link } from 'expo-router';
-import { WebBrowser } from 'expo-web-browser';
+import * as WebBrowser from 'expo-web-browser';
 
 import { Colors, Fonts, Typography } from '@/constants/theme';
 import { onboardingStorage } from '@/lib/onboarding-storage';
